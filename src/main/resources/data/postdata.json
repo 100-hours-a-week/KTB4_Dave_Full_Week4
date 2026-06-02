@@ -1,0 +1,15 @@
+[
+  {
+    "postNum" : 1,
+    "userNum" : 1,
+    "title" : "first post",
+    "content" : "no content",
+    "image" : null,
+    "views" : 1,
+    "likes" : 0,
+    "comments" : 1,
+    "reports" : 0,
+    "isEdited" : false,
+    "saveTime" : "2026-06-02T14:30:45.123"
+  }
+]

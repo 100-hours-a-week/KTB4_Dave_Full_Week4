@@ -1,0 +1,13 @@
+[
+  {
+    "commentNum" : 1,
+    "postNum" : 1,
+    "parentNum" : null,
+    "depth" : 0,
+    "userNum" : 2,
+    "content" : "good Post",
+    "isEdited" : false,
+    "isDeleted" : false,
+    "saveTime" : "2026-06-02T14:33:45.123"
+  }
+]

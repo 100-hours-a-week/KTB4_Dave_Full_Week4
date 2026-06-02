@@ -22,6 +22,7 @@ public class Post {
     private long comments = 0;
     @Min(0) @Max(5)
     private long reports = 0;
+    @NotNull
     private boolean isEdited = false;
     @NotBlank
     private LocalDateTime saveTime;

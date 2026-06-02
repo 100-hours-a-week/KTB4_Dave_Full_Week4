@@ -1,0 +1,18 @@
+[
+  {
+    "userNum": 1,
+    "email" : "wns1628@gmail.com",
+    "password" : "abcd",
+    "nickname" : "dave",
+    "profileImage" : null,
+    "isDeleted" : false
+  },
+  {
+    "userNum": 2,
+    "email" : "wnsdnjs1628@gmail.com",
+    "password" : "abcd",
+    "nickname" : "wnsdnjs",
+    "profileImage" : null,
+    "isDeleted" : false
+  }
+]
