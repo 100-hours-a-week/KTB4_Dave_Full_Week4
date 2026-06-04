@@ -1,7 +1,7 @@
-package dto.response;
+package domain.post.response;
 
 public record PostReportResponse(
         long postNum,
-        int number_of_report
+        int numberOfReport
 ) {
 }

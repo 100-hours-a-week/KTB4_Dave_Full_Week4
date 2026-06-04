@@ -1,4 +1,4 @@
-package dto.response;
+package domain;
 
 import lombok.RequiredArgsConstructor;
 

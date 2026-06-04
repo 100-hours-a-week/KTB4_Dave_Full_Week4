@@ -1,10 +1,16 @@
-package dto;
+package domain.comment;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@ToString
+@RequiredArgsConstructor
+@NoArgsConstructor
 public class Comment {
     private long commentNum;
     private long postNum;

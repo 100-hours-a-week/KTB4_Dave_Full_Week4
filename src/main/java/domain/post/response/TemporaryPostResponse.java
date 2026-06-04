@@ -1,11 +1,7 @@
-package dto.response;
-
-import jakarta.validation.constraints.NotBlank;
+package domain.post.response;
 
 public record TemporaryPostResponse(
-        @NotBlank
         String title,
-        @NotBlank
         String content,
         String image
 ) {

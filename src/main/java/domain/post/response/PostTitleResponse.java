@@ -1,4 +1,4 @@
-package dto.response;
+package domain.post.response;
 
 import java.time.LocalDateTime;
 
@@ -8,8 +8,8 @@ public record PostTitleResponse(
         String title,
         int view,
         int like,
-        int number_of_comment,
-        int number_of_report,
+        int numberOfComment,
+        int numberOfReport,
         LocalDateTime saveTime
 ) {
 }

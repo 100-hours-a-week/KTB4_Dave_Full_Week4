@@ -1,4 +1,4 @@
-package dto.response;
+package domain.comment.response;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +12,6 @@ import java.util.List;
 @ToString
 @RequiredArgsConstructor
 public class CommentListResponse {
-    CommentResponse commentResponse;
-    List<CommentListResponse> comments;
+    CommentResponse comment;
+    List<CommentListResponse> childComments;
 }

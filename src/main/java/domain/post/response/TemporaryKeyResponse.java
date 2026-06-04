@@ -1,7 +1,7 @@
-package dto.response;
+package domain.post.response;
 
 public record TemporaryKeyResponse(
         long userNum,
-        String temporary_key
+        String temporaryKey
 ) {
 }

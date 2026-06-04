@@ -1,8 +1,4 @@
-package dto.response;
-
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+package domain.comment.response;
 
 import java.time.LocalDateTime;
 
