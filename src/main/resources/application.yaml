@@ -1,3 +1,7 @@
 spring:
   application:
     name: Community
+
+
+app:
+  userFile: ./data/userdata.json

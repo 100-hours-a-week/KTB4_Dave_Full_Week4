@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Setter
 @ToString
 @RequiredArgsConstructor
-@NoArgsConstructor
 public class Comment {
     private long commentNum;
     private long postNum;
@@ -23,5 +22,6 @@ public class Comment {
     private boolean isDeleted = false;
     @NotNull
     private LocalDateTime saveTime;
-
+    @NotNull
+    private LocalDateTime writeDate;
 }

@@ -8,6 +8,7 @@
     "content" : "good Post",
     "isEdited" : false,
     "isDeleted" : false,
-    "saveTime" : "2026-06-02T14:33:45.123"
+    "saveTime" : "2026-06-02T14:33:45.123",
+    "writeDate" : "2026-06-02T14:33:45.123"
   }
 ]

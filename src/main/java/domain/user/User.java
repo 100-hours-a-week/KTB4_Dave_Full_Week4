@@ -6,7 +6,6 @@ import lombok.*;
 @Setter
 @ToString
 @RequiredArgsConstructor
-@NoArgsConstructor
 public class User {
     private long userNum;
     private String email;
@@ -17,10 +16,6 @@ public class User {
 
     public boolean passwordConfirm(String password){
         return this.password.equals(password);
-    }
-
-    public String getNickname(){
-        return isDeleted ? "알 수 없음" : nickname;
     }
 
     public void delete(){

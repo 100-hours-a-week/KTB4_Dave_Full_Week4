@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Setter
 @ToString
 @RequiredArgsConstructor
-@NoArgsConstructor
 public class Post {
     private long postNum;
     private long userNum;

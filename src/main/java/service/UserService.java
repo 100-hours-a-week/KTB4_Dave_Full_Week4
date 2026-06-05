@@ -1,7 +1,5 @@
 package service;
 
-import org.springframework.stereotype.Service;
+public interface UserService {
 
-@Service
-public class UserService {
 }
