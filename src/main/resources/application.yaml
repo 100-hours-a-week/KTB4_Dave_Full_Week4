@@ -5,3 +5,8 @@ spring:
 
 app:
   userFile: ./data/userdata.json
+  userLikeFile: ./data/userlikedata.json
+  postFile: ./data/postdata.json
+  postEditFile: ./data/posteditrecorddata.json
+  temporaryPostFile: ./data/temporarypostdata.json
+  commentFile: ./data/commentdata.json
