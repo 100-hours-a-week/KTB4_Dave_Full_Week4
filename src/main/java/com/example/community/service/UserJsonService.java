@@ -47,9 +47,7 @@ public class UserJsonService implements UserService{
         user.setNickname(signUpRequest.nickname());
         user.setProfileImage(signUpRequest.profileImage());
         user.setUserRole(UserRole.USER);
-        userRepository.addUser(user);
-
-        return userNum;
+        return userRepository.addUser(user);
     }
 
     @Override

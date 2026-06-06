@@ -15,8 +15,8 @@ public interface UserRepository {
     Optional<User> findByNickname(String nickname);
     boolean isExistEmail(String email);
     boolean isExistNickname(String nickname);
-    Optional<UserInfoDTO> updateUserInfo(UserInfoDTO userInfoDTO);
+    UserInfoDTO updateUserInfo(UserInfoDTO userInfoDTO);
     void changePassword(long userNum, String nextPassword);
-    Optional<UserDeleteResponse> deleteUser(long userNum);
+    UserDeleteResponse deleteUser(long userNum);
     List<UserInfoDTO> getUserInfos(List<Long> userNums);
 }

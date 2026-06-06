@@ -33,16 +33,11 @@ public class UserLikeJsonRepository implements UserLikeRepository{
     }
 
     @Override
-    public Optional<UserLikePost> addUserLikePost(UserLikePost userLikePost) {
+    public UserLikePost addUserLikePost(UserLikePost userLikePost) {
         List<UserLikePost> userLikePosts = dataManager.readData();
         userLikePosts.add(userLikePost);
-        try {
-            dataManager.writeData(userLikePosts);
-        }catch (Exception e){
-            e.printStackTrace();
-            return Optional.empty();
-        }
-        return Optional.of(userLikePost);
+        dataManager.writeData(userLikePosts);
+        return userLikePost;
     }
 
     @Override

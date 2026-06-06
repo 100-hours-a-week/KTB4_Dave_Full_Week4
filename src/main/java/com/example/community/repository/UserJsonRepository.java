@@ -73,17 +73,17 @@ public class UserJsonRepository implements UserRepository{
     }
 
     @Override
-    public Optional<UserInfoDTO> updateUserInfo(UserInfoDTO userInfoDTO) {
+    public UserInfoDTO updateUserInfo(UserInfoDTO userInfoDTO) {
         List<User> users = getAll();
         for(User u : users){
             if(u.getUserNum() == userInfoDTO.userNum()){
                 u.setNickname(userInfoDTO.nickname());
                 u.setProfileImage(userInfoDTO.profileImage());
-                return Optional.of(userInfoDTO);
+                dataManager.writeData(users);
+                return userInfoDTO;
             }
         }
-
-        return Optional.empty();
+        throw new RuntimeException("존재하지 않는 유저"); // 커스텀 예외로 변경
     }
 
     @Override
@@ -92,28 +92,24 @@ public class UserJsonRepository implements UserRepository{
         for(User u : users){
             if(u.getUserNum() == userNum){
                 u.setPassword(nextPassword);
+                dataManager.writeData(users);
                 return;
             }
         }
+        throw new RuntimeException("존재하지 않는 유저"); // 커스텀 예외로 변경
     }
 
     @Override
-    public Optional<UserDeleteResponse> deleteUser(long userNum) {
+    public UserDeleteResponse deleteUser(long userNum) {
         List<User> users = getAll();
-        boolean delete = false;
-        Optional<UserDeleteResponse> deletedUser = Optional.empty();
         for(User u : users){
             if(u.getUserNum() == userNum){
                 u.delete();
-                delete = true;
-                deletedUser = Optional.of(UserDeleteResponse.from(u));
-                break;
+                dataManager.writeData(users);
+                return UserDeleteResponse.from(u);
             }
         }
-        if(delete){
-            dataManager.writeData(users);
-        }
-        return deletedUser;
+        throw new RuntimeException("존재하지 않는 유저"); // 커스텀 예외로 변경
     }
 
     @Override
