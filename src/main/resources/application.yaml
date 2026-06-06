@@ -11,3 +11,7 @@ app:
   temporaryPostFile: ./data/temporarypostdata.json
   commentFile: ./data/commentdata.json
   refreshTokenFile: ./data/refreshtoken.json
+
+tokenExpire:
+  refresh: 1000*60*30
+  access: 1000*60*10

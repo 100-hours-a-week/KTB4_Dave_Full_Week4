@@ -13,6 +13,7 @@ public class User {
     private String nickname;
     private String profileImage;
     private boolean isDeleted = false;
+    private UserRole userRole;
 
     public boolean passwordConfirm(String password){
         return this.password.equals(password);

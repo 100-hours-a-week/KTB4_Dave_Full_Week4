@@ -1,6 +1,6 @@
 package com.example.community.repository;
 
-import com.example.community.component.DataManager;
+import com.example.community.util.DataManager;
 import com.example.community.domain.user.UserLikePost;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;

@@ -1,4 +1,4 @@
-package com.example.community.component;
+package com.example.community.util;
 
 import java.util.List;
 

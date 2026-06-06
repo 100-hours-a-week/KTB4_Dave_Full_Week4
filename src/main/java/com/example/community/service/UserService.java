@@ -12,7 +12,6 @@ import com.example.community.domain.user.response.UserResponse;
 public interface UserService {
     long signUp(SignUpRequest signUpRequest);
     UserResponse signIn(SignInRequest signInRequest);
-    void signOut(long userNum);
     boolean isExistEmail(String email);
     boolean isExistNickname(String nickname);
     UserInfoResponse updateUserInfo(Token token, UserInfoRequest userInfoRequest);

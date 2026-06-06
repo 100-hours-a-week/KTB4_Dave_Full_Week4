@@ -1,4 +1,4 @@
-package com.example.community.component;
+package com.example.community.util;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;

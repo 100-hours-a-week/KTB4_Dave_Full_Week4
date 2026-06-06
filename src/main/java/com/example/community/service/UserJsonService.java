@@ -3,6 +3,7 @@ package com.example.community.service;
 import com.example.community.domain.token.Token;
 import com.example.community.domain.user.User;
 import com.example.community.domain.user.UserInfoDTO;
+import com.example.community.domain.user.UserRole;
 import com.example.community.domain.user.request.PasswordChangeRequest;
 import com.example.community.domain.user.request.SignInRequest;
 import com.example.community.domain.user.request.SignUpRequest;
@@ -10,6 +11,7 @@ import com.example.community.domain.user.request.UserInfoRequest;
 import com.example.community.domain.user.response.UserDeleteResponse;
 import com.example.community.domain.user.response.UserInfoResponse;
 import com.example.community.domain.user.response.UserResponse;
+import com.example.community.repository.RefreshTokenRepository;
 import com.example.community.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -17,9 +19,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserJsonService implements UserService{
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    public UserJsonService(@Qualifier("userJsonRepository") UserRepository userRepository){
+    public UserJsonService(@Qualifier("userJsonRepository") UserRepository userRepository,
+                           @Qualifier("refreshTokenJsonRepository") RefreshTokenRepository refreshTokenRepository){
         this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
 
@@ -41,7 +46,7 @@ public class UserJsonService implements UserService{
         user.setPassword(signUpRequest.password());
         user.setNickname(signUpRequest.nickname());
         user.setProfileImage(signUpRequest.profileImage());
-
+        user.setUserRole(UserRole.USER);
         userRepository.addUser(user);
 
         return userNum;
@@ -59,10 +64,6 @@ public class UserJsonService implements UserService{
         return UserResponse.from(user);
     }
 
-    @Override
-    public void signOut(long userNum) {
-        // refresh 토큰 제거 정도?
-    }
 
     @Override
     public boolean isExistEmail(String email) {

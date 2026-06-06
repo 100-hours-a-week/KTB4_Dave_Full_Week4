@@ -1,7 +1,7 @@
 package com.example.community.configuration;
 
-import com.example.community.component.DataManager;
-import com.example.community.component.PathDataManager;
+import com.example.community.util.DataManager;
+import com.example.community.util.PathDataManager;
 import com.example.community.domain.comment.Comment;
 import com.example.community.domain.post.Post;
 import com.example.community.domain.post.PostEditRecord;
