@@ -10,3 +10,4 @@ app:
   postEditFile: ./data/posteditrecorddata.json
   temporaryPostFile: ./data/temporarypostdata.json
   commentFile: ./data/commentdata.json
+  refreshTokenFile: ./data/refreshtoken.json

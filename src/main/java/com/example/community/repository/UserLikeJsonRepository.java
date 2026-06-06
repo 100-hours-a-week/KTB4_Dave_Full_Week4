@@ -3,10 +3,12 @@ package com.example.community.repository;
 import com.example.community.component.DataManager;
 import com.example.community.domain.user.UserLikePost;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public class UserLikeJsonRepository implements UserLikeRepository{
     private final DataManager<UserLikePost> dataManager;
 

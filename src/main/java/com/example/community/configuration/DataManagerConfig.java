@@ -6,6 +6,7 @@ import com.example.community.domain.comment.Comment;
 import com.example.community.domain.post.Post;
 import com.example.community.domain.post.PostEditRecord;
 import com.example.community.domain.post.TemporaryPost;
+import com.example.community.domain.token.Token;
 import com.example.community.domain.user.User;
 import com.example.community.domain.user.UserLikePost;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +47,12 @@ public class DataManagerConfig {
     public DataManager<Comment> commentDataManager(@Value("${app.commentFile") Path path, ObjectMapper objectMapper) {
         return new PathDataManager<Comment>(path, objectMapper);
     }
+
+    @Bean
+    public DataManager<Token> refreshTokenDataManager(@Value("${app.refershTokenFile") Path path, ObjectMapper objectMapper){
+        return new PathDataManager<Token>(path, objectMapper);
+    }
+
 
 
 }

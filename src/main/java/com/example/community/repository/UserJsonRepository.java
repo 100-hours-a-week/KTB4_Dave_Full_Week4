@@ -73,17 +73,28 @@ public class UserJsonRepository implements UserRepository{
     }
 
     @Override
-    public Optional<UserInfoDTO> updateUserInfo(long userNum, String nickname, String profileImage) {
+    public Optional<UserInfoDTO> updateUserInfo(UserInfoDTO userInfoDTO) {
         List<User> users = getAll();
         for(User u : users){
-            if(u.getUserNum() == userNum){
-                u.setNickname(nickname);
-                u.setProfileImage(profileImage);
-                return Optional.of(UserInfoDTO.from(u));
+            if(u.getUserNum() == userInfoDTO.userNum()){
+                u.setNickname(userInfoDTO.nickname());
+                u.setProfileImage(userInfoDTO.profileImage());
+                return Optional.of(userInfoDTO);
             }
         }
 
         return Optional.empty();
+    }
+
+    @Override
+    public void changePassword(long userNum, String nextPassword) {
+        List<User> users = getAll();
+        for(User u : users){
+            if(u.getUserNum() == userNum){
+                u.setPassword(nextPassword);
+                return;
+            }
+        }
     }
 
     @Override
