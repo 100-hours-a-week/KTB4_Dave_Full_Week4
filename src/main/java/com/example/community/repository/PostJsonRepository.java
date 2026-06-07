@@ -44,6 +44,8 @@ public class PostJsonRepository implements PostRepository{
         List<Post> posts = dataManager.readData();
         for(Post p : posts){
             if(p.getPostNum() == postNum && !p.isDeleted()){
+                p.view();
+                dataManager.writeData(posts);
                 return Optional.of(p);
             }
         }

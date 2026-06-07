@@ -40,9 +40,9 @@ public class Post {
     }
 
     public void delete(){
-        this.deleted = true;
+        deleted = true;
     }
-
+    public void view(){ view = view+1;}
     public void like(){
         like = like +1;
     }
