@@ -34,6 +34,16 @@ public class PostJsonService implements PostService{
     }
 
     @Override
+    public void checkUserAuthority(Token token, long postNum) {
+        Post post = postRepository.getPost(postNum).orElseThrow(() -> new RuntimeException("존재하지 않는 게시글"));
+        if(token.userNum() != post.getUserNum()){
+            if(token.role() != UserRole.ADMIN){
+                throw new RuntimeException("작성자만 수정 가능");
+            }
+        }
+    }
+
+    @Override
     public PostListResponse getPostsByPage(int index, int offset) {
         List<Post> posts = postRepository.getPostsByPage(index, offset+1);
         boolean hasNext = posts.size() > offset;
@@ -86,7 +96,7 @@ public class PostJsonService implements PostService{
     @Override
     public PostResponse addPost(Token token, PostRequest postRequest) {
         long userNum = token.userNum();
-        long postNum = postRepository.getPostCount();
+        long postNum = postRepository.getPostCount()+1;
         Post post = new Post();
         post.setPostNum(postNum);
         post.setUserNum(userNum);
@@ -101,13 +111,8 @@ public class PostJsonService implements PostService{
 
     @Override
     public PostResponse updatePost(Token token, PostEditRequest postEditRequest) {
-        Post post = postRepository.getPost(postEditRequest.postNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 게시글"));
-        if(token.userNum() != post.getUserNum()){
-            if(token.role() != UserRole.ADMIN){
-                throw new RuntimeException("작성자만 수정 가능");
-            }
-        }
-        post = postRepository.updatePost(postEditRequest.postNum(), postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
+        checkUserAuthority(token, postEditRequest.postNum());
+        Post post = postRepository.updatePost(postEditRequest.postNum(), postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
 
         return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
@@ -136,19 +141,10 @@ public class PostJsonService implements PostService{
         return new PostReportResponse(postRepository.reportPost(postNum));
     }
 
-    @Override
-    public int addComment(long postNum) {
-        return postRepository.addComment(postNum);
-    }
 
     @Override
     public void deletePost(Token token, long postNum) {
-        Post post = postRepository.getPost(postNum).orElseThrow(()->new RuntimeException("존재하지 않는 게시글"));
-        if(token.userNum() != post.getUserNum()){
-            if(token.role() != UserRole.ADMIN){
-                throw new RuntimeException("작성자만 게시글 삭제 가능");
-            }
-        }
+        checkUserAuthority(token, postNum);
         postRepository.deletePost(postNum);
     }
 }

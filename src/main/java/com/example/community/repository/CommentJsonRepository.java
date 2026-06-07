@@ -32,6 +32,21 @@ public class CommentJsonRepository implements CommentRepository{
     }
 
     @Override
+    public Optional<Comment> getComment(long commentNum) {
+        for(Comment c : dataManager.readData()){
+            if(c.getCommentNum() == commentNum){
+                return Optional.of(c);
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public int getCommentCount() {
+        return dataManager.readData().size();
+    }
+
+    @Override
     public Optional<Comment> updateComment(long commentNum, String content) {
         List<Comment> comments = dataManager.readData();
         for(Comment c : comments){

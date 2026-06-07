@@ -9,6 +9,7 @@ import com.example.community.domain.post.response.PostResponse;
 import com.example.community.domain.token.Token;
 
 public interface PostService {
+    void checkUserAuthority(Token token, long postNum);
     PostListResponse getPostsByPage(int index, int offset);
     PostResponse getPost(long postNum);
     PostListResponse getPostsByUserNum(long userNum, int index, int offset);
@@ -16,6 +17,5 @@ public interface PostService {
     PostResponse updatePost(Token token, PostEditRequest postEditRequest);
     PostLikeResponse likePost(Token token, long postNum);
     PostReportResponse reportPost(long postNum);
-    int addComment(long postNum);
     void deletePost(Token token, long postNum);
 }

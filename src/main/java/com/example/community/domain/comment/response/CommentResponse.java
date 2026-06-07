@@ -6,7 +6,6 @@ import com.example.community.domain.user.response.UserInfoResponse;
 import java.time.LocalDateTime;
 
 public record CommentResponse(
-        int numberOfComment,
         long commentNum,
         long postNum,
         long parentNum,
@@ -17,9 +16,8 @@ public record CommentResponse(
         boolean deleted,
         LocalDateTime writeTime
         ) {
-        public static CommentResponse from(int numberOfComment, Comment comment, UserInfoResponse userInfoResponse){
+        public static CommentResponse from(Comment comment, UserInfoResponse userInfoResponse){
                 return new CommentResponse(
-                        numberOfComment,
                         comment.getCommentNum(),
                         comment.getPostNum(),
                         comment.getParentNum(),

@@ -74,7 +74,7 @@ public class UserJsonService implements UserService{
     @Override
     public UserInfoResponse updateUserInfo(Token token, UserInfoRequest userInfoRequest) {
        UserInfoDTO userInfoDTO = userRepository.
-               updateUserInfo(new UserInfoDTO(token.userNum(), userInfoRequest.nickname(), userInfoRequest.profileImage()));
+               updateUserInfo(new UserInfoDTO(token.userNum(), userInfoRequest.nickname(), userInfoRequest.profileImage(), true));
        return UserInfoResponse.from(userInfoDTO);
     }
 
