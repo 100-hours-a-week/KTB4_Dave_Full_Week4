@@ -1,6 +1,7 @@
 package com.example.community.service;
 
 import com.example.community.domain.post.Post;
+import com.example.community.domain.post.PostEditRecord;
 import com.example.community.domain.post.request.PostEditRequest;
 import com.example.community.domain.post.request.PostRequest;
 import com.example.community.domain.post.response.*;
@@ -9,6 +10,7 @@ import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.UserLikePost;
 import com.example.community.domain.user.UserRole;
 import com.example.community.domain.user.response.UserInfoResponse;
+import com.example.community.repository.PostEditRepository;
 import com.example.community.repository.PostRepository;
 import com.example.community.repository.UserLikeRepository;
 import com.example.community.repository.UserRepository;
@@ -22,13 +24,16 @@ import java.util.stream.Collectors;
 @Service
 public class PostJsonService implements PostService{
     private final PostRepository postRepository;
+    private final PostEditRepository postEditRepository;
     private final UserRepository userRepository;
     private final UserLikeRepository userLikeRepository;
 
     public PostJsonService(@Qualifier("postJsonRepository") PostRepository postRepository,
+                           @Qualifier("postEditJsonRepository") PostEditRepository postEditRepository,
                            @Qualifier("userJsonRepository") UserRepository userRepository,
                            @Qualifier("userLikeJsonRepository") UserLikeRepository userLikeRepository){
         this.postRepository = postRepository;
+        this.postEditRepository = postEditRepository;
         this.userRepository = userRepository;
         this.userLikeRepository = userLikeRepository;
     }
@@ -129,7 +134,9 @@ public class PostJsonService implements PostService{
     @Override
     public PostResponse updatePost(Token token,long postNum, PostEditRequest postEditRequest) {
         checkUserAuthority(token, postNum);
-        Post post = postRepository.updatePost(postNum, postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
+        Post post = postRepository.getPost(postNum).orElseThrow(()-> new RuntimeException("존재하지 않는 게시글"));
+        postEditRepository.addPostEditRecord(PostEditRecord.from(post));
+        post = postRepository.updatePost(postNum, postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
 
         return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
