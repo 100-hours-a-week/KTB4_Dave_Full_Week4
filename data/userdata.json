@@ -2,7 +2,7 @@
   "deleted" : false,
   "email" : "wns1628@gmail.com",
   "nickname" : "dave",
-  "password" : "abcd",
+  "password" : "12345678",
   "profileImage" : null,
   "userNum" : 1,
   "userRole" : "USER"
@@ -10,7 +10,7 @@
   "deleted" : false,
   "email" : "wnsdnjs1628@gmail.com",
   "nickname" : "wnsdnjs",
-  "password" : "abcd",
+  "password" : "12345678",
   "profileImage" : null,
   "userNum" : 2,
   "userRole" : "USER"

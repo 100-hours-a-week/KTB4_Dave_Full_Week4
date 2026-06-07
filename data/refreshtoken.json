@@ -22,4 +22,10 @@
   "role" : "USER",
   "uuid" : "24f1bd68-1f67-41b4-b020-cdad1ab1d577",
   "exp" : "2026-06-07T07:52:40.709378Z"
+}, {
+  "userNum" : 1,
+  "type" : "Refresh",
+  "role" : "USER",
+  "uuid" : "4718d0f1-1a09-4195-a1ad-e0cf6dd83fd0",
+  "exp" : "2026-06-07T13:56:19.761463Z"
 } ]

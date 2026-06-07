@@ -1,7 +1,6 @@
 package com.example.community.repository;
 
 import com.example.community.domain.post.Post;
-import com.example.community.domain.post.request.PostEditRequest;
 import com.example.community.util.DataManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
@@ -19,11 +18,21 @@ public class PostJsonRepository implements PostRepository{
     }
 
     @Override
+    public List<Post> getAllPosts() {
+        return dataManager.readData().stream()
+                .filter(p -> !p.isDeleted()).toList();
+    }
+
+    @Override
     public List<Post> getPostsByPage(int index, int offset) {
         List<Post> posts = dataManager.readData().stream()
                 .filter(p -> !p.isDeleted()).toList();
+        int end = posts.size();
+        if(end > (index+1)*offset){
+            end = (index+1)*offset;
+        }
         List<Post> result = new ArrayList<>();
-        for(int i = index*offset; i < (index+1)*offset; i++){
+        for(int i = index*offset; i < end; i++){
             result.add(posts.get(i));
         }
 
@@ -53,7 +62,12 @@ public class PostJsonRepository implements PostRepository{
             }
         }
 
-        for(int i = index*offset; i < (index+1)*offset; i++){
+        int end = userPosts.size();
+        if(end > (index+1)*offset){
+            end = (index+1)*offset;
+        }
+
+        for(int i = index*offset; i < end; i++){
             results.add(userPosts.get(i));
         }
 

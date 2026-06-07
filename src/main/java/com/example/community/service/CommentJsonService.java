@@ -47,11 +47,11 @@ public class CommentJsonService implements CommentService{
     }
 
     @Override
-    public CommentAddResponse addCommentToPost(Token token, CommentToPostRequest commentRequest) {
+    public CommentAddResponse addCommentToPost(Token token, long postNum, CommentToPostRequest commentRequest) {
         Comment comment = new Comment();
         long commentNum = commentRepository.getCommentCount()+1;
         comment.setCommentNum(commentNum);
-        comment.setPostNum(commentRequest.postNum());
+        comment.setPostNum(postNum);
         comment.setContent(commentRequest.content());
         comment.setUserNum(token.userNum());
         comment.setParentNum(-1);
@@ -60,16 +60,16 @@ public class CommentJsonService implements CommentService{
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(()->new RuntimeException("존재하지 않는 유저"));
 
         return new CommentAddResponse(
-                postRepository.addComment(commentRequest.postNum())
+                postRepository.addComment(postNum)
                 ,CommentResponse.from(comment, UserInfoResponse.from(userInfoDTO)));
     }
 
     @Override
-    public CommentAddResponse addCommentToComment(Token token, CommentToCommentRequest commentRequest) {
+    public CommentAddResponse addCommentToComment(Token token, long postNum, CommentToCommentRequest commentRequest) {
         Comment comment = new Comment();
         long commentNum = commentRepository.getCommentCount()+1;
         comment.setCommentNum(commentNum);
-        comment.setPostNum(commentRequest.postNum());
+        comment.setPostNum(postNum);
         comment.setContent(commentRequest.content());
         comment.setUserNum(token.userNum());
         comment.setParentNum(commentRequest.parentNum());
@@ -78,30 +78,26 @@ public class CommentJsonService implements CommentService{
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(()->new RuntimeException("존재하지 않는 유저"));
 
         return new CommentAddResponse(
-                postRepository.addComment(commentRequest.postNum())
+                postRepository.addComment(postNum)
                 ,CommentResponse.from(comment, UserInfoResponse.from(userInfoDTO)));
     }
 
     @Override
-    public List<CommentListResponse> getPostCommentList(long postNum) {
+    public List<CommentResponse> getPostCommentList(long postNum) {
         List<Comment> comments = commentRepository.getCommentsByPostNum(postNum);
         List<Long> users = comments.stream().map(Comment::getUserNum).toList();
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(users);
         Map<Long, UserInfoResponse> userInfoResponseMap = userInfoDTOS.stream()
                 .collect(Collectors.toMap(UserInfoDTO::userNum, UserInfoResponse::from));
 
-        List<CommentResponse> commentResponses = comments.stream()
+        return comments.stream()
                 .map(c -> CommentResponse.from(c, userInfoResponseMap.get(c.getUserNum()))).toList();
-
-
-
-        return List.of();
     }
 
     @Override
-    public CommentResponse updateComment(Token token, CommentEditRequest commentEditRequest) {
-        checkUserAuthority(token, commentEditRequest.commentNum());
-        Comment comment = commentRepository.updateComment(commentEditRequest.commentNum(), commentEditRequest.content()).orElseThrow(() -> new RuntimeException("존재하지 않는 댓글"));
+    public CommentResponse updateComment(Token token, long commentNum, CommentEditRequest commentEditRequest) {
+        checkUserAuthority(token, commentNum);
+        Comment comment = commentRepository.updateComment(commentNum, commentEditRequest.content()).orElseThrow(() -> new RuntimeException("존재하지 않는 댓글"));
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(()->new RuntimeException("존재하지 않는 유저"));
 
         return CommentResponse.from(comment, UserInfoResponse.from(userInfoDTO));

@@ -12,6 +12,7 @@ public record CommentResponse(
         int depth,
         String nickname,
         String profileImage,
+        String content,
         boolean edited,
         boolean deleted,
         LocalDateTime writeTime
@@ -24,6 +25,7 @@ public record CommentResponse(
                         comment.getDepth(),
                         userInfoResponse.nickname(),
                         userInfoResponse.profileImage(),
+                        comment.getContent(),
                         comment.isEdited(),
                         comment.isDeleted(),
                         comment.getWriteTime()

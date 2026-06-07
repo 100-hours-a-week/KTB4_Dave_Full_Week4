@@ -1,12 +1,12 @@
 package com.example.community.repository;
 
 import com.example.community.domain.post.Post;
-import com.example.community.domain.post.request.PostEditRequest;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface PostRepository {
+    List<Post> getAllPosts();
     List<Post> getPostsByPage(int index, int offset);
     Optional<Post> getPost(long postNum);
     List<Post> getPostsByUserNum(long userNum, int index, int offset);

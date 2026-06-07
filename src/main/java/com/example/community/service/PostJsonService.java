@@ -44,6 +44,23 @@ public class PostJsonService implements PostService{
     }
 
     @Override
+    public List<PostTitleResponse> getAllPosts() {
+        List<Post> posts = postRepository.getAllPosts();
+
+        List<Long> userNums = posts.stream().map(Post::getUserNum).toList();
+        List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
+                .stream().map(ui -> ui.deleted() ? new UserInfoDTO(ui.userNum(), "알수없음", null, true) : ui).toList();
+        Map<Long, UserInfoResponse> userInfoMap = userInfoDTOS.stream()
+                .collect(Collectors.toMap(
+                        UserInfoDTO::userNum,
+                        UserInfoResponse::from
+                ));
+
+        return posts.stream()
+                .map(p ->  PostTitleResponse.from(p, userInfoMap.get(p.getUserNum()))).toList();
+    }
+
+    @Override
     public PostListResponse getPostsByPage(int index, int offset) {
         List<Post> posts = postRepository.getPostsByPage(index, offset+1);
         boolean hasNext = posts.size() > offset;
@@ -110,9 +127,9 @@ public class PostJsonService implements PostService{
     }
 
     @Override
-    public PostResponse updatePost(Token token, PostEditRequest postEditRequest) {
-        checkUserAuthority(token, postEditRequest.postNum());
-        Post post = postRepository.updatePost(postEditRequest.postNum(), postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
+    public PostResponse updatePost(Token token,long postNum, PostEditRequest postEditRequest) {
+        checkUserAuthority(token, postNum);
+        Post post = postRepository.updatePost(postNum, postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
 
         return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
@@ -126,11 +143,11 @@ public class PostJsonService implements PostService{
         int like;
         if(userLikeRepository.isUserLikePost(userLikePost)){
             userLikeRepository.deleteUserLikePost(userLikePost);
-            like = postRepository.like(postNum);
+            like = postRepository.unLike(postNum);
         }
         else{
             userLikeRepository.addUserLikePost(userLikePost);
-            like = postRepository.unLike(postNum);
+            like = postRepository.like(postNum);
         }
         return new PostLikeResponse(like);
     }

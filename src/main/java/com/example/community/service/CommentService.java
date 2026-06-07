@@ -12,9 +12,9 @@ import java.util.List;
 
 public interface CommentService {
     void checkUserAuthority(Token token, long commentNum);
-    CommentAddResponse addCommentToPost(Token token, CommentToPostRequest commentRequest);
-    CommentAddResponse addCommentToComment(Token token, CommentToCommentRequest commentRequest);
-    List<CommentListResponse> getPostCommentList(long postNum);
-    CommentResponse updateComment(Token token, CommentEditRequest commentEditRequest);
+    CommentAddResponse addCommentToPost(Token token, long postNum, CommentToPostRequest commentRequest);
+    CommentAddResponse addCommentToComment(Token token, long postNum, CommentToCommentRequest commentRequest);
+    List<CommentResponse> getPostCommentList(long postNum);
+    CommentResponse updateComment(Token token, long commentNum, CommentEditRequest commentEditRequest);
     void deleteComment(Token token, long commentNum);
 }
