@@ -18,5 +18,6 @@ public interface UserRepository {
     UserInfoDTO updateUserInfo(UserInfoDTO userInfoDTO);
     void changePassword(long userNum, String nextPassword);
     UserDeleteResponse deleteUser(long userNum);
+    Optional<UserInfoDTO> getUserInfo(long userNum);
     List<UserInfoDTO> getUserInfos(List<Long> userNums);
 }

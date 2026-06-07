@@ -5,9 +5,10 @@ public record UserInfoDTO
 (
         Long userNum,
         String nickname,
-        String profileImage
+        String profileImage,
+        boolean deleted
 ){
     public static UserInfoDTO from(User user){
-        return new UserInfoDTO(user.getUserNum(), user.getNickname(), user.getProfileImage());
+        return new UserInfoDTO(user.getUserNum(), user.getNickname(), user.getProfileImage(), user.isDeleted());
     }
 }

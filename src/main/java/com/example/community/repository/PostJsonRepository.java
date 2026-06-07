@@ -1,6 +1,7 @@
 package com.example.community.repository;
 
 import com.example.community.domain.post.Post;
+import com.example.community.domain.post.request.PostEditRequest;
 import com.example.community.util.DataManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
@@ -19,7 +20,8 @@ public class PostJsonRepository implements PostRepository{
 
     @Override
     public List<Post> getPostsByPage(int index, int offset) {
-        List<Post> posts = dataManager.readData();
+        List<Post> posts = dataManager.readData().stream()
+                .filter(p -> !p.isDeleted()).toList();
         List<Post> result = new ArrayList<>();
         for(int i = index*offset; i < (index+1)*offset; i++){
             result.add(posts.get(i));
@@ -32,7 +34,7 @@ public class PostJsonRepository implements PostRepository{
     public Optional<Post> getPost(long postNum) {
         List<Post> posts = dataManager.readData();
         for(Post p : posts){
-            if(p.getPostNum() == postNum){
+            if(p.getPostNum() == postNum && !p.isDeleted()){
                 return Optional.of(p);
             }
         }
@@ -46,7 +48,7 @@ public class PostJsonRepository implements PostRepository{
         List<Post> userPosts = new ArrayList<>();
         List<Post> results = new ArrayList<>();
         for(Post p : posts){
-            if(p.getUserNum() == userNum){
+            if(p.getUserNum() == userNum && !p.isDeleted()){
                 userPosts.add(p);
             }
         }
@@ -60,7 +62,8 @@ public class PostJsonRepository implements PostRepository{
 
     @Override
     public int getPostCount() {
-        List<Post> posts = dataManager.readData();
+        List<Post> posts = dataManager.readData().stream()
+                .filter(p -> !p.isDeleted()).toList();
 
         return posts.size();
     }
@@ -76,11 +79,11 @@ public class PostJsonRepository implements PostRepository{
     }
 
     @Override
-    public Post updatePost(Post post) {
+    public Post updatePost(long postNum, String title, String content, String image) {
         List<Post> posts = dataManager.readData();
         for(Post p : posts){
-            if(p.getPostNum() == post.getPostNum()){
-                p.update(post);
+            if(p.getPostNum() == postNum && !p.isDeleted()){
+                p.update(title, content, image);
                 dataManager.writeData(posts);
                 return p;
             }
@@ -89,53 +92,54 @@ public class PostJsonRepository implements PostRepository{
         throw new RuntimeException("게시글 수정 불가"); // 커스텀 예외
     }
 
+
     @Override
-    public void addLike(long postNum) {
+    public int like(long postNum) {
         List<Post> posts = dataManager.readData();
         for(Post p : posts){
-            if(p.getPostNum() == postNum){
+            if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.like();
                 dataManager.writeData(posts);
-                return;
+                return p.getLike();
             }
         }
         throw new RuntimeException("좋아요 불가"); // 커스텀 예외
     }
 
     @Override
-    public void deleteLike(long postNum) {
+    public int unLike(long postNum) {
         List<Post> posts = dataManager.readData();
         for(Post p : posts){
-            if(p.getPostNum() == postNum){
+            if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.unlike();
                 dataManager.writeData(posts);
-                return;
+                return p.getLike();
             }
         }
         throw new RuntimeException("좋아요 취소 불가"); // 커스텀 예외
     }
 
     @Override
-    public void reportPost(long postNum) {
+    public int reportPost(long postNum) {
         List<Post> posts = dataManager.readData();
         for(Post p : posts){
-            if(p.getPostNum() == postNum){
+            if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.report();
                 dataManager.writeData(posts);
-                return;
+                return p.getReport();
             }
         }
         throw new RuntimeException("신고 불가"); // 커스텀 예외
     }
 
     @Override
-    public void addComment(long postNum) {
+    public int addComment(long postNum) {
         List<Post> posts = dataManager.readData();
         for(Post p : posts){
-            if(p.getPostNum() == postNum){
+            if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.addComment();
                 dataManager.writeData(posts);
-                return;
+                return p.getNumberOfComments();
             }
         }
         throw new RuntimeException("댓글추가 불가"); // 커스텀 예외
@@ -145,7 +149,7 @@ public class PostJsonRepository implements PostRepository{
     public void deletePost(long postNum) {
         List<Post> posts = dataManager.readData();
         for(Post p : posts){
-            if(p.getPostNum() == postNum){
+            if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.delete();
                 dataManager.writeData(posts);
                 return;

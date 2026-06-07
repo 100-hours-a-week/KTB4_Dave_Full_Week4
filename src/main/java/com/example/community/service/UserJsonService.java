@@ -12,7 +12,6 @@ import com.example.community.domain.user.response.SignUpResponse;
 import com.example.community.domain.user.response.UserDeleteResponse;
 import com.example.community.domain.user.response.UserInfoResponse;
 import com.example.community.domain.user.response.UserResponse;
-import com.example.community.repository.RefreshTokenRepository;
 import com.example.community.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;

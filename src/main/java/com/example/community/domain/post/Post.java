@@ -14,12 +14,12 @@ public class Post {
     private String title;
     private String content;
     private String image;
-    private long views = 0;
-    private long likes = 0;
-    private long comments = 0;
-    private long reports = 0;
-    private boolean isEdited = false;
-    private boolean isDeleted = false;
+    private int view = 0;
+    private int like = 0;
+    private int report = 0;
+    private int numberOfComments = 0;
+    private boolean edited = false;
+    private boolean deleted = false;
     private LocalDateTime saveTime = LocalDateTime.now();
     private LocalDateTime writeTime = LocalDateTime.now();
 
@@ -27,26 +27,34 @@ public class Post {
         this.title = post.getTitle();
         this.content = post.getContent();
         this.image = post.getImage();
-        this.isEdited = true;
+        this.edited = true;
+        this.saveTime = LocalDateTime.now();
+    }
+
+    public void update(String title, String content, String image){
+        this.title = title;
+        this.content = content;
+        this.image = image;
+        this.edited = true;
         this.saveTime = LocalDateTime.now();
     }
 
     public void delete(){
-        this.isDeleted = true;
+        this.deleted = true;
     }
 
     public void like(){
-        likes = likes+1;
+        like = like +1;
     }
     public void unlike(){
-        likes = likes-1;
+        like = like -1;
     }
 
     public void report(){
-        reports = reports + 1;
+        report = report + 1;
     }
 
     public void addComment(){
-        comments = comments + 1;
+        numberOfComments = numberOfComments + 1;
     }
 }

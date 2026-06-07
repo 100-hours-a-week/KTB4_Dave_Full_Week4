@@ -1,0 +1,149 @@
+package com.example.community.service;
+
+import com.example.community.domain.post.Post;
+import com.example.community.domain.post.request.PostEditRequest;
+import com.example.community.domain.post.request.PostRequest;
+import com.example.community.domain.post.response.*;
+import com.example.community.domain.token.Token;
+import com.example.community.domain.user.UserInfoDTO;
+import com.example.community.domain.user.UserLikePost;
+import com.example.community.domain.user.UserRole;
+import com.example.community.domain.user.response.UserInfoResponse;
+import com.example.community.repository.PostRepository;
+import com.example.community.repository.UserLikeRepository;
+import com.example.community.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+public class PostJsonService implements PostService{
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final UserLikeRepository userLikeRepository;
+
+    public PostJsonService(@Qualifier("postJsonRepository") PostRepository postRepository,
+                           @Qualifier("userJsonRepository") UserRepository userRepository,
+                           @Qualifier("userLikeJsonRepository") UserLikeRepository userLikeRepository){
+        this.postRepository = postRepository;
+        this.userRepository = userRepository;
+        this.userLikeRepository = userLikeRepository;
+    }
+
+    @Override
+    public PostListResponse getPostsByPage(int index, int offset) {
+        List<Post> posts = postRepository.getPostsByPage(index, offset+1);
+        boolean hasNext = posts.size() > offset;
+        if(hasNext) {
+            posts.removeLast();
+        }
+        List<Long> userNums = posts.stream().map(Post::getUserNum).toList();
+        List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
+                .stream().map(ui -> ui.deleted() ? new UserInfoDTO(ui.userNum(), "알수없음", null, true) : ui).toList();
+        Map<Long, UserInfoResponse> userInfoMap = userInfoDTOS.stream()
+                .collect(Collectors.toMap(
+                        UserInfoDTO::userNum,
+                        UserInfoResponse::from
+                ));
+        List<PostTitleResponse> postTitleResponses = posts.stream()
+                .map(p ->  PostTitleResponse.from(p, userInfoMap.get(p.getUserNum()))).toList();
+
+        return new PostListResponse(postTitleResponses, hasNext);
+    }
+
+    @Override
+    public PostResponse getPost(long postNum) {
+        Post post = postRepository.getPost(postNum).orElseThrow(()->new RuntimeException("존재하지 않는 게시글"));
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(post.getUserNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
+        userInfoDTO = userInfoDTO.deleted() ? new UserInfoDTO(userInfoDTO.userNum(), "알수없음", null, true);
+
+        return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
+    }
+
+    @Override
+    public PostListResponse getPostsByUserNum(long userNum, int index, int offset) {
+        List<Post> posts = postRepository.getPostsByUserNum(userNum, index, offset+1);
+        boolean hasNext = posts.size() > offset;
+        if(hasNext){
+            posts.removeLast();
+        }
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum).orElseThrow(()->new RuntimeException("존재하지 않는 유저"));
+        userInfoDTO = userInfoDTO.deleted() ? new UserInfoDTO(userInfoDTO.userNum(), "알수없음", null, true);
+        List<PostTitleResponse> result = posts.stream().map(p->PostTitleResponse.from(p, UserInfoResponse.from(userInfoDTO))).toList();
+
+        return new PostListResponse(result, hasNext);
+    }
+
+
+    @Override
+    public PostResponse addPost(Token token, PostRequest postRequest) {
+        long userNum = token.userNum();
+        long postNum = postRepository.getPostCount();
+        Post post = new Post();
+        post.setPostNum(postNum);
+        post.setUserNum(userNum);
+        post.setTitle(postRequest.title());
+        post.setContent(postRequest.content());
+        post.setImage(postRequest.image());
+        post = postRepository.addPost(post);
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
+
+        return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
+    }
+
+    @Override
+    public PostResponse updatePost(Token token, PostEditRequest postEditRequest) {
+        Post post = postRepository.getPost(postEditRequest.postNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 게시글"));
+        if(token.userNum() != post.getUserNum()){
+            if(token.role() != UserRole.ADMIN){
+                throw new RuntimeException("작성자만 수정 가능");
+            }
+        }
+        post = postRepository.updatePost(postEditRequest.postNum(), postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
+
+        return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
+    }
+
+    @Override
+    public PostLikeResponse likePost(Token token, long postNum) {
+        UserLikePost userLikePost = new UserLikePost();
+        userLikePost.setUserNum(token.userNum());
+        userLikePost.setPostNum(postNum);
+        int like;
+        if(userLikeRepository.isUserLikePost(userLikePost)){
+            userLikeRepository.deleteUserLikePost(userLikePost);
+            like = postRepository.like(postNum);
+        }
+        else{
+            userLikeRepository.addUserLikePost(userLikePost);
+            like = postRepository.unLike(postNum);
+        }
+        return new PostLikeResponse(like);
+    }
+
+
+    @Override
+    public PostReportResponse reportPost(long postNum) {
+        return new PostReportResponse(postRepository.reportPost(postNum));
+    }
+
+    @Override
+    public int addComment(long postNum) {
+        return postRepository.addComment(postNum);
+    }
+
+    @Override
+    public void deletePost(Token token, long postNum) {
+        Post post = postRepository.getPost(postNum).orElseThrow(()->new RuntimeException("존재하지 않는 게시글"));
+        if(token.userNum() != post.getUserNum()){
+            if(token.role() != UserRole.ADMIN){
+                throw new RuntimeException("작성자만 게시글 삭제 가능");
+            }
+        }
+        postRepository.deletePost(postNum);
+    }
+}

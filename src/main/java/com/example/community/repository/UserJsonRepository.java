@@ -113,6 +113,16 @@ public class UserJsonRepository implements UserRepository{
     }
 
     @Override
+    public Optional<UserInfoDTO> getUserInfo(long userNum) {
+        for(User u : getAll()){
+            if(u.getUserNum() == userNum){
+                return Optional.of(UserInfoDTO.from(u));
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
     public List<UserInfoDTO> getUserInfos(List<Long> userNums) {
         return getAll().stream().
                 filter(u -> userNums.contains(u.getUserNum())).
