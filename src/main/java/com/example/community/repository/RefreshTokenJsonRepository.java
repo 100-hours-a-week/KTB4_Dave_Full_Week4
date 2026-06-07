@@ -3,9 +3,11 @@ package com.example.community.repository;
 import com.example.community.util.DataManager;
 import com.example.community.domain.token.Token;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public class RefreshTokenJsonRepository implements RefreshTokenRepository{
     private final DataManager<Token> dataManager;
 

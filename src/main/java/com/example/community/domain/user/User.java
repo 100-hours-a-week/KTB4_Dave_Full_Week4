@@ -12,7 +12,7 @@ public class User {
     private String password;
     private String nickname;
     private String profileImage;
-    private boolean isDeleted = false;
+    private boolean deleted = false;
     private UserRole userRole;
 
     public boolean passwordConfirm(String password){
@@ -20,6 +20,6 @@ public class User {
     }
 
     public void delete(){
-        isDeleted = true;
+        deleted = true;
     }
 }

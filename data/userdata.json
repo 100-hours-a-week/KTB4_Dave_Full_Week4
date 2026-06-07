@@ -1,18 +1,25 @@
-[
-  {
-    "userNum": 1,
-    "email" : "wns1628@gmail.com",
-    "password" : "abcd",
-    "nickname" : "dave",
-    "profileImage" : null,
-    "isDeleted" : false
-  },
-  {
-    "userNum": 2,
-    "email" : "wnsdnjs1628@gmail.com",
-    "password" : "abcd",
-    "nickname" : "wnsdnjs",
-    "profileImage" : null,
-    "isDeleted" : false
-  }
-]
+[ {
+  "deleted" : false,
+  "email" : "wns1628@gmail.com",
+  "nickname" : "dave",
+  "password" : "abcd",
+  "profileImage" : null,
+  "userNum" : 1,
+  "userRole" : "USER"
+}, {
+  "deleted" : false,
+  "email" : "wnsdnjs1628@gmail.com",
+  "nickname" : "wnsdnjs",
+  "password" : "abcd",
+  "profileImage" : null,
+  "userNum" : 2,
+  "userRole" : "USER"
+}, {
+  "deleted" : true,
+  "email" : "test@gmail.com",
+  "nickname" : "test2",
+  "password" : "23456789",
+  "profileImage" : null,
+  "userNum" : 3,
+  "userRole" : "USER"
+} ]

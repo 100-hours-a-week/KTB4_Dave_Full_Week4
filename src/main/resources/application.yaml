@@ -13,5 +13,5 @@ app:
   refreshTokenFile: ./data/refreshtoken.json
 
 tokenExpire:
-  refresh: 1000*60*30
-  access: 1000*60*10
+  refresh: 1800000
+  access: 600000

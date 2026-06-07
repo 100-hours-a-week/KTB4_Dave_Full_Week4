@@ -10,36 +10,36 @@ import java.util.List;
 public class PathDataManager<T> implements DataManager<T>{
     private final Path path;
     private final ObjectMapper objectMapper;
+    private final Class<T> type;
 
-    public PathDataManager(Path path, ObjectMapper objectMapper){
+    public PathDataManager(Path path, ObjectMapper objectMapper, Class<T> type) {
         this.path = path;
         this.objectMapper = objectMapper;
+        this.type = type;
     }
 
     @Override
     public List<T> readData() {
-
-        List<T> data = null;
         try {
-            data = objectMapper.readValue(
+            return objectMapper.readValue(
                     path.toFile(),
-                    new TypeReference<>() {
-                    }
+                    objectMapper.getTypeFactory()
+                            .constructCollectionType(List.class, type)
             );
         }
         catch(Exception e){
             // 커스텀 예외로 관리할 예정
             if(e instanceof JacksonException){
                 System.out.println("객체 형식 안 맞음");
+                throw e;
             }
             if(e instanceof UnsupportedOperationException){
                 System.out.println("파일 관련 문제, 이름이나 권한 관련");
+                throw e;
             }
+            e.printStackTrace();
         }
-
-        return data == null
-                ? new ArrayList<>()
-                : data;
+        return List.of();
     }
 
     @Override

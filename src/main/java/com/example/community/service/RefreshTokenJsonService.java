@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
-public class RefreshTokenJsonService implements RefreshTokenRepository {
+public class RefreshTokenJsonService implements RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     public RefreshTokenJsonService(@Qualifier("refreshTokenJsonRepository") RefreshTokenRepository refreshTokenRepository){

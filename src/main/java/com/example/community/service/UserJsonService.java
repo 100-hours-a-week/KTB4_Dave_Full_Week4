@@ -8,6 +8,7 @@ import com.example.community.domain.user.request.PasswordChangeRequest;
 import com.example.community.domain.user.request.SignInRequest;
 import com.example.community.domain.user.request.SignUpRequest;
 import com.example.community.domain.user.request.UserInfoRequest;
+import com.example.community.domain.user.response.SignUpResponse;
 import com.example.community.domain.user.response.UserDeleteResponse;
 import com.example.community.domain.user.response.UserInfoResponse;
 import com.example.community.domain.user.response.UserResponse;
@@ -19,24 +20,22 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserJsonService implements UserService{
     private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
 
-    public UserJsonService(@Qualifier("userJsonRepository") UserRepository userRepository,
-                           @Qualifier("refreshTokenJsonRepository") RefreshTokenRepository refreshTokenRepository){
+    public UserJsonService(@Qualifier("userJsonRepository") UserRepository userRepository){
         this.userRepository = userRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
     }
 
 
     @Override
-    public long signUp(SignUpRequest signUpRequest) {
+    public SignUpResponse signUp(SignUpRequest signUpRequest) {
         if(isExistEmail(signUpRequest.email())){
             throw new RuntimeException("이메일 중복");
         }
         if(isExistNickname(signUpRequest.nickname())){
             throw new RuntimeException("닉네임 중복");
         }
-        if(signUpRequest.password() != signUpRequest.passwordConfirm()){
+        System.out.println(signUpRequest.password() + " " + signUpRequest.passwordConfirm());
+        if(!signUpRequest.password().equals(signUpRequest.passwordConfirm())){
             throw new RuntimeException("비밀번호 확인 불일치");
         }
         User user = new User();
@@ -47,7 +46,7 @@ public class UserJsonService implements UserService{
         user.setNickname(signUpRequest.nickname());
         user.setProfileImage(signUpRequest.profileImage());
         user.setUserRole(UserRole.USER);
-        return userRepository.addUser(user);
+        return new SignUpResponse(userRepository.addUser(user));
     }
 
     @Override
@@ -76,8 +75,7 @@ public class UserJsonService implements UserService{
     @Override
     public UserInfoResponse updateUserInfo(Token token, UserInfoRequest userInfoRequest) {
        UserInfoDTO userInfoDTO = userRepository.
-               updateUserInfo(new UserInfoDTO(token.userNum(), userInfoRequest.nickname(), userInfoRequest.profileImage())).
-               orElseThrow(() -> new RuntimeException("존재하지 않는 유저, 혹은 유효하지 않은 토큰일 듯")); // 여기도 수정 예정
+               updateUserInfo(new UserInfoDTO(token.userNum(), userInfoRequest.nickname(), userInfoRequest.profileImage()));
        return UserInfoResponse.from(userInfoDTO);
     }
 
@@ -96,6 +94,6 @@ public class UserJsonService implements UserService{
 
     @Override
     public UserDeleteResponse deleteUser(Token token) {
-        return userRepository.deleteUser(token.userNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
+        return userRepository.deleteUser(token.userNum());
     }
 }
