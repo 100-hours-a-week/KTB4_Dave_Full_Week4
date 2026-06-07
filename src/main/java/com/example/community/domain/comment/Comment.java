@@ -1,7 +1,5 @@
 package com.example.community.domain.comment;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -16,12 +14,19 @@ public class Comment {
     private long parentNum;
     private int depth;
     private long userNum;
-    @NotBlank
     private String content;
-    private boolean isEdited = false;
-    private boolean isDeleted = false;
-    @NotNull
-    private LocalDateTime saveTime;
-    @NotNull
-    private LocalDateTime writeDate;
+    private boolean edited = false;
+    private boolean deleted = false;
+    private LocalDateTime saveTime = LocalDateTime.now();
+    private LocalDateTime writeTime = LocalDateTime.now();
+
+    public void update(String content){
+        this.content = content;
+        edited = true;
+        saveTime = LocalDateTime.now();
+    }
+
+    public void delete(){
+        this.deleted = true;
+    }
 }

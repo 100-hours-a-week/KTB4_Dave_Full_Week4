@@ -58,7 +58,9 @@ public class PostJsonService implements PostService{
     public PostResponse getPost(long postNum) {
         Post post = postRepository.getPost(postNum).orElseThrow(()->new RuntimeException("존재하지 않는 게시글"));
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(post.getUserNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
-        userInfoDTO = userInfoDTO.deleted() ? new UserInfoDTO(userInfoDTO.userNum(), "알수없음", null, true);
+        if(userInfoDTO.deleted()){
+            userInfoDTO = new UserInfoDTO(userInfoDTO.userNum(), "알수없음", null, true);
+        }
 
         return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
     }
@@ -71,8 +73,11 @@ public class PostJsonService implements PostService{
             posts.removeLast();
         }
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum).orElseThrow(()->new RuntimeException("존재하지 않는 유저"));
-        userInfoDTO = userInfoDTO.deleted() ? new UserInfoDTO(userInfoDTO.userNum(), "알수없음", null, true);
-        List<PostTitleResponse> result = posts.stream().map(p->PostTitleResponse.from(p, UserInfoResponse.from(userInfoDTO))).toList();
+        if(userInfoDTO.deleted()){
+            userInfoDTO =  new UserInfoDTO(userInfoDTO.userNum(), "알수없음", null, true);
+        }
+        UserInfoDTO finalUserInfoDTO = userInfoDTO;
+        List<PostTitleResponse> result = posts.stream().map(p->PostTitleResponse.from(p, UserInfoResponse.from(finalUserInfoDTO))).toList();
 
         return new PostListResponse(result, hasNext);
     }
