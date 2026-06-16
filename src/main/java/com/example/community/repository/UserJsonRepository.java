@@ -1,10 +1,12 @@
 package com.example.community.repository;
 
+import com.example.community.domain.exception.NotFoundException;
 import com.example.community.util.DataManager;
 import com.example.community.domain.user.User;
 import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.response.UserDeleteResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -83,7 +85,7 @@ public class UserJsonRepository implements UserRepository{
                 return userInfoDTO;
             }
         }
-        throw new RuntimeException("존재하지 않는 유저"); // 커스텀 예외로 변경
+        throw new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND); // 커스텀 예외로 변경
     }
 
     @Override
@@ -96,7 +98,7 @@ public class UserJsonRepository implements UserRepository{
                 return;
             }
         }
-        throw new RuntimeException("존재하지 않는 유저"); // 커스텀 예외로 변경
+        throw new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND); // 커스텀 예외로 변경
     }
 
     @Override
@@ -109,7 +111,7 @@ public class UserJsonRepository implements UserRepository{
                 return UserDeleteResponse.from(u);
             }
         }
-        throw new RuntimeException("존재하지 않는 유저"); // 커스텀 예외로 변경
+        throw new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND); // 커스텀 예외로 변경
     }
 
     @Override

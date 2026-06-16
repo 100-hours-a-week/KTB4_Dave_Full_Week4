@@ -1,8 +1,10 @@
 package com.example.community.repository;
 
+import com.example.community.domain.exception.NotFoundException;
 import com.example.community.domain.post.Post;
 import com.example.community.util.DataManager;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -44,7 +46,6 @@ public class PostJsonRepository implements PostRepository{
         List<Post> posts = dataManager.readData();
         for(Post p : posts){
             if(p.getPostNum() == postNum && !p.isDeleted()){
-                p.view();
                 dataManager.writeData(posts);
                 return Optional.of(p);
             }
@@ -105,7 +106,21 @@ public class PostJsonRepository implements PostRepository{
             }
         }
 
-        throw new RuntimeException("게시글 수정 불가"); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
+    }
+
+    @Override
+    public void view(long postNum) {
+        List<Post> posts = dataManager.readData();
+        for(Post p : posts){
+            if(p.getPostNum() == postNum && !p.isDeleted()){
+                p.view();
+                dataManager.writeData(posts);
+                return;
+            }
+        }
+
+        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
     }
 
 
@@ -119,7 +134,7 @@ public class PostJsonRepository implements PostRepository{
                 return p.getLike();
             }
         }
-        throw new RuntimeException("좋아요 불가"); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
     }
 
     @Override
@@ -132,7 +147,7 @@ public class PostJsonRepository implements PostRepository{
                 return p.getLike();
             }
         }
-        throw new RuntimeException("좋아요 취소 불가"); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
     }
 
     @Override
@@ -145,7 +160,7 @@ public class PostJsonRepository implements PostRepository{
                 return p.getReport();
             }
         }
-        throw new RuntimeException("신고 불가"); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
     }
 
     @Override
@@ -158,7 +173,7 @@ public class PostJsonRepository implements PostRepository{
                 return p.getNumberOfComments();
             }
         }
-        throw new RuntimeException("댓글추가 불가"); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
     }
 
     @Override
@@ -171,6 +186,6 @@ public class PostJsonRepository implements PostRepository{
                 return;
             }
         }
-        throw new RuntimeException("게시글 삭제 불가"); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
     }
 }

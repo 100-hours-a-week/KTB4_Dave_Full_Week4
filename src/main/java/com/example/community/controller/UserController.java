@@ -13,6 +13,7 @@ import com.example.community.domain.user.response.UserResponse;
 import com.example.community.service.RefreshTokenService;
 import com.example.community.service.UserService;
 import com.example.community.util.TokenProvider;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -44,13 +45,13 @@ public class UserController {
     }
 
     @PostMapping()
-    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@RequestBody SignUpRequest signUpRequest){
+    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@RequestBody @Valid SignUpRequest signUpRequest){
         return ResponseEntity.created(URI.create("/users/state")).
                 body(ApiResponse.of("회원가입 성공", userService.signUp(signUpRequest)));
     }
 
     @PostMapping("/state")
-    public ResponseEntity<ApiResponse<UserResponse>> signIn(@RequestBody SignInRequest signInRequest){
+    public ResponseEntity<ApiResponse<UserResponse>> signIn(@RequestBody @Valid SignInRequest signInRequest){
         UserResponse userResponse = userService.signIn(signInRequest);
         Token accessToken = tokenProvider.createAccessToken(userResponse.userNum(), userResponse.userRole());
         Token refreshToken = tokenProvider.createRefreshToken(userResponse.userNum(), userResponse.userRole());
@@ -83,14 +84,14 @@ public class UserController {
     }
 
     @PatchMapping("/info")
-    public ResponseEntity<ApiResponse<UserInfoResponse>> updateInfo(@RequestHeader("Authorization") String token ,@RequestBody UserInfoRequest userInfoRequest){
+    public ResponseEntity<ApiResponse<UserInfoResponse>> updateInfo(@RequestHeader("Authorization") String token ,@RequestBody @Valid UserInfoRequest userInfoRequest){
         String decoded = URLDecoder.decode(token, StandardCharsets.UTF_8);
         Token access = objectMapper.readValue(decoded, Token.class);
         return ResponseEntity.ok(ApiResponse.of("회원정보 수정 완료",userService.updateUserInfo(access,userInfoRequest)));
     }
 
     @PatchMapping("/password")
-    public ResponseEntity<ApiResponse<Object>> changePassword(@RequestHeader("Authorization") String token, @RequestBody PasswordChangeRequest passwordChangeRequest){
+    public ResponseEntity<ApiResponse<Object>> changePassword(@RequestHeader("Authorization") String token, @RequestBody @Valid PasswordChangeRequest passwordChangeRequest){
         String decoded = URLDecoder.decode(token, StandardCharsets.UTF_8);
         Token access = objectMapper.readValue(decoded, Token.class);
 

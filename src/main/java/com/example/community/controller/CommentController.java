@@ -9,6 +9,7 @@ import com.example.community.domain.comment.response.CommentListResponse;
 import com.example.community.domain.comment.response.CommentResponse;
 import com.example.community.domain.token.Token;
 import com.example.community.service.CommentService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,7 @@ public class CommentController {
     }
 
     @PostMapping("/post/{postNum}")
-    public ResponseEntity<ApiResponse<CommentAddResponse>> commentToPost(@RequestHeader("Authorization") String token, @PathVariable long postNum , @RequestBody CommentToPostRequest commentToPostRequest){
+    public ResponseEntity<ApiResponse<CommentAddResponse>> commentToPost(@RequestHeader("Authorization") String token, @PathVariable long postNum , @RequestBody @Valid CommentToPostRequest commentToPostRequest){
         String decoded = URLDecoder.decode(token, StandardCharsets.UTF_8);
         Token access = objectMapper.readValue(decoded, Token.class);
 
@@ -40,7 +41,7 @@ public class CommentController {
     }
 
     @PostMapping("/comment/{postNum}")
-    public ResponseEntity<ApiResponse<CommentAddResponse>> commentToComment(@RequestHeader("Authorization") String token, @PathVariable long postNum, @RequestBody CommentToCommentRequest commentToCommentRequest){
+    public ResponseEntity<ApiResponse<CommentAddResponse>> commentToComment(@RequestHeader("Authorization") String token, @PathVariable long postNum, @RequestBody @Valid CommentToCommentRequest commentToCommentRequest){
         String decoded = URLDecoder.decode(token, StandardCharsets.UTF_8);
         Token access = objectMapper.readValue(decoded, Token.class);
 
@@ -53,7 +54,7 @@ public class CommentController {
     }
 
     @PatchMapping("/{commentNum}")
-    public ResponseEntity<ApiResponse<CommentResponse>> updateComment(@RequestHeader("Authorization") String token, @PathVariable long commentNum, @RequestBody CommentEditRequest  commentEditRequest){
+    public ResponseEntity<ApiResponse<CommentResponse>> updateComment(@RequestHeader("Authorization") String token, @PathVariable long commentNum, @RequestBody @Valid CommentEditRequest  commentEditRequest){
         String decoded = URLDecoder.decode(token, StandardCharsets.UTF_8);
         Token access = objectMapper.readValue(decoded, Token.class);
 
