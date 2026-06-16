@@ -28,6 +28,14 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc' // 선택: 코드로 쿼리 테스트 시 권장
+    runtimeOnly 'com.h2database:h2' // H2는 런타임 의존성으로 추가
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // JWT
+    implementation "io.jsonwebtoken:jjwt-api:0.13.0"
+    runtimeOnly  "io.jsonwebtoken:jjwt-impl:0.13.0"
+    runtimeOnly  "io.jsonwebtoken:jjwt-jackson:0.13.0"
 }
 
 tasks.named('test') {
