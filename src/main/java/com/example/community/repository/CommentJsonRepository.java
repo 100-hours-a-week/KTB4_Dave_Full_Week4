@@ -1,6 +1,6 @@
 package com.example.community.repository;
 
-import com.example.community.domain.comment.Comment;
+import com.example.community.domain.comment.CommentDTO;
 import com.example.community.util.DataManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
@@ -10,15 +10,15 @@ import java.util.Optional;
 
 @Repository
 public class CommentJsonRepository implements CommentRepository{
-    private final DataManager<Comment> dataManager;
+    private final DataManager<CommentDTO> dataManager;
 
-    public CommentJsonRepository(@Qualifier("commentDataManager") DataManager<Comment> dataManager){
+    public CommentJsonRepository(@Qualifier("commentDataManager") DataManager<CommentDTO> dataManager){
         this.dataManager = dataManager;
     }
 
     @Override
-    public Comment addComment(Comment comment) {
-        List<Comment> comments = dataManager.readData();
+    public CommentDTO addComment(CommentDTO comment) {
+        List<CommentDTO> comments = dataManager.readData();
         comments.add(comment);
 
         dataManager.writeData(comments);
@@ -26,14 +26,14 @@ public class CommentJsonRepository implements CommentRepository{
     }
 
     @Override
-    public List<Comment> getCommentsByPostNum(long postNum) {
+    public List<CommentDTO> getCommentsByPostNum(long postNum) {
         return dataManager.readData().stream()
                 .filter(c -> c.getPostNum() == postNum).toList();
     }
 
     @Override
-    public Optional<Comment> getComment(long commentNum) {
-        for(Comment c : dataManager.readData()){
+    public Optional<CommentDTO> getComment(long commentNum) {
+        for(CommentDTO c : dataManager.readData()){
             if(c.getCommentNum() == commentNum){
                 return Optional.of(c);
             }
@@ -47,9 +47,9 @@ public class CommentJsonRepository implements CommentRepository{
     }
 
     @Override
-    public Optional<Comment> updateComment(long commentNum, String content) {
-        List<Comment> comments = dataManager.readData();
-        for(Comment c : comments){
+    public Optional<CommentDTO> updateComment(long commentNum, String content) {
+        List<CommentDTO> comments = dataManager.readData();
+        for(CommentDTO c : comments){
             if(c.getCommentNum() == commentNum){
                 c.update(content);
                 dataManager.writeData(comments);
@@ -61,8 +61,8 @@ public class CommentJsonRepository implements CommentRepository{
 
     @Override
     public void deleteComment(long commentNum) {
-        List<Comment> comments = dataManager.readData();
-        for(Comment c: comments){
+        List<CommentDTO> comments = dataManager.readData();
+        for(CommentDTO c: comments){
             if(c.getCommentNum() == commentNum){
                 c.delete();
                 dataManager.writeData(comments);

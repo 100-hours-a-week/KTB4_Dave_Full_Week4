@@ -1,19 +1,19 @@
 package com.example.community.repository;
 
-import com.example.community.domain.post.Post;
+import com.example.community.domain.post.PostDTO;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface PostRepository {
-    List<Post> getAllPosts();
-    List<Post> getPostsByPage(int index, int offset);
-    Optional<Post> getPost(long postNum);
-    List<Post> getPostsByUserNum(long userNum, int index, int offset);
+    List<PostDTO> getAllPosts();
+    List<PostDTO> getPostsByPage(int index, int offset);
+    Optional<PostDTO> getPost(long postNum);
+    List<PostDTO> getPostsByUserNum(long userNum, int index, int offset);
     // boolean canAddPost(long userNum); // 당일 작성한 게시글 개수 확인
     int getPostCount();
-    Post addPost(Post post);
-    Post updatePost(long postNum, String title, String content, String image);
+    PostDTO addPost(PostDTO post);
+    PostDTO updatePost(long postNum, String title, String content, String image);
     void view(long postNum);
     int like(long postNum);
     int unLike(long postNum);

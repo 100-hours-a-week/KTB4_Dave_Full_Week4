@@ -1,6 +1,6 @@
 package com.example.community.repository;
 
-import com.example.community.domain.post.PostEditRecord;
+import com.example.community.domain.post.PostEditRecordDTO;
 import com.example.community.util.DataManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
@@ -10,36 +10,36 @@ import java.util.List;
 
 @Repository
 public class PostEditJsonRepository implements PostEditRepository{
-    private final DataManager<PostEditRecord> dataManager;
+    private final DataManager<PostEditRecordDTO> dataManager;
 
-    public PostEditJsonRepository(@Qualifier("postEditDataManager")DataManager<PostEditRecord> dataManager){
+    public PostEditJsonRepository(@Qualifier("postEditDataManager")DataManager<PostEditRecordDTO> dataManager){
         this.dataManager = dataManager;
     }
 
     @Override
-    public void addPostEditRecord(PostEditRecord postEditRecord) {
-        List<PostEditRecord> postEditRecords = dataManager.readData();
+    public void addPostEditRecord(PostEditRecordDTO postEditRecord) {
+        List<PostEditRecordDTO> postEditRecords = dataManager.readData();
         postEditRecords.add(postEditRecord);
 
         dataManager.writeData(postEditRecords);
     }
 
     @Override
-    public List<PostEditRecord> getPostEditRecordByPostNum(long postNum) {
+    public List<PostEditRecordDTO> getPostEditRecordByPostNum(long postNum) {
 
         return dataManager.readData().stream().filter(er -> er.postNum() == postNum).toList();
     }
 
     @Override
     public void deletePostEditRecord(long postNum) {
-        List<PostEditRecord> postEditRecords = dataManager.readData();
-        List<PostEditRecord> deletes = new ArrayList<>();
-        for(PostEditRecord record : postEditRecords){
+        List<PostEditRecordDTO> postEditRecords = dataManager.readData();
+        List<PostEditRecordDTO> deletes = new ArrayList<>();
+        for(PostEditRecordDTO record : postEditRecords){
             if(record.postNum() == postNum){
                 deletes.add(record);
             }
         }
-        for(PostEditRecord record : deletes) {
+        for(PostEditRecordDTO record : deletes) {
             postEditRecords.remove(record);
         }
 

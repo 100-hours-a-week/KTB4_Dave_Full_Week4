@@ -1,35 +1,65 @@
 package com.example.community.domain.post;
 
-import lombok.*;
+import com.example.community.domain.user.SignInfo;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 
+@Entity
 @Getter
-@Setter
-@ToString
-@RequiredArgsConstructor
+@NoArgsConstructor
+@Table(name = "Post")
 public class Post {
-    private long postNum;
-    private long userNum;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "postNum")
+    private Long postNum;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userNum", referencedColumnName = "userNum", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private SignInfo signInfo;
+
+    @Column(name = "title", nullable = false)
     private String title;
+
+    @Column(name = "content", nullable = false)
     private String content;
+
+    @Column(name = "image")
     private String image;
-    private int view = 0;
-    private int like = 0;
-    private int report = 0;
-    private int numberOfComments = 0;
-    private boolean edited = false;
-    private boolean deleted = false;
+
+    @Column(name = "view", nullable = false)
+    private Integer view = 0;
+
+    @Column(name = "like", nullable = false)
+    private Integer like = 0;
+
+    @Column(name = "report", nullable = false)
+    private Integer report = 0;
+
+    @Column(name = "numberOfComment", nullable = false)
+    private Integer numberOfComment = 0;
+
+    @Column(name = "edited", nullable = false)
+    private Boolean edited = false;
+
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
+
+    @Column(name = "saveTime", nullable = false)
     private LocalDateTime saveTime = LocalDateTime.now();
+
+    @Column(name = "writeTime", nullable = false)
     private LocalDateTime writeTime = LocalDateTime.now();
 
-    public void update(Post post){
-        this.title = post.getTitle();
-        this.content = post.getContent();
-        this.image = post.getImage();
-        this.edited = true;
-        this.saveTime = LocalDateTime.now();
-    }
+    @Column(name = "version", nullable = false)
+    private Integer version = 1;
+
 
     public void update(String title, String content, String image){
         this.title = title;
@@ -37,6 +67,7 @@ public class Post {
         this.image = image;
         this.edited = true;
         this.saveTime = LocalDateTime.now();
+        this.version = version+1;
     }
 
     public void delete(){
@@ -55,6 +86,6 @@ public class Post {
     }
 
     public void addComment(){
-        numberOfComments = numberOfComments + 1;
+        numberOfComment = numberOfComment + 1;
     }
 }

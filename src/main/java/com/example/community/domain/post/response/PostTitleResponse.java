@@ -1,6 +1,6 @@
 package com.example.community.domain.post.response;
 
-import com.example.community.domain.post.Post;
+import com.example.community.domain.post.PostDTO;
 import com.example.community.domain.user.response.UserInfoResponse;
 
 import java.time.LocalDateTime;
@@ -16,7 +16,7 @@ public record PostTitleResponse(
         int numberOfComments,
         LocalDateTime writeTime
 ) {
-    public static PostTitleResponse from(Post post, UserInfoResponse userInfoResponse){
+    public static PostTitleResponse from(PostDTO post, UserInfoResponse userInfoResponse){
         return new PostTitleResponse(
                 post.getPostNum(),
                 userInfoResponse.nickname(),

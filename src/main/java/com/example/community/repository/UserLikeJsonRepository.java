@@ -1,7 +1,7 @@
 package com.example.community.repository;
 
 import com.example.community.util.DataManager;
-import com.example.community.domain.user.UserLikePost;
+import com.example.community.domain.user.UserLikePostDTO;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
@@ -9,20 +9,20 @@ import java.util.List;
 
 @Repository
 public class UserLikeJsonRepository implements UserLikeRepository{
-    private final DataManager<UserLikePost> dataManager;
+    private final DataManager<UserLikePostDTO> dataManager;
 
-    public UserLikeJsonRepository(@Qualifier("userLikeDataManager") DataManager<UserLikePost> dataManager){
+    public UserLikeJsonRepository(@Qualifier("userLikeDataManager") DataManager<UserLikePostDTO> dataManager){
         this.dataManager = dataManager;
     }
 
     @Override
-    public List<UserLikePost> getUserLikePosts(long userNum) {
+    public List<UserLikePostDTO> getUserLikePosts(long userNum) {
         return dataManager.readData().stream().filter(ul -> ul.getUserNum() == userNum).toList();
     }
 
     @Override
-    public boolean isUserLikePost(UserLikePost userLikePost) {
-        for(UserLikePost ul : dataManager.readData()){
+    public boolean isUserLikePost(UserLikePostDTO userLikePost) {
+        for(UserLikePostDTO ul : dataManager.readData()){
             if(ul.equals(userLikePost)){
                 return true;
             }
@@ -32,16 +32,16 @@ public class UserLikeJsonRepository implements UserLikeRepository{
     }
 
     @Override
-    public UserLikePost addUserLikePost(UserLikePost userLikePost) {
-        List<UserLikePost> userLikePosts = dataManager.readData();
+    public UserLikePostDTO addUserLikePost(UserLikePostDTO userLikePost) {
+        List<UserLikePostDTO> userLikePosts = dataManager.readData();
         userLikePosts.add(userLikePost);
         dataManager.writeData(userLikePosts);
         return userLikePost;
     }
 
     @Override
-    public void deleteUserLikePost(UserLikePost userLikePost) {
-        List<UserLikePost> userLikePosts = dataManager.readData();
+    public void deleteUserLikePost(UserLikePostDTO userLikePost) {
+        List<UserLikePostDTO> userLikePosts = dataManager.readData();
         userLikePosts.remove(userLikePost);
 
         dataManager.writeData(userLikePosts);

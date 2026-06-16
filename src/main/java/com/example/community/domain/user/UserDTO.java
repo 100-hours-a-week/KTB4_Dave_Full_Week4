@@ -6,7 +6,7 @@ import lombok.*;
 @Setter
 @ToString
 @RequiredArgsConstructor
-public class User {
+public class UserDTO {
     private long userNum;
     private String email;
     private String password;

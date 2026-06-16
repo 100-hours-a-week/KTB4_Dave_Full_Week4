@@ -1,5 +1,6 @@
 package com.example.community.util;
 
+import com.example.community.domain.user.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -28,7 +29,7 @@ public class JWTUtil {
         this.refreshExpiration = refreshExpiration;
     }
 
-    public String generateAccessToken(Long userNum, String role) {
+    public String generateAccessToken(Long userNum, UserRole role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessExpiration);
 
@@ -42,13 +43,13 @@ public class JWTUtil {
                 .compact();
     }
 
-    public String generateAccessToken(Long userNum, String role, long expirationMs) {
+    public String generateAccessToken(Long userNum, UserRole role, long expirationMs) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
                 .subject(String.valueOf(userNum))
-                .claim(CLAIM_ROLE, role)
+                .claim(CLAIM_ROLE, role.name())
                 .claim(CLAIM_TYPE, TOKEN_TYPE_ACCESS)
                 .issuedAt(now)
                 .expiration(expiryDate)
@@ -83,9 +84,9 @@ public class JWTUtil {
         return Long.parseLong(claims.getSubject());
     }
 
-    public String getRoleFromToken(String token) {
+    public UserRole getRoleFromToken(String token) {
         Claims claims = validateToken(token);
-        return claims.get(CLAIM_ROLE, String.class);
+        return UserRole.valueOf(claims.get(CLAIM_ROLE, String.class));
     }
 
     public String getTokenType(String token) {

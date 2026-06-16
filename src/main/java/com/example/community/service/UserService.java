@@ -1,6 +1,5 @@
 package com.example.community.service;
 
-import com.example.community.domain.token.Token;
 import com.example.community.domain.user.request.PasswordChangeRequest;
 import com.example.community.domain.user.request.SignInRequest;
 import com.example.community.domain.user.request.SignUpRequest;
@@ -15,7 +14,7 @@ public interface UserService {
     UserResponse signIn(SignInRequest signInRequest);
     boolean isExistEmail(String email);
     boolean isExistNickname(String nickname);
-    UserInfoResponse updateUserInfo(Token token, UserInfoRequest userInfoRequest);
-    void changePassword(Token token, PasswordChangeRequest passwordChangeRequest);
-    UserDeleteResponse deleteUser(Token token);
+    UserInfoResponse updateUserInfo(String token, UserInfoRequest userInfoRequest);
+    void changePassword(String  token, PasswordChangeRequest passwordChangeRequest);
+    UserDeleteResponse deleteUser(String token);
 }

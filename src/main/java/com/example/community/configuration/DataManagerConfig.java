@@ -2,13 +2,13 @@ package com.example.community.configuration;
 
 import com.example.community.util.DataManager;
 import com.example.community.util.PathDataManager;
-import com.example.community.domain.comment.Comment;
-import com.example.community.domain.post.Post;
-import com.example.community.domain.post.PostEditRecord;
-import com.example.community.domain.post.TemporaryPost;
-import com.example.community.domain.token.Token;
-import com.example.community.domain.user.User;
-import com.example.community.domain.user.UserLikePost;
+import com.example.community.domain.comment.CommentDTO;
+import com.example.community.domain.post.PostDTO;
+import com.example.community.domain.post.PostEditRecordDTO;
+import com.example.community.domain.post.TemporaryPostDTO;
+import com.example.community.domain.token.TokenDTO;
+import com.example.community.domain.user.UserDTO;
+import com.example.community.domain.user.UserLikePostDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,38 +19,38 @@ import java.nio.file.Path;
 @Configuration
 public class DataManagerConfig {
     @Bean
-    public DataManager<User> userDataManager(@Value("${app.userFile}") String path, ObjectMapper objectMapper) {
-        return new PathDataManager<User>(Path.of(path), objectMapper, User.class);
+    public DataManager<UserDTO> userDataManager(@Value("${app.userFile}") String path, ObjectMapper objectMapper) {
+        return new PathDataManager<UserDTO>(Path.of(path), objectMapper, UserDTO.class);
     }
 
     @Bean
-    public DataManager<UserLikePost> userLikeDataManager(@Value("${app.userLikeFile}") String path, ObjectMapper objectMapper) {
-        return new PathDataManager<UserLikePost>(Path.of(path), objectMapper, UserLikePost.class);
+    public DataManager<UserLikePostDTO> userLikeDataManager(@Value("${app.userLikeFile}") String path, ObjectMapper objectMapper) {
+        return new PathDataManager<UserLikePostDTO>(Path.of(path), objectMapper, UserLikePostDTO.class);
     }
 
     @Bean
-    public DataManager<Post> postDataManager(@Value("${app.postFile}") String path, ObjectMapper objectMapper) {
-        return new PathDataManager<Post>(Path.of(path), objectMapper,Post.class);
+    public DataManager<PostDTO> postDataManager(@Value("${app.postFile}") String path, ObjectMapper objectMapper) {
+        return new PathDataManager<PostDTO>(Path.of(path), objectMapper, PostDTO.class);
     }
 
     @Bean
-    public DataManager<PostEditRecord> postEditDataManager(@Value("${app.postEditFile}") String path, ObjectMapper objectMapper) {
-        return new PathDataManager<PostEditRecord>(Path.of(path), objectMapper, PostEditRecord.class);
+    public DataManager<PostEditRecordDTO> postEditDataManager(@Value("${app.postEditFile}") String path, ObjectMapper objectMapper) {
+        return new PathDataManager<PostEditRecordDTO>(Path.of(path), objectMapper, PostEditRecordDTO.class);
     }
 
     @Bean
-    public DataManager<TemporaryPost> temporaryPostDataManager(@Value("${app.temporaryPostFile}") String path, ObjectMapper objectMapper) {
-        return new PathDataManager<TemporaryPost>(Path.of(path), objectMapper, TemporaryPost.class);
+    public DataManager<TemporaryPostDTO> temporaryPostDataManager(@Value("${app.temporaryPostFile}") String path, ObjectMapper objectMapper) {
+        return new PathDataManager<TemporaryPostDTO>(Path.of(path), objectMapper, TemporaryPostDTO.class);
     }
 
     @Bean
-    public DataManager<Comment> commentDataManager(@Value("${app.commentFile}") String path, ObjectMapper objectMapper) {
-        return new PathDataManager<Comment>(Path.of(path), objectMapper, Comment.class);
+    public DataManager<CommentDTO> commentDataManager(@Value("${app.commentFile}") String path, ObjectMapper objectMapper) {
+        return new PathDataManager<CommentDTO>(Path.of(path), objectMapper, CommentDTO.class);
     }
 
     @Bean
-    public DataManager<Token> refreshTokenDataManager(@Value("${app.refreshTokenFile}") String path, ObjectMapper objectMapper){
-        return new PathDataManager<Token>(Path.of(path), objectMapper, Token.class);
+    public DataManager<TokenDTO> refreshTokenDataManager(@Value("${app.refreshTokenFile}") String path, ObjectMapper objectMapper){
+        return new PathDataManager<TokenDTO>(Path.of(path), objectMapper, TokenDTO.class);
     }
 
 

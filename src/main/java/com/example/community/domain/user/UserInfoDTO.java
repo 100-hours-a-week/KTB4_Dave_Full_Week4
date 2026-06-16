@@ -8,7 +8,7 @@ public record UserInfoDTO
         String profileImage,
         boolean deleted
 ){
-    public static UserInfoDTO from(User user){
+    public static UserInfoDTO from(UserDTO user){
         return new UserInfoDTO(user.getUserNum(), user.getNickname(), user.getProfileImage(), user.isDeleted());
     }
 }

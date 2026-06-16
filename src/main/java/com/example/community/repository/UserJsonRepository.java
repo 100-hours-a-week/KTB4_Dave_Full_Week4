@@ -2,7 +2,7 @@ package com.example.community.repository;
 
 import com.example.community.domain.exception.NotFoundException;
 import com.example.community.util.DataManager;
-import com.example.community.domain.user.User;
+import com.example.community.domain.user.UserDTO;
 import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.response.UserDeleteResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,15 +14,15 @@ import java.util.Optional;
 
 @Repository
 public class UserJsonRepository implements UserRepository{
-    private final DataManager<User> dataManager;
+    private final DataManager<UserDTO> dataManager;
 
-    public UserJsonRepository(@Qualifier("userDataManager") DataManager<User> dataManager){
+    public UserJsonRepository(@Qualifier("userDataManager") DataManager<UserDTO> dataManager){
         this.dataManager = dataManager;
     }
 
     @Override
-    public long addUser(User user) {
-        List<User> users = getAll();
+    public long addUser(UserDTO user) {
+        List<UserDTO> users = getAll();
         users.add(user);
 
         dataManager.writeData(users);
@@ -30,13 +30,13 @@ public class UserJsonRepository implements UserRepository{
     }
 
     @Override
-    public List<User> getAll() {
+    public List<UserDTO> getAll() {
         return dataManager.readData();
     }
 
     @Override
-    public Optional<User> findByUserNum(long userNum) {
-        for(User u : getAll()){
+    public Optional<UserDTO> findByUserNum(long userNum) {
+        for(UserDTO u : getAll()){
             if(u.getUserNum() == userNum){
                 return Optional.of(u);
             }
@@ -45,8 +45,8 @@ public class UserJsonRepository implements UserRepository{
     }
 
     @Override
-    public Optional<User> findByEmail(String email) {
-        for(User u : getAll()){
+    public Optional<UserDTO> findByEmail(String email) {
+        for(UserDTO u : getAll()){
             if(u.getEmail().equals(email)){
                 return Optional.of(u);
             }
@@ -55,8 +55,8 @@ public class UserJsonRepository implements UserRepository{
     }
 
     @Override
-    public Optional<User> findByNickname(String nickname){
-        for(User u : getAll()){
+    public Optional<UserDTO> findByNickname(String nickname){
+        for(UserDTO u : getAll()){
             if(u.getNickname().equals(nickname)){
                 return Optional.of(u);
             }
@@ -76,8 +76,8 @@ public class UserJsonRepository implements UserRepository{
 
     @Override
     public UserInfoDTO updateUserInfo(UserInfoDTO userInfoDTO) {
-        List<User> users = getAll();
-        for(User u : users){
+        List<UserDTO> users = getAll();
+        for(UserDTO u : users){
             if(u.getUserNum() == userInfoDTO.userNum()){
                 u.setNickname(userInfoDTO.nickname());
                 u.setProfileImage(userInfoDTO.profileImage());
@@ -90,8 +90,8 @@ public class UserJsonRepository implements UserRepository{
 
     @Override
     public void changePassword(long userNum, String nextPassword) {
-        List<User> users = getAll();
-        for(User u : users){
+        List<UserDTO> users = getAll();
+        for(UserDTO u : users){
             if(u.getUserNum() == userNum){
                 u.setPassword(nextPassword);
                 dataManager.writeData(users);
@@ -103,8 +103,8 @@ public class UserJsonRepository implements UserRepository{
 
     @Override
     public UserDeleteResponse deleteUser(long userNum) {
-        List<User> users = getAll();
-        for(User u : users){
+        List<UserDTO> users = getAll();
+        for(UserDTO u : users){
             if(u.getUserNum() == userNum){
                 u.delete();
                 dataManager.writeData(users);
@@ -116,7 +116,7 @@ public class UserJsonRepository implements UserRepository{
 
     @Override
     public Optional<UserInfoDTO> getUserInfo(long userNum) {
-        for(User u : getAll()){
+        for(UserDTO u : getAll()){
             if(u.getUserNum() == userNum){
                 return Optional.of(UserInfoDTO.from(u));
             }

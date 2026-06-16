@@ -1,6 +1,6 @@
 package com.example.community.service;
 
-import com.example.community.domain.token.Token;
+import com.example.community.domain.token.TokenDTO;
 import com.example.community.repository.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -14,17 +14,19 @@ public class RefreshTokenJsonService implements RefreshTokenService {
     }
 
     @Override
-    public void addRefreshToken(Token token) {
-        refreshTokenRepository.addRefreshToken(token);
+    public void addRefreshToken(long userNum, String token) {
+        TokenDTO newToken = new TokenDTO(userNum, token);
+        refreshTokenRepository.addRefreshToken(newToken);
     }
 
     @Override
-    public boolean checkRefreshToken(Token token) {
-        return refreshTokenRepository.checkRefreshToken(token);
+    public boolean checkRefreshToken(long userNum, String token) {
+        TokenDTO newToken = new TokenDTO(userNum, token);
+        return refreshTokenRepository.checkRefreshToken(newToken);
     }
 
     @Override
-    public void deleteRefreshToken(Token token) {
+    public void deleteRefreshToken(String token) {
         refreshTokenRepository.deleteRefreshToken(token);
     }
 

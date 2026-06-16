@@ -2,20 +2,20 @@ package com.example.community.service;
 
 import com.example.community.domain.exception.ForbiddenException;
 import com.example.community.domain.exception.NotFoundException;
-import com.example.community.domain.post.Post;
-import com.example.community.domain.post.PostEditRecord;
+import com.example.community.domain.post.PostDTO;
+import com.example.community.domain.post.PostEditRecordDTO;
 import com.example.community.domain.post.request.PostEditRequest;
 import com.example.community.domain.post.request.PostRequest;
 import com.example.community.domain.post.response.*;
-import com.example.community.domain.token.Token;
 import com.example.community.domain.user.UserInfoDTO;
-import com.example.community.domain.user.UserLikePost;
+import com.example.community.domain.user.UserLikePostDTO;
 import com.example.community.domain.user.UserRole;
 import com.example.community.domain.user.response.UserInfoResponse;
 import com.example.community.repository.PostEditRepository;
 import com.example.community.repository.PostRepository;
 import com.example.community.repository.UserLikeRepository;
 import com.example.community.repository.UserRepository;
+import com.example.community.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,22 +30,27 @@ public class PostJsonService implements PostService{
     private final PostEditRepository postEditRepository;
     private final UserRepository userRepository;
     private final UserLikeRepository userLikeRepository;
+    private final JWTUtil jwtUtil;
 
     public PostJsonService(@Qualifier("postJsonRepository") PostRepository postRepository,
                            @Qualifier("postEditJsonRepository") PostEditRepository postEditRepository,
                            @Qualifier("userJsonRepository") UserRepository userRepository,
-                           @Qualifier("userLikeJsonRepository") UserLikeRepository userLikeRepository){
+                           @Qualifier("userLikeJsonRepository") UserLikeRepository userLikeRepository,
+                           JWTUtil jwtUtil){
         this.postRepository = postRepository;
         this.postEditRepository = postEditRepository;
         this.userRepository = userRepository;
         this.userLikeRepository = userLikeRepository;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
-    public void checkUserAuthority(Token token, long postNum) {
-        Post post = postRepository.getPost(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND));
-        if(token.userNum() != post.getUserNum()){
-            if(token.role() != UserRole.ADMIN){
+    public void checkUserAuthority(String token, long postNum) {
+        long userNum = jwtUtil.getUidFromToken(token);
+        UserRole role = jwtUtil.getRoleFromToken(token);
+        PostDTO post = postRepository.getPost(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND));
+        if(userNum != post.getUserNum()){
+            if(role != UserRole.ADMIN){
                 throw new ForbiddenException("작성자만 수정 가능", HttpStatus.FORBIDDEN);
             }
         }
@@ -53,9 +58,9 @@ public class PostJsonService implements PostService{
 
     @Override
     public List<PostTitleResponse> getAllPosts() {
-        List<Post> posts = postRepository.getAllPosts();
+        List<PostDTO> posts = postRepository.getAllPosts();
 
-        List<Long> userNums = posts.stream().map(Post::getUserNum).toList();
+        List<Long> userNums = posts.stream().map(PostDTO::getUserNum).toList();
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
                 .stream().map(ui -> ui.deleted() ? new UserInfoDTO(ui.userNum(), "알수없음", null, true) : ui).toList();
         Map<Long, UserInfoResponse> userInfoMap = userInfoDTOS.stream()
@@ -70,12 +75,12 @@ public class PostJsonService implements PostService{
 
     @Override
     public PostListResponse getPostsByPage(int index, int offset) {
-        List<Post> posts = postRepository.getPostsByPage(index, offset+1);
+        List<PostDTO> posts = postRepository.getPostsByPage(index, offset+1);
         boolean hasNext = posts.size() > offset;
         if(hasNext) {
             posts.removeLast();
         }
-        List<Long> userNums = posts.stream().map(Post::getUserNum).toList();
+        List<Long> userNums = posts.stream().map(PostDTO::getUserNum).toList();
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
                 .stream().map(ui -> ui.deleted() ? new UserInfoDTO(ui.userNum(), "알수없음", null, true) : ui).toList();
         Map<Long, UserInfoResponse> userInfoMap = userInfoDTOS.stream()
@@ -92,7 +97,7 @@ public class PostJsonService implements PostService{
     @Override
     public PostResponse getPost(long postNum) {
         postRepository.view(postNum);
-        Post post = postRepository.getPost(postNum)
+        PostDTO post = postRepository.getPost(postNum)
                 .orElseThrow(()->new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND));
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(post.getUserNum())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
@@ -105,7 +110,7 @@ public class PostJsonService implements PostService{
 
     @Override
     public PostListResponse getPostsByUserNum(long userNum, int index, int offset) {
-        List<Post> posts = postRepository.getPostsByUserNum(userNum, index, offset+1);
+        List<PostDTO> posts = postRepository.getPostsByUserNum(userNum, index, offset+1);
         boolean hasNext = posts.size() > offset;
         if(hasNext){
             posts.removeLast();
@@ -123,10 +128,10 @@ public class PostJsonService implements PostService{
 
 
     @Override
-    public PostResponse addPost(Token token, PostRequest postRequest) {
-        long userNum = token.userNum();
+    public PostResponse addPost(String token, PostRequest postRequest) {
+        long userNum = jwtUtil.getUidFromToken(token);
         long postNum = postRepository.getPostCount()+1;
-        Post post = new Post();
+        PostDTO post = new PostDTO();
         post.setPostNum(postNum);
         post.setUserNum(userNum);
         post.setTitle(postRequest.title());
@@ -140,22 +145,26 @@ public class PostJsonService implements PostService{
     }
 
     @Override
-    public PostResponse updatePost(Token token,long postNum, PostEditRequest postEditRequest) {
+    public PostResponse updatePost(String token,long postNum, PostEditRequest postEditRequest) {
+        long userNum = jwtUtil.getUidFromToken(token);
+
         checkUserAuthority(token, postNum);
-        Post post = postRepository.getPost(postNum)
+        PostDTO post = postRepository.getPost(postNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND));
-        postEditRepository.addPostEditRecord(PostEditRecord.from(post));
+        postEditRepository.addPostEditRecord(PostEditRecordDTO.from(post));
         post = postRepository.updatePost(postNum, postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum())
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
 
         return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
     }
 
     @Override
-    public PostLikeResponse likePost(Token token, long postNum) {
-        UserLikePost userLikePost = new UserLikePost();
-        userLikePost.setUserNum(token.userNum());
+    public PostLikeResponse likePost(String token, long postNum) {
+        long userNum = jwtUtil.getUidFromToken(token);
+
+        UserLikePostDTO userLikePost = new UserLikePostDTO();
+        userLikePost.setUserNum(userNum);
         userLikePost.setPostNum(postNum);
         int like;
         if(userLikeRepository.isUserLikePost(userLikePost)){
@@ -177,7 +186,7 @@ public class PostJsonService implements PostService{
 
 
     @Override
-    public void deletePost(Token token, long postNum) {
+    public void deletePost(String token, long postNum) {
         checkUserAuthority(token, postNum);
         postRepository.deletePost(postNum);
     }

@@ -1,7 +1,7 @@
 package com.example.community.repository;
 
+import com.example.community.domain.token.TokenDTO;
 import com.example.community.util.DataManager;
-import com.example.community.domain.token.Token;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
@@ -9,23 +9,23 @@ import java.util.List;
 
 @Repository
 public class RefreshTokenJsonRepository implements RefreshTokenRepository{
-    private final DataManager<Token> dataManager;
+    private final DataManager<TokenDTO> dataManager;
 
-    public RefreshTokenJsonRepository(@Qualifier("refreshTokenDataManager") DataManager<Token> dataManager){
+    public RefreshTokenJsonRepository(@Qualifier("refreshTokenDataManager") DataManager<TokenDTO> dataManager){
         this.dataManager = dataManager;
     }
 
     @Override
-    public void addRefreshToken(Token token) {
-        List<Token> tokens = dataManager.readData();
+    public void addRefreshToken(TokenDTO token) {
+        List<TokenDTO> tokens = dataManager.readData();
         tokens.add(token);
 
         dataManager.writeData(tokens);
     }
 
     @Override
-    public boolean checkRefreshToken(Token token) {
-        for(Token t : dataManager.readData()){
+    public boolean checkRefreshToken(TokenDTO token) {
+        for(TokenDTO t : dataManager.readData()){
             if(t.equals(token)){
                 return true;
             }
@@ -34,19 +34,43 @@ public class RefreshTokenJsonRepository implements RefreshTokenRepository{
     }
 
     @Override
-    public void deleteRefreshToken(Token token) {
-        List<Token> tokens = dataManager.readData();
-        tokens.remove(token);
+    public void updateRefreshToken(TokenDTO token) {
+        List<TokenDTO> tokens = dataManager.readData();
+        for(TokenDTO t : tokens){
+            if(t.userNum() == token.userNum()){
+                t = token;
+                dataManager.writeData(tokens);
+                return;
+            }
+        }
 
-        dataManager.writeData(tokens);
+    }
+
+    @Override
+    public void deleteRefreshToken(String token) {
+        List<TokenDTO> tokens = dataManager.readData();
+        TokenDTO delete = null;
+
+        for(TokenDTO t : tokens){
+            if(t.token().equals(token)){
+                delete = t;
+                break;
+            }
+        }
+        if(delete != null){
+            tokens.remove(delete);
+            dataManager.writeData(tokens);
+        }
+
+
     }
 
     @Override
     public void deleteRefreshToken(long userNum) {
-        List<Token> tokens = dataManager.readData();
-        Token delete = null;
+        List<TokenDTO> tokens = dataManager.readData();
+        TokenDTO delete = null;
 
-        for(Token t : tokens){
+        for(TokenDTO t : tokens){
             if(t.userNum() == userNum){
                 delete = t;
                 break;
@@ -54,8 +78,7 @@ public class RefreshTokenJsonRepository implements RefreshTokenRepository{
         }
         if(delete != null){
             tokens.remove(delete);
+            dataManager.writeData(tokens);
         }
-
-        dataManager.writeData(tokens);
     }
 }

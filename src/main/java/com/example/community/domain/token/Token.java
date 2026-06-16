@@ -1,18 +1,15 @@
 package com.example.community.domain.token;
 
-import com.example.community.domain.user.UserRole;
+import jakarta.persistence.Entity;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
-import java.time.Instant;
-import java.util.UUID;
-
-public record Token (
-        long userNum,
-        String type,// Access, Refresh
-        UserRole role, // ADMIN, USER
-        UUID uuid,
-        Instant exp
-){
-    public static boolean isExpired(Token token){
-        return Instant.now().isAfter(token.exp());
-    }
+@Entity
+@Getter
+@NoArgsConstructor
+@RequiredArgsConstructor
+public class Token {
+    private long userNum;
+    private String token;
 }

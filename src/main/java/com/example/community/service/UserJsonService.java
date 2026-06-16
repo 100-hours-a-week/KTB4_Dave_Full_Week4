@@ -1,8 +1,7 @@
 package com.example.community.service;
 
 import com.example.community.domain.exception.NotFoundException;
-import com.example.community.domain.token.Token;
-import com.example.community.domain.user.User;
+import com.example.community.domain.user.UserDTO;
 import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.UserRole;
 import com.example.community.domain.user.request.PasswordChangeRequest;
@@ -14,6 +13,7 @@ import com.example.community.domain.user.response.UserDeleteResponse;
 import com.example.community.domain.user.response.UserInfoResponse;
 import com.example.community.domain.user.response.UserResponse;
 import com.example.community.repository.UserRepository;
+import com.example.community.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,9 +21,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserJsonService implements UserService{
     private final UserRepository userRepository;
+    private final JWTUtil jwtUtil;
 
-    public UserJsonService(@Qualifier("userJsonRepository") UserRepository userRepository){
+    public UserJsonService(@Qualifier("userJsonRepository") UserRepository userRepository,
+                           JWTUtil jwtUtil){
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
     }
 
 
@@ -39,7 +42,7 @@ public class UserJsonService implements UserService{
         if(!signUpRequest.password().equals(signUpRequest.passwordConfirm())){
             throw new RuntimeException("비밀번호 확인 불일치");
         }
-        User user = new User();
+        UserDTO user = new UserDTO();
         long userNum = userRepository.getAll().size()+1;
         user.setUserNum(userNum);
         user.setEmail(signUpRequest.email());
@@ -52,7 +55,7 @@ public class UserJsonService implements UserService{
 
     @Override
     public UserResponse signIn(SignInRequest signInRequest) {
-        User user = userRepository.findByEmail(signInRequest.email()).orElseThrow(
+        UserDTO user = userRepository.findByEmail(signInRequest.email()).orElseThrow(
                 () -> new RuntimeException("이메일 혹은 비밀번호를 확인해 주세요.") // 사용자 지정 예외로 대체 예정
         );
         if(!user.passwordConfirm(signInRequest.password())){
@@ -74,15 +77,18 @@ public class UserJsonService implements UserService{
     }
 
     @Override
-    public UserInfoResponse updateUserInfo(Token token, UserInfoRequest userInfoRequest) {
-       UserInfoDTO userInfoDTO = userRepository.
-               updateUserInfo(new UserInfoDTO(token.userNum(), userInfoRequest.nickname(), userInfoRequest.profileImage(), true));
-       return UserInfoResponse.from(userInfoDTO);
+    public UserInfoResponse updateUserInfo(String token, UserInfoRequest userInfoRequest) {
+        long userNum = jwtUtil.getUidFromToken(token);
+
+        UserInfoDTO userInfoDTO = userRepository.
+               updateUserInfo(new UserInfoDTO(userNum, userInfoRequest.nickname(), userInfoRequest.profileImage(), true));
+        return UserInfoResponse.from(userInfoDTO);
     }
 
     @Override
-    public void changePassword(Token token, PasswordChangeRequest passwordChangeRequest) {
-        User user = userRepository.findByUserNum(token.userNum())
+    public void changePassword(String token, PasswordChangeRequest passwordChangeRequest) {
+        long userNum = jwtUtil.getUidFromToken(token);
+        UserDTO user = userRepository.findByUserNum(userNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
         if(!user.passwordConfirm(passwordChangeRequest.password())){
             throw new RuntimeException("현재 패스워드 틀림");
@@ -90,12 +96,14 @@ public class UserJsonService implements UserService{
         if(!passwordChangeRequest.nextPassword().equals(passwordChangeRequest.passwordConfirm())){
             throw new RuntimeException("패스워드 확인 틀림");
         }
-        userRepository.changePassword(token.userNum(), passwordChangeRequest.nextPassword());
+        userRepository.changePassword(userNum, passwordChangeRequest.nextPassword());
 
     }
 
     @Override
-    public UserDeleteResponse deleteUser(Token token) {
-        return userRepository.deleteUser(token.userNum());
+    public UserDeleteResponse deleteUser(String token) {
+        long userNum = jwtUtil.getUidFromToken(token);
+
+        return userRepository.deleteUser(userNum);
     }
 }

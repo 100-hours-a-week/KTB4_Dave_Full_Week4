@@ -1,7 +1,7 @@
 package com.example.community.repository;
 
 import com.example.community.domain.exception.NotFoundException;
-import com.example.community.domain.post.Post;
+import com.example.community.domain.post.PostDTO;
 import com.example.community.util.DataManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -13,27 +13,27 @@ import java.util.Optional;
 
 @Repository
 public class PostJsonRepository implements PostRepository{
-    private final DataManager<Post> dataManager;
+    private final DataManager<PostDTO> dataManager;
 
-    public PostJsonRepository(@Qualifier("postDataManager") DataManager<Post> dataManager){
+    public PostJsonRepository(@Qualifier("postDataManager") DataManager<PostDTO> dataManager){
         this.dataManager = dataManager;
     }
 
     @Override
-    public List<Post> getAllPosts() {
+    public List<PostDTO> getAllPosts() {
         return dataManager.readData().stream()
                 .filter(p -> !p.isDeleted()).toList();
     }
 
     @Override
-    public List<Post> getPostsByPage(int index, int offset) {
-        List<Post> posts = dataManager.readData().stream()
+    public List<PostDTO> getPostsByPage(int index, int offset) {
+        List<PostDTO> posts = dataManager.readData().stream()
                 .filter(p -> !p.isDeleted()).toList();
         int end = posts.size();
         if(end > (index+1)*offset){
             end = (index+1)*offset;
         }
-        List<Post> result = new ArrayList<>();
+        List<PostDTO> result = new ArrayList<>();
         for(int i = index*offset; i < end; i++){
             result.add(posts.get(i));
         }
@@ -42,9 +42,9 @@ public class PostJsonRepository implements PostRepository{
     }
 
     @Override
-    public Optional<Post> getPost(long postNum) {
-        List<Post> posts = dataManager.readData();
-        for(Post p : posts){
+    public Optional<PostDTO> getPost(long postNum) {
+        List<PostDTO> posts = dataManager.readData();
+        for(PostDTO p : posts){
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 dataManager.writeData(posts);
                 return Optional.of(p);
@@ -55,11 +55,11 @@ public class PostJsonRepository implements PostRepository{
     }
 
     @Override
-    public List<Post> getPostsByUserNum(long userNum, int index, int offset) {
-        List<Post> posts = dataManager.readData();
-        List<Post> userPosts = new ArrayList<>();
-        List<Post> results = new ArrayList<>();
-        for(Post p : posts){
+    public List<PostDTO> getPostsByUserNum(long userNum, int index, int offset) {
+        List<PostDTO> posts = dataManager.readData();
+        List<PostDTO> userPosts = new ArrayList<>();
+        List<PostDTO> results = new ArrayList<>();
+        for(PostDTO p : posts){
             if(p.getUserNum() == userNum && !p.isDeleted()){
                 userPosts.add(p);
             }
@@ -79,15 +79,15 @@ public class PostJsonRepository implements PostRepository{
 
     @Override
     public int getPostCount() {
-        List<Post> posts = dataManager.readData().stream()
+        List<PostDTO> posts = dataManager.readData().stream()
                 .filter(p -> !p.isDeleted()).toList();
 
         return posts.size();
     }
 
     @Override
-    public Post addPost(Post post) {
-        List<Post> posts = dataManager.readData();
+    public PostDTO addPost(PostDTO post) {
+        List<PostDTO> posts = dataManager.readData();
         posts.add(post);
 
         dataManager.writeData(posts);
@@ -96,9 +96,9 @@ public class PostJsonRepository implements PostRepository{
     }
 
     @Override
-    public Post updatePost(long postNum, String title, String content, String image) {
-        List<Post> posts = dataManager.readData();
-        for(Post p : posts){
+    public PostDTO updatePost(long postNum, String title, String content, String image) {
+        List<PostDTO> posts = dataManager.readData();
+        for(PostDTO p : posts){
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.update(title, content, image);
                 dataManager.writeData(posts);
@@ -111,8 +111,8 @@ public class PostJsonRepository implements PostRepository{
 
     @Override
     public void view(long postNum) {
-        List<Post> posts = dataManager.readData();
-        for(Post p : posts){
+        List<PostDTO> posts = dataManager.readData();
+        for(PostDTO p : posts){
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.view();
                 dataManager.writeData(posts);
@@ -126,8 +126,8 @@ public class PostJsonRepository implements PostRepository{
 
     @Override
     public int like(long postNum) {
-        List<Post> posts = dataManager.readData();
-        for(Post p : posts){
+        List<PostDTO> posts = dataManager.readData();
+        for(PostDTO p : posts){
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.like();
                 dataManager.writeData(posts);
@@ -139,8 +139,8 @@ public class PostJsonRepository implements PostRepository{
 
     @Override
     public int unLike(long postNum) {
-        List<Post> posts = dataManager.readData();
-        for(Post p : posts){
+        List<PostDTO> posts = dataManager.readData();
+        for(PostDTO p : posts){
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.unlike();
                 dataManager.writeData(posts);
@@ -152,8 +152,8 @@ public class PostJsonRepository implements PostRepository{
 
     @Override
     public int reportPost(long postNum) {
-        List<Post> posts = dataManager.readData();
-        for(Post p : posts){
+        List<PostDTO> posts = dataManager.readData();
+        for(PostDTO p : posts){
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.report();
                 dataManager.writeData(posts);
@@ -165,8 +165,8 @@ public class PostJsonRepository implements PostRepository{
 
     @Override
     public int addComment(long postNum) {
-        List<Post> posts = dataManager.readData();
-        for(Post p : posts){
+        List<PostDTO> posts = dataManager.readData();
+        for(PostDTO p : posts){
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.addComment();
                 dataManager.writeData(posts);
@@ -178,8 +178,8 @@ public class PostJsonRepository implements PostRepository{
 
     @Override
     public void deletePost(long postNum) {
-        List<Post> posts = dataManager.readData();
-        for(Post p : posts){
+        List<PostDTO> posts = dataManager.readData();
+        for(PostDTO p : posts){
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.delete();
                 dataManager.writeData(posts);
