@@ -14,6 +14,7 @@ public interface PostRepository {
     int getPostCount();
     Post addPost(Post post);
     Post updatePost(long postNum, String title, String content, String image);
+    void view(long postNum);
     int like(long postNum);
     int unLike(long postNum);
     int reportPost(long postNum);

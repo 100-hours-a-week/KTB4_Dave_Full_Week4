@@ -9,6 +9,7 @@ import com.example.community.domain.post.response.PostReportResponse;
 import com.example.community.domain.post.response.PostResponse;
 import com.example.community.domain.token.Token;
 import com.example.community.service.PostService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,7 +43,7 @@ public class PostController {
     }
 
     @PostMapping()
-    public ResponseEntity<ApiResponse<PostResponse>> addPost(@RequestHeader("Authorization") String token , @RequestBody PostRequest postRequest){
+    public ResponseEntity<ApiResponse<PostResponse>> addPost(@RequestHeader("Authorization") String token , @RequestBody @Valid PostRequest postRequest){
         String decoded = URLDecoder.decode(token, StandardCharsets.UTF_8);
         Token access = objectMapper.readValue(decoded, Token.class);
 
@@ -51,12 +52,11 @@ public class PostController {
     }
 
     @PatchMapping("/{postNum}")
-    public ResponseEntity<ApiResponse<PostResponse>> updatePost(@RequestHeader("Authorization") String token, @PathVariable long postNum , @RequestBody PostEditRequest postEditRequest) {
+    public ResponseEntity<ApiResponse<PostResponse>> updatePost(@RequestHeader("Authorization") String token, @PathVariable long postNum , @RequestBody @Valid PostEditRequest postEditRequest) {
         String decoded = URLDecoder.decode(token, StandardCharsets.UTF_8);
         Token access = objectMapper.readValue(decoded, Token.class);
 
-        return ResponseEntity.created(URI.create("/posts"))
-                .body(new ApiResponse<>("게시글 등록 성공", postService.updatePost(access, postNum, postEditRequest)));
+        return ResponseEntity.ok(new ApiResponse<>("게시글 수정 성공", postService.updatePost(access, postNum, postEditRequest)));
     }
 
     @PostMapping("/{postNum}/like")

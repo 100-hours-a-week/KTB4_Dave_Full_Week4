@@ -7,6 +7,8 @@ import com.example.community.domain.comment.request.CommentToPostRequest;
 import com.example.community.domain.comment.response.CommentAddResponse;
 import com.example.community.domain.comment.response.CommentListResponse;
 import com.example.community.domain.comment.response.CommentResponse;
+import com.example.community.domain.exception.ForbiddenException;
+import com.example.community.domain.exception.NotFoundException;
 import com.example.community.domain.token.Token;
 import com.example.community.domain.user.User;
 import com.example.community.domain.user.UserInfoDTO;
@@ -16,6 +18,7 @@ import com.example.community.repository.CommentRepository;
 import com.example.community.repository.PostRepository;
 import com.example.community.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -38,10 +41,11 @@ public class CommentJsonService implements CommentService{
 
     @Override
     public void checkUserAuthority(Token token, long commentNum) {
-        Comment comment = commentRepository.getComment(commentNum).orElseThrow(() -> new RuntimeException("존재하지 않는 댓글"));
+        Comment comment = commentRepository.getComment(commentNum)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글", HttpStatus.NOT_FOUND));
         if(comment.getUserNum() != token.userNum()){
             if(token.role() != UserRole.ADMIN) {
-                throw new RuntimeException("작성자만 수정 가능");
+                throw new ForbiddenException("작성자만 수정 가능", HttpStatus.FORBIDDEN);
             }
         }
     }
@@ -57,7 +61,8 @@ public class CommentJsonService implements CommentService{
         comment.setParentNum(-1);
         comment.setDepth(0);
         comment = commentRepository.addComment(comment);
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(()->new RuntimeException("존재하지 않는 유저"));
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum())
+                .orElseThrow(()->new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
 
         return new CommentAddResponse(
                 postRepository.addComment(postNum)
@@ -75,7 +80,8 @@ public class CommentJsonService implements CommentService{
         comment.setParentNum(commentRequest.parentNum());
         comment.setDepth(commentRequest.depth());
         comment = commentRepository.addComment(comment);
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(()->new RuntimeException("존재하지 않는 유저"));
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum())
+                .orElseThrow(()->new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
 
         return new CommentAddResponse(
                 postRepository.addComment(postNum)
@@ -97,8 +103,10 @@ public class CommentJsonService implements CommentService{
     @Override
     public CommentResponse updateComment(Token token, long commentNum, CommentEditRequest commentEditRequest) {
         checkUserAuthority(token, commentNum);
-        Comment comment = commentRepository.updateComment(commentNum, commentEditRequest.content()).orElseThrow(() -> new RuntimeException("존재하지 않는 댓글"));
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(()->new RuntimeException("존재하지 않는 유저"));
+        Comment comment = commentRepository.updateComment(commentNum, commentEditRequest.content())
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글", HttpStatus.NOT_FOUND));
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum())
+                .orElseThrow(()->new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
 
         return CommentResponse.from(comment, UserInfoResponse.from(userInfoDTO));
     }

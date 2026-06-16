@@ -1,5 +1,7 @@
 package com.example.community.service;
 
+import com.example.community.domain.exception.ForbiddenException;
+import com.example.community.domain.exception.NotFoundException;
 import com.example.community.domain.post.Post;
 import com.example.community.domain.post.PostEditRecord;
 import com.example.community.domain.post.request.PostEditRequest;
@@ -15,6 +17,7 @@ import com.example.community.repository.PostRepository;
 import com.example.community.repository.UserLikeRepository;
 import com.example.community.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -40,10 +43,10 @@ public class PostJsonService implements PostService{
 
     @Override
     public void checkUserAuthority(Token token, long postNum) {
-        Post post = postRepository.getPost(postNum).orElseThrow(() -> new RuntimeException("존재하지 않는 게시글"));
+        Post post = postRepository.getPost(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND));
         if(token.userNum() != post.getUserNum()){
             if(token.role() != UserRole.ADMIN){
-                throw new RuntimeException("작성자만 수정 가능");
+                throw new ForbiddenException("작성자만 수정 가능", HttpStatus.FORBIDDEN);
             }
         }
     }
@@ -88,8 +91,11 @@ public class PostJsonService implements PostService{
 
     @Override
     public PostResponse getPost(long postNum) {
-        Post post = postRepository.getPost(postNum).orElseThrow(()->new RuntimeException("존재하지 않는 게시글"));
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(post.getUserNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
+        postRepository.view(postNum);
+        Post post = postRepository.getPost(postNum)
+                .orElseThrow(()->new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND));
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(post.getUserNum())
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
         if(userInfoDTO.deleted()){
             userInfoDTO = new UserInfoDTO(userInfoDTO.userNum(), "알수없음", null, true);
         }
@@ -104,7 +110,8 @@ public class PostJsonService implements PostService{
         if(hasNext){
             posts.removeLast();
         }
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum).orElseThrow(()->new RuntimeException("존재하지 않는 유저"));
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
+                .orElseThrow(()->new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
         if(userInfoDTO.deleted()){
             userInfoDTO =  new UserInfoDTO(userInfoDTO.userNum(), "알수없음", null, true);
         }
@@ -126,7 +133,8 @@ public class PostJsonService implements PostService{
         post.setContent(postRequest.content());
         post.setImage(postRequest.image());
         post = postRepository.addPost(post);
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
 
         return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
     }
@@ -134,10 +142,12 @@ public class PostJsonService implements PostService{
     @Override
     public PostResponse updatePost(Token token,long postNum, PostEditRequest postEditRequest) {
         checkUserAuthority(token, postNum);
-        Post post = postRepository.getPost(postNum).orElseThrow(()-> new RuntimeException("존재하지 않는 게시글"));
+        Post post = postRepository.getPost(postNum)
+                .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND));
         postEditRepository.addPostEditRecord(PostEditRecord.from(post));
         post = postRepository.updatePost(postNum, postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum()).orElseThrow(() -> new RuntimeException("존재하지 않는 유저"));
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(token.userNum())
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
 
         return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
     }
