@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Size;
 
 public record UserInfoRequest(
         @NotBlank
+        Long profileId,
+        @NotBlank
         @Size(max=10)
         String nickname,
         String profileImage

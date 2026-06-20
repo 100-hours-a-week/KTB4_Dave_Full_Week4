@@ -1,36 +1,46 @@
 package com.example.community.domain.comment;
 
-import com.example.community.domain.post.Post;
-import com.example.community.domain.post.PostEditRecordId;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(name = "CommentEditRecord")
+@Table(
+        name = "CommentEditRecord",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "UK_CommentEditRecord_commentNum_version",
+                        columnNames = {"commentNum", "version"}
+                )
+        }
+)
 public class CommentEditRecord {
-    @EmbeddedId
-    private CommentEditRecordId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "commentEditId")
+    private Long commentEditId;
 
-    @MapsId("commentNum")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "commentNum", referencedColumnName = "commentNum")
+    @JoinColumn(name = "commentNum")
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Comment comment;
+
+    @Column(name = "version", nullable = false)
+    private Integer version;
 
     @Column(name = "content", nullable = false)
     private String content;
 
-    @Column(name = "writeTime", nullable = false)
-    private LocalDateTime writeTime = LocalDateTime.now();
+    @Column(name = "writeAt", nullable = false)
+    private Instant writeAt = Instant.now();
 
-    public CommentEditRecord(Comment comment, Integer version,  String content, LocalDateTime writeTime){
+    public CommentEditRecord(Comment comment, Integer version,  String content, Instant writeAt){
         if(comment == null){
             throw new IllegalArgumentException("post가 null");
         }
@@ -40,12 +50,12 @@ public class CommentEditRecord {
         if( content == null || content.isBlank()){
             throw new IllegalArgumentException("제목과 내용은 비어있으면 안됨");
         }
-        if(writeTime == null){
+        if(writeAt == null){
             throw new IllegalArgumentException("writeTime이 null");
         }
         this.comment = comment;
+        this.version = version;
         this.content = content;
-        this.writeTime = writeTime;
-        this.id = new CommentEditRecordId(comment.getCommentNum(), version);
+        this.writeAt = writeAt;
     }
 }

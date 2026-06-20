@@ -6,7 +6,6 @@ import com.example.community.domain.user.UserDTO;
 import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.response.UserDeleteResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -30,7 +29,12 @@ public class UserJsonRepository implements UserRepository{
     }
 
     @Override
-    public List<UserDTO> getAll() {
+    public long getCountUser() {
+        return getAll().size();
+    }
+
+
+    private List<UserDTO> getAll() {
         return dataManager.readData();
     }
 
@@ -55,10 +59,11 @@ public class UserJsonRepository implements UserRepository{
     }
 
     @Override
-    public Optional<UserDTO> findByNickname(String nickname){
+    public Optional<UserInfoDTO> findByNickname(String nickname){
         for(UserDTO u : getAll()){
             if(u.getNickname().equals(nickname)){
-                return Optional.of(u);
+                UserInfoDTO userInfoDTO = UserInfoDTO.from(u);
+                return Optional.of(userInfoDTO);
             }
         }
         return Optional.empty();
@@ -78,14 +83,14 @@ public class UserJsonRepository implements UserRepository{
     public UserInfoDTO updateUserInfo(UserInfoDTO userInfoDTO) {
         List<UserDTO> users = getAll();
         for(UserDTO u : users){
-            if(u.getUserNum() == userInfoDTO.userNum()){
+            if(u.getUserNum() == userInfoDTO.profileId()){
                 u.setNickname(userInfoDTO.nickname());
                 u.setProfileImage(userInfoDTO.profileImage());
                 dataManager.writeData(users);
                 return userInfoDTO;
             }
         }
-        throw new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND); // 커스텀 예외로 변경
+        throw new NotFoundException("존재하지 않는 유저"); // 커스텀 예외로 변경
     }
 
     @Override
@@ -98,7 +103,7 @@ public class UserJsonRepository implements UserRepository{
                 return;
             }
         }
-        throw new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND); // 커스텀 예외로 변경
+        throw new NotFoundException("존재하지 않는 유저"); // 커스텀 예외로 변경
     }
 
     @Override
@@ -111,7 +116,7 @@ public class UserJsonRepository implements UserRepository{
                 return UserDeleteResponse.from(u);
             }
         }
-        throw new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND); // 커스텀 예외로 변경
+        throw new NotFoundException("존재하지 않는 유저"); // 커스텀 예외로 변경
     }
 
     @Override
@@ -125,9 +130,9 @@ public class UserJsonRepository implements UserRepository{
     }
 
     @Override
-    public List<UserInfoDTO> getUserInfos(List<Long> userNums) {
+    public List<UserInfoDTO> getUserInfos(List<Long> profileIds) {
         return getAll().stream().
-                filter(u -> userNums.contains(u.getUserNum())).
+                filter(u -> profileIds.contains(u.getUserNum())).
                 map(UserInfoDTO::from).toList();
     }
 

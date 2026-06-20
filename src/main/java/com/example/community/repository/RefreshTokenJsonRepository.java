@@ -52,7 +52,7 @@ public class RefreshTokenJsonRepository implements RefreshTokenRepository{
         TokenDTO delete = null;
 
         for(TokenDTO t : tokens){
-            if(t.token().equals(token)){
+            if(t.jwtToken().equals(token)){
                 delete = t;
                 break;
             }

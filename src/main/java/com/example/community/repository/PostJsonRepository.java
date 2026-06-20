@@ -106,7 +106,7 @@ public class PostJsonRepository implements PostRepository{
             }
         }
 
-        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외
     }
 
     @Override
@@ -120,7 +120,7 @@ public class PostJsonRepository implements PostRepository{
             }
         }
 
-        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외
     }
 
 
@@ -134,7 +134,7 @@ public class PostJsonRepository implements PostRepository{
                 return p.getLike();
             }
         }
-        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외
     }
 
     @Override
@@ -147,7 +147,7 @@ public class PostJsonRepository implements PostRepository{
                 return p.getLike();
             }
         }
-        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외
     }
 
     @Override
@@ -160,7 +160,7 @@ public class PostJsonRepository implements PostRepository{
                 return p.getReport();
             }
         }
-        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외
     }
 
     @Override
@@ -173,7 +173,7 @@ public class PostJsonRepository implements PostRepository{
                 return p.getNumberOfComments();
             }
         }
-        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외
     }
 
     @Override
@@ -186,6 +186,6 @@ public class PostJsonRepository implements PostRepository{
                 return;
             }
         }
-        throw new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND); // 커스텀 예외
+        throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외
     }
 }

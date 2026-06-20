@@ -1,10 +1,13 @@
 package com.example.community.domain.user;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+
+import java.time.Instant;
 
 @Entity
 @Getter
@@ -12,17 +15,17 @@ import org.hibernate.annotations.OnDeleteAction;
 @Table(name="UserInfo")
 public class UserInfo {
     @Id
-    @Column(name = "userNum")
-    private Long userNum;
+    @Column(name = "profileId")
+    private Long profileId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
-    @JoinColumn(name = "userNum")
+    @JoinColumn(name = "profileId", nullable = false, unique = true)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private SignInfo signInfo;
 
-    @Column(name = "nickname", nullable = false)
+    @Column(name = "nickname", nullable = false, unique = true)
     private String nickname;
+
 
     @Column(name = "profileImage")
     private String profileImage;
@@ -31,6 +34,28 @@ public class UserInfo {
     @Column(name = "role", nullable = false)
     private UserRole role = UserRole.USER;
 
-    @Column(name = "deleted", nullable = false)
-    private Boolean deleted = false;
+    @Column(name = "deletedAt")
+    private Instant deletedAt;
+
+    public UserInfo(SignInfo signInfo, String nickname, String profileImage){
+        this.signInfo = signInfo;
+        this.nickname = nickname;
+        this.profileImage = profileImage;
+    }
+
+    public void update(String nickname, String profileImage){
+        this.nickname = nickname;
+        this.profileImage = profileImage;
+    }
+
+    public void delete(){
+        deletedAt = Instant.now();
+    }
+
+
+    private boolean isDeleted(){
+        return deletedAt != null;
+    }
+
+
 }

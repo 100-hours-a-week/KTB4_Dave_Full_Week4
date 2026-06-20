@@ -9,15 +9,15 @@ import java.util.Optional;
 
 public interface UserRepository {
     long addUser(UserDTO user);
-    List<UserDTO> getAll();
+    long getCountUser();
     Optional<UserDTO> findByUserNum(long userNum);
     Optional<UserDTO> findByEmail(String email);
-    Optional<UserDTO> findByNickname(String nickname);
+    Optional<UserInfoDTO> findByNickname(String nickname);
     boolean isExistEmail(String email);
     boolean isExistNickname(String nickname);
     UserInfoDTO updateUserInfo(UserInfoDTO userInfoDTO);
     void changePassword(long userNum, String nextPassword);
     UserDeleteResponse deleteUser(long userNum);
     Optional<UserInfoDTO> getUserInfo(long userNum);
-    List<UserInfoDTO> getUserInfos(List<Long> userNums);
+    List<UserInfoDTO> getUserInfos(List<Long> profileIds);
 }

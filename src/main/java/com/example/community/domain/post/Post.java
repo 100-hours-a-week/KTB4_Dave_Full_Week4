@@ -1,13 +1,13 @@
 package com.example.community.domain.post;
 
-import com.example.community.domain.user.SignInfo;
+import com.example.community.domain.user.UserInfo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Getter
@@ -20,9 +20,9 @@ public class Post {
     private Long postNum;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userNum", referencedColumnName = "userNum", nullable = false)
+    @JoinColumn(name = "profileId", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private SignInfo signInfo;
+    private UserInfo userInfo;
 
     @Column(name = "title", nullable = false)
     private String title;
@@ -45,17 +45,14 @@ public class Post {
     @Column(name = "numberOfComment", nullable = false)
     private Integer numberOfComment = 0;
 
-    @Column(name = "edited", nullable = false)
-    private Boolean edited = false;
+    @Column(name = "deletedAt")
+    private Instant deletedAt;
 
-    @Column(name = "deleted", nullable = false)
-    private Boolean deleted = false;
+    @Column(name = "editedAt")
+    private Instant editedAt;
 
-    @Column(name = "saveTime", nullable = false)
-    private LocalDateTime saveTime = LocalDateTime.now();
-
-    @Column(name = "writeTime", nullable = false)
-    private LocalDateTime writeTime = LocalDateTime.now();
+    @Column(name = "writeAt", nullable = false)
+    private final Instant writeTime = Instant.now();
 
     @Column(name = "version", nullable = false)
     private Integer version = 1;
@@ -65,13 +62,12 @@ public class Post {
         this.title = title;
         this.content = content;
         this.image = image;
-        this.edited = true;
-        this.saveTime = LocalDateTime.now();
+        this.editedAt = Instant.now();
         this.version = version+1;
     }
 
     public void delete(){
-        deleted = true;
+        deletedAt = Instant.now();
     }
     public void view(){ view = view+1;}
     public void like(){

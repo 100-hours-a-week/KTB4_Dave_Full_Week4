@@ -11,29 +11,35 @@ import org.hibernate.annotations.OnDeleteAction;
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(name="UserLikePost")
+@Table(
+        name="UserLikePost",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "UK_UserLikePost_userNum_postNum",
+                        columnNames = {"profileId", "postNum"}
+                )
+        })
 public class UserLikePost {
-    @EmbeddedId
-    private UserLikePostId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "likeId")
+    private Long likeId;
 
-    @MapsId("userNum")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userNum", referencedColumnName = "userNum")
+    @JoinColumn(name = "profileId", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private SignInfo signInfo;
+    private UserInfo userInfo;
 
-    @MapsId("postNum")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "postNum", referencedColumnName = "postNum")
+    @JoinColumn(name = "postNum", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Post post;
 
-    public UserLikePost(SignInfo signInfo, Post post) {
-        this.signInfo = signInfo;
+    public UserLikePost(UserInfo userInfo, Post post) {
+        if(userInfo == null || post == null){
+            throw new IllegalArgumentException("null이 아닌 인자가 전달돼야 함");
+        }
+        this.userInfo = userInfo;
         this.post = post;
-        this.id = new UserLikePostId(
-                signInfo.getUserNum(),
-                post.getPostNum()
-        );
     }
 }

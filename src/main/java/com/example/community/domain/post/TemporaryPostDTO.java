@@ -2,7 +2,7 @@ package com.example.community.domain.post;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -14,5 +14,5 @@ public class TemporaryPostDTO {
     private String title;
     private String content;
     private String image;
-    private LocalDateTime saveTime;
+    private Instant saveTime;
 }

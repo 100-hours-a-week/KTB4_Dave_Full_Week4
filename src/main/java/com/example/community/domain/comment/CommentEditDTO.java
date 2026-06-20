@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -15,5 +15,5 @@ public class CommentEditDTO {
     private long commentNum;
     private int version;
     private String content;
-    private LocalDateTime writeTime;
+    private Instant writeAt;
 }

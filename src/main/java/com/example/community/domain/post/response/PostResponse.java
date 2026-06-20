@@ -2,7 +2,8 @@ package com.example.community.domain.post.response;
 import com.example.community.domain.post.PostDTO;
 import com.example.community.domain.user.response.UserInfoResponse;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 public record PostResponse(
         long postNum,
@@ -16,9 +17,10 @@ public record PostResponse(
         int report,
         int numberOfComments,
         boolean isEdited,
-        LocalDateTime writeTime
+        OffsetDateTime writeAt
 ) {
     public static PostResponse from(PostDTO post, UserInfoResponse userInfoResponse){
+        ZoneOffset kstOffset = ZoneOffset.of("+09:00");
         return new PostResponse(
                 post.getPostNum(),
                 userInfoResponse.nickname(),
@@ -30,8 +32,8 @@ public record PostResponse(
                 post.getLike(),
                 post.getReport(),
                 post.getNumberOfComments(),
-                post.isEdited(),
-                post.getWriteTime()
+                post.getEditedAt() != null,
+                post.getWriteTime().atOffset(kstOffset)
         );
     }
 }

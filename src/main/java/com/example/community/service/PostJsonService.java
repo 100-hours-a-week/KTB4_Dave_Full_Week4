@@ -15,7 +15,7 @@ import com.example.community.repository.PostEditRepository;
 import com.example.community.repository.PostRepository;
 import com.example.community.repository.UserLikeRepository;
 import com.example.community.repository.UserRepository;
-import com.example.community.util.JWTUtil;
+import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,25 +30,22 @@ public class PostJsonService implements PostService{
     private final PostEditRepository postEditRepository;
     private final UserRepository userRepository;
     private final UserLikeRepository userLikeRepository;
-    private final JWTUtil jwtUtil;
 
     public PostJsonService(@Qualifier("postJsonRepository") PostRepository postRepository,
                            @Qualifier("postEditJsonRepository") PostEditRepository postEditRepository,
                            @Qualifier("userJsonRepository") UserRepository userRepository,
-                           @Qualifier("userLikeJsonRepository") UserLikeRepository userLikeRepository,
-                           JWTUtil jwtUtil){
+                           @Qualifier("userLikeJsonRepository") UserLikeRepository userLikeRepository){
         this.postRepository = postRepository;
         this.postEditRepository = postEditRepository;
         this.userRepository = userRepository;
         this.userLikeRepository = userLikeRepository;
-        this.jwtUtil = jwtUtil;
     }
 
     @Override
-    public void checkUserAuthority(String token, long postNum) {
-        long userNum = jwtUtil.getUidFromToken(token);
-        UserRole role = jwtUtil.getRoleFromToken(token);
-        PostDTO post = postRepository.getPost(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND));
+    public void checkUserAuthority(SignUserInfo signUserInfo, long postNum) {
+        long userNum = signUserInfo.userNum();
+        UserRole role = signUserInfo.userRole();
+        PostDTO post = postRepository.getPost(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
         if(userNum != post.getUserNum()){
             if(role != UserRole.ADMIN){
                 throw new ForbiddenException("작성자만 수정 가능", HttpStatus.FORBIDDEN);
@@ -62,10 +59,12 @@ public class PostJsonService implements PostService{
 
         List<Long> userNums = posts.stream().map(PostDTO::getUserNum).toList();
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
-                .stream().map(ui -> ui.deleted() ? new UserInfoDTO(ui.userNum(), "알수없음", null, true) : ui).toList();
+                .stream().map(ui ->
+                        ui.deletedAt() != null ? new UserInfoDTO(ui.userNum(), ui.profileId()
+                                , "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
         Map<Long, UserInfoResponse> userInfoMap = userInfoDTOS.stream()
                 .collect(Collectors.toMap(
-                        UserInfoDTO::userNum,
+                        UserInfoDTO::profileId,
                         UserInfoResponse::from
                 ));
 
@@ -82,10 +81,12 @@ public class PostJsonService implements PostService{
         }
         List<Long> userNums = posts.stream().map(PostDTO::getUserNum).toList();
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
-                .stream().map(ui -> ui.deleted() ? new UserInfoDTO(ui.userNum(), "알수없음", null, true) : ui).toList();
+                .stream().map(ui ->
+                        ui.deletedAt() != null ? new UserInfoDTO(ui.userNum(), ui.profileId()
+                                , "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
         Map<Long, UserInfoResponse> userInfoMap = userInfoDTOS.stream()
                 .collect(Collectors.toMap(
-                        UserInfoDTO::userNum,
+                        UserInfoDTO::profileId,
                         UserInfoResponse::from
                 ));
         List<PostTitleResponse> postTitleResponses = posts.stream()
@@ -98,11 +99,12 @@ public class PostJsonService implements PostService{
     public PostResponse getPost(long postNum) {
         postRepository.view(postNum);
         PostDTO post = postRepository.getPost(postNum)
-                .orElseThrow(()->new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND));
+                .orElseThrow(()->new NotFoundException("존재하지 않는 게시글"));
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(post.getUserNum())
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
-        if(userInfoDTO.deleted()){
-            userInfoDTO = new UserInfoDTO(userInfoDTO.userNum(), "알수없음", null, true);
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
+        if(userInfoDTO.deletedAt() != null){
+            userInfoDTO = new UserInfoDTO(userInfoDTO.userNum(), userInfoDTO.profileId()
+                    , "알수없음", null, userInfoDTO.userRole(), userInfoDTO.deletedAt());
         }
 
         return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
@@ -116,9 +118,10 @@ public class PostJsonService implements PostService{
             posts.removeLast();
         }
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
-                .orElseThrow(()->new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
-        if(userInfoDTO.deleted()){
-            userInfoDTO =  new UserInfoDTO(userInfoDTO.userNum(), "알수없음", null, true);
+                .orElseThrow(()->new NotFoundException("존재하지 않는 유저"));
+        if(userInfoDTO.deletedAt() != null){
+            userInfoDTO = new UserInfoDTO(userInfoDTO.userNum(), userInfoDTO.profileId()
+                    , "알수없음", null, userInfoDTO.userRole(), userInfoDTO.deletedAt());
         }
         UserInfoDTO finalUserInfoDTO = userInfoDTO;
         List<PostTitleResponse> result = posts.stream().map(p->PostTitleResponse.from(p, UserInfoResponse.from(finalUserInfoDTO))).toList();
@@ -128,8 +131,8 @@ public class PostJsonService implements PostService{
 
 
     @Override
-    public PostResponse addPost(String token, PostRequest postRequest) {
-        long userNum = jwtUtil.getUidFromToken(token);
+    public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) {
+        long userNum = signUserInfo.userNum();
         long postNum = postRepository.getPostCount()+1;
         PostDTO post = new PostDTO();
         post.setPostNum(postNum);
@@ -139,29 +142,29 @@ public class PostJsonService implements PostService{
         post.setImage(postRequest.image());
         post = postRepository.addPost(post);
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
 
         return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
     }
 
     @Override
-    public PostResponse updatePost(String token,long postNum, PostEditRequest postEditRequest) {
-        long userNum = jwtUtil.getUidFromToken(token);
+    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostEditRequest postEditRequest) {
+        long userNum = signUserInfo.userNum();
 
-        checkUserAuthority(token, postNum);
+        checkUserAuthority(signUserInfo, postNum);
         PostDTO post = postRepository.getPost(postNum)
-                .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글", HttpStatus.NOT_FOUND));
+                .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"));
         postEditRepository.addPostEditRecord(PostEditRecordDTO.from(post));
         post = postRepository.updatePost(postNum, postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
 
         return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
     }
 
     @Override
-    public PostLikeResponse likePost(String token, long postNum) {
-        long userNum = jwtUtil.getUidFromToken(token);
+    public PostLikeResponse likePost(SignUserInfo signUserInfo, long postNum) {
+        long userNum = signUserInfo.userNum();
 
         UserLikePostDTO userLikePost = new UserLikePostDTO();
         userLikePost.setUserNum(userNum);
@@ -186,8 +189,8 @@ public class PostJsonService implements PostService{
 
 
     @Override
-    public void deletePost(String token, long postNum) {
-        checkUserAuthority(token, postNum);
+    public void deletePost(SignUserInfo signUserInfo, long postNum) {
+        checkUserAuthority(signUserInfo, postNum);
         postRepository.deletePost(postNum);
     }
 }

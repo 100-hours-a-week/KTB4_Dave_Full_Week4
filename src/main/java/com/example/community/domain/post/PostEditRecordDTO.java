@@ -1,6 +1,6 @@
 package com.example.community.domain.post;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record PostEditRecordDTO(
         long postNum,
@@ -8,7 +8,7 @@ public record PostEditRecordDTO(
         String title,
         String content,
         String image,
-        LocalDateTime writeTime
+        Instant writeTime
 ) {
     public static PostEditRecordDTO from(PostDTO post){
         return new PostEditRecordDTO(
@@ -17,7 +17,7 @@ public record PostEditRecordDTO(
                 post.getTitle(),
                 post.getContent(),
                 post.getImage(),
-                post.getSaveTime()
+                post.getEditedAt()
                 );
     }
 }

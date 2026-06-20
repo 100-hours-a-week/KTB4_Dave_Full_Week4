@@ -1,14 +1,14 @@
 package com.example.community.controller;
 
 import com.example.community.domain.ApiResponse;
+import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.request.PasswordChangeRequest;
 import com.example.community.domain.user.request.SignInRequest;
 import com.example.community.domain.user.request.SignUpRequest;
 import com.example.community.domain.user.request.UserInfoRequest;
-import com.example.community.domain.user.response.SignUpResponse;
-import com.example.community.domain.user.response.UserDeleteResponse;
-import com.example.community.domain.user.response.UserInfoResponse;
-import com.example.community.domain.user.response.UserResponse;
+import com.example.community.domain.user.response.*;
+import com.example.community.resolver.SignUser;
+import com.example.community.resolver.SignUserInfo;
 import com.example.community.service.RefreshTokenService;
 import com.example.community.service.UserService;
 import com.example.community.util.JWTUtil;
@@ -29,7 +29,7 @@ public class UserController {
     private final RefreshTokenService refreshTokenService;
     private final JWTUtil jwtUtil;
 
-    public UserController(@Qualifier("userJsonService") UserService userService,
+    public UserController(@Qualifier("userJPAService") UserService userService,
                           @Qualifier("refreshTokenJsonService") RefreshTokenService refreshTokenService,
                           JWTUtil jwtUtil){
         this.userService = userService;
@@ -44,10 +44,11 @@ public class UserController {
     }
 
     @PostMapping("/state")
-    public ResponseEntity<ApiResponse<UserResponse>> signIn(@RequestBody @Valid SignInRequest signInRequest){
-        UserResponse userResponse = userService.signIn(signInRequest);
+    public ResponseEntity<ApiResponse<SignInResponse>> signIn(@RequestBody @Valid SignInRequest signInRequest){
+        UserInfoDTO userResponse = userService.signIn(signInRequest);
         String accessToken = jwtUtil.generateAccessToken(userResponse.userNum(), userResponse.userRole());
         String refreshToken = jwtUtil.generateRefreshToken(userResponse.userNum());
+        SignInResponse signInResponse = SignInResponse.of(userResponse, accessToken);
 
         refreshTokenService.addRefreshToken(userResponse.userNum(), refreshToken);
 
@@ -59,35 +60,29 @@ public class UserController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .header("Authorization", accessToken)
-                .body(ApiResponse.of("로그인 성공",userResponse));
+                .body(ApiResponse.of("로그인 성공",signInResponse));
     }
 
     @DeleteMapping("/state")
-    public ResponseEntity<ApiResponse<Object>> signOut(@RequestHeader("Authorization") String token, @CookieValue(value = "refresh", required = false) String refreshToken){
+    public ResponseEntity<ApiResponse<Object>> signOut(@SignUser SignUserInfo signUserInfo, @CookieValue(value = "refresh") String refreshToken){
 
         refreshTokenService.deleteRefreshToken("");
         return ResponseEntity.ok(ApiResponse.of("로그아웃 성공", null));
     }
 
     @PatchMapping("/info")
-    public ResponseEntity<ApiResponse<UserInfoResponse>> updateInfo(@RequestHeader("Authorization") String token ,@RequestBody @Valid UserInfoRequest userInfoRequest){
-
-        //userNum 체크
-        return ResponseEntity.ok(ApiResponse.of("회원정보 수정 완료",userService.updateUserInfo(token,userInfoRequest)));
+    public ResponseEntity<ApiResponse<UserInfoResponse>> updateInfo(@SignUser SignUserInfo signUserInfo, @RequestBody @Valid UserInfoRequest userInfoRequest){
+        return ResponseEntity.ok(ApiResponse.of("회원정보 수정 완료",userService.updateUserInfo(signUserInfo,userInfoRequest)));
     }
 
     @PatchMapping("/password")
-    public ResponseEntity<ApiResponse<Object>> changePassword(@RequestHeader("Authorization") String token, @RequestBody @Valid PasswordChangeRequest passwordChangeRequest){
-
-
-        userService.changePassword(token, passwordChangeRequest);
+    public ResponseEntity<ApiResponse<Object>> changePassword(@SignUser SignUserInfo signUserInfo, @RequestBody @Valid PasswordChangeRequest passwordChangeRequest){
+        userService.changePassword(signUserInfo, passwordChangeRequest);
         return ResponseEntity.ok(ApiResponse.of("비밀번호 변경 완료", null));
     }
 
     @DeleteMapping()
-    public ResponseEntity<ApiResponse<UserDeleteResponse>> deleteUser(@RequestHeader("Authorization") String token){
-
-        return ResponseEntity.ok(ApiResponse.of("회원탈퇴 완료", userService.deleteUser(token)));
+    public ResponseEntity<ApiResponse<UserDeleteResponse>> deleteUser(@SignUser SignUserInfo signUserInfo){
+        return ResponseEntity.ok(ApiResponse.of("회원탈퇴 완료", userService.deleteUser(signUserInfo)));
     }
 }

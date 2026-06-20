@@ -2,7 +2,7 @@ package com.example.community.domain.comment;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -15,18 +15,20 @@ public class CommentDTO {
     private int depth;
     private long userNum;
     private String content;
-    private boolean edited = false;
-    private boolean deleted = false;
-    private LocalDateTime saveTime = LocalDateTime.now();
-    private LocalDateTime writeTime = LocalDateTime.now();
+    private Instant editedAt;
+    private Instant deletedAt;
+    private Instant writeAt = Instant.now();
 
     public void update(String content){
         this.content = content;
-        edited = true;
-        saveTime = LocalDateTime.now();
+        editedAt = Instant.now();
+        editedAt = Instant.now();
+    }
+    public boolean isDeleted(){
+        return this.deletedAt != null;
     }
 
     public void delete(){
-        this.deleted = true;
+        this.deletedAt = Instant.now();
     }
 }

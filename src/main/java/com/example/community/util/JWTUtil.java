@@ -79,7 +79,7 @@ public class JWTUtil {
                 .getPayload();
     }
 
-    public Long getUidFromToken(String token) {
+    public Long getUserNumFromToken(String token) {
         Claims claims = validateToken(token);
         return Long.parseLong(claims.getSubject());
     }

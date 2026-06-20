@@ -14,7 +14,7 @@ import com.example.community.domain.user.response.UserInfoResponse;
 import com.example.community.repository.CommentRepository;
 import com.example.community.repository.PostRepository;
 import com.example.community.repository.UserRepository;
-import com.example.community.util.JWTUtil;
+import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,24 +28,21 @@ public class CommentJsonService implements CommentService{
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final JWTUtil jwtUtil;
 
     public CommentJsonService(@Qualifier("commentJsonRepository") CommentRepository commentRepository,
                               @Qualifier("postJsonRepository") PostRepository postRepository,
-                              @Qualifier("userJsonRepository") UserRepository userRepository,
-                              JWTUtil jwtUtil){
+                              @Qualifier("userJsonRepository") UserRepository userRepository){
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
-        this.jwtUtil = jwtUtil;
     }
 
     @Override
-    public void checkUserAuthority(String token, long commentNum) {
-        long userNum = jwtUtil.getUidFromToken(token);
-        UserRole role = jwtUtil.getRoleFromToken(token);
+    public void checkUserAuthority(SignUserInfo signUserInfo, long commentNum) {
+        long userNum = signUserInfo.userNum();
+        UserRole role = signUserInfo.userRole();
         CommentDTO comment = commentRepository.getComment(commentNum)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글"));
         if(comment.getUserNum() != userNum){
             if(role != UserRole.ADMIN) {
                 throw new ForbiddenException("작성자만 수정 가능", HttpStatus.FORBIDDEN);
@@ -54,8 +51,8 @@ public class CommentJsonService implements CommentService{
     }
 
     @Override
-    public CommentAddResponse addCommentToPost(String token, long postNum, CommentToPostRequest commentRequest) {
-        long userNum = jwtUtil.getUidFromToken(token);
+    public CommentAddResponse addCommentToPost(SignUserInfo signUserInfo, long postNum, CommentToPostRequest commentRequest) {
+        long userNum = signUserInfo.userNum();
 
         CommentDTO comment = new CommentDTO();
         long commentNum = commentRepository.getCommentCount()+1;
@@ -67,16 +64,16 @@ public class CommentJsonService implements CommentService{
         comment.setDepth(0);
         comment = commentRepository.addComment(comment);
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
-                .orElseThrow(()->new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
+                .orElseThrow(()->new NotFoundException("존재하지 않는 유저"));
 
         return new CommentAddResponse(
                 postRepository.addComment(postNum)
-                ,CommentResponse.from(comment, UserInfoResponse.from(userInfoDTO)));
+                ,CommentResponse.of(comment, UserInfoResponse.from(userInfoDTO)));
     }
 
     @Override
-    public CommentAddResponse addCommentToComment(String token, long postNum, CommentToCommentRequest commentRequest) {
-        long userNum = jwtUtil.getUidFromToken(token);
+    public CommentAddResponse addCommentToComment(SignUserInfo signUserInfo, long postNum, CommentToCommentRequest commentRequest) {
+        long userNum = signUserInfo.userNum();
 
         CommentDTO comment = new CommentDTO();
         long commentNum = commentRepository.getCommentCount()+1;
@@ -88,11 +85,11 @@ public class CommentJsonService implements CommentService{
         comment.setDepth(commentRequest.depth());
         comment = commentRepository.addComment(comment);
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
-                .orElseThrow(()->new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
+                .orElseThrow(()->new NotFoundException("존재하지 않는 유저"));
 
         return new CommentAddResponse(
                 postRepository.addComment(postNum)
-                ,CommentResponse.from(comment, UserInfoResponse.from(userInfoDTO)));
+                ,CommentResponse.of(comment, UserInfoResponse.from(userInfoDTO)));
     }
 
     @Override
@@ -101,27 +98,27 @@ public class CommentJsonService implements CommentService{
         List<Long> users = comments.stream().map(CommentDTO::getUserNum).toList();
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(users);
         Map<Long, UserInfoResponse> userInfoResponseMap = userInfoDTOS.stream()
-                .collect(Collectors.toMap(UserInfoDTO::userNum, UserInfoResponse::from));
+                .collect(Collectors.toMap(UserInfoDTO::profileId, UserInfoResponse::from));
 
         return comments.stream()
-                .map(c -> CommentResponse.from(c, userInfoResponseMap.get(c.getUserNum()))).toList();
+                .map(c -> CommentResponse.of(c, userInfoResponseMap.get(c.getUserNum()))).toList();
     }
 
     @Override
-    public CommentResponse updateComment(String token, long commentNum, CommentEditRequest commentEditRequest) {
-        long userNum = jwtUtil.getUidFromToken(token);
-        checkUserAuthority(token, commentNum);
+    public CommentResponse updateComment(SignUserInfo signUserInfo, long commentNum, CommentEditRequest commentEditRequest) {
+        long userNum = signUserInfo.userNum();
+        checkUserAuthority(signUserInfo, commentNum);
         CommentDTO comment = commentRepository.updateComment(commentNum, commentEditRequest.content())
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글"));
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
-                .orElseThrow(()->new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
+                .orElseThrow(()->new NotFoundException("존재하지 않는 유저"));
 
-        return CommentResponse.from(comment, UserInfoResponse.from(userInfoDTO));
+        return CommentResponse.of(comment, UserInfoResponse.from(userInfoDTO));
     }
 
     @Override
-    public void deleteComment(String token, long commentNum) {
-        checkUserAuthority(token, commentNum);
+    public void deleteComment(SignUserInfo signUserInfo, long commentNum) {
+        checkUserAuthority(signUserInfo, commentNum);
 
         commentRepository.deleteComment(commentNum);
     }

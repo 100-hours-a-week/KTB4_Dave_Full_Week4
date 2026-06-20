@@ -6,6 +6,8 @@ import com.example.community.domain.comment.request.CommentToCommentRequest;
 import com.example.community.domain.comment.request.CommentToPostRequest;
 import com.example.community.domain.comment.response.CommentAddResponse;
 import com.example.community.domain.comment.response.CommentResponse;
+import com.example.community.resolver.SignUser;
+import com.example.community.resolver.SignUserInfo;
 import com.example.community.service.CommentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -24,13 +26,13 @@ public class CommentController {
     }
 
     @PostMapping("/post/{postNum}")
-    public ResponseEntity<ApiResponse<CommentAddResponse>> commentToPost(@RequestHeader("Authorization") String token, @PathVariable long postNum , @RequestBody @Valid CommentToPostRequest commentToPostRequest){
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("댓글 등록 성공", commentService.addCommentToPost(token, postNum, commentToPostRequest)));
+    public ResponseEntity<ApiResponse<CommentAddResponse>> commentToPost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum , @RequestBody @Valid CommentToPostRequest commentToPostRequest){
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("댓글 등록 성공", commentService.addCommentToPost(signUserInfo, postNum, commentToPostRequest)));
     }
 
     @PostMapping("/comment/{postNum}")
-    public ResponseEntity<ApiResponse<CommentAddResponse>> commentToComment(@RequestHeader("Authorization") String token, @PathVariable long postNum, @RequestBody @Valid CommentToCommentRequest commentToCommentRequest){
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("댓글 등록 성공", commentService.addCommentToComment(token, postNum,commentToCommentRequest)));
+    public ResponseEntity<ApiResponse<CommentAddResponse>> commentToComment(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum, @RequestBody @Valid CommentToCommentRequest commentToCommentRequest){
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("댓글 등록 성공", commentService.addCommentToComment(signUserInfo, postNum,commentToCommentRequest)));
     }
 
     @GetMapping("/list/{postNum}")
@@ -39,13 +41,13 @@ public class CommentController {
     }
 
     @PatchMapping("/{commentNum}")
-    public ResponseEntity<ApiResponse<CommentResponse>> updateComment(@RequestHeader("Authorization") String token, @PathVariable long commentNum, @RequestBody @Valid CommentEditRequest  commentEditRequest){
-        return ResponseEntity.ok(new ApiResponse<>("댓글 조회 성공",commentService.updateComment(token, commentNum, commentEditRequest)));
+    public ResponseEntity<ApiResponse<CommentResponse>> updateComment(@SignUser SignUserInfo signUserInfo, @PathVariable long commentNum, @RequestBody @Valid CommentEditRequest  commentEditRequest){
+        return ResponseEntity.ok(new ApiResponse<>("댓글 조회 성공",commentService.updateComment(signUserInfo, commentNum, commentEditRequest)));
     }
 
     @DeleteMapping("/{commentNum}")
-    public ResponseEntity<ApiResponse<Object>> updateComment(@RequestHeader("Authorization") String token, @PathVariable long commentNum){
-        commentService.deleteComment(token, commentNum);
+    public ResponseEntity<ApiResponse<Object>> updateComment(@SignUser SignUserInfo signUserInfo, @PathVariable long commentNum){
+        commentService.deleteComment(signUserInfo, commentNum);
         return ResponseEntity.ok(new ApiResponse<>("댓글 삭제 성공",null));
     }
 }

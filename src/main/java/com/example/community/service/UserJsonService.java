@@ -13,7 +13,7 @@ import com.example.community.domain.user.response.UserDeleteResponse;
 import com.example.community.domain.user.response.UserInfoResponse;
 import com.example.community.domain.user.response.UserResponse;
 import com.example.community.repository.UserRepository;
-import com.example.community.util.JWTUtil;
+import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,12 +21,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserJsonService implements UserService{
     private final UserRepository userRepository;
-    private final JWTUtil jwtUtil;
 
-    public UserJsonService(@Qualifier("userJsonRepository") UserRepository userRepository,
-                           JWTUtil jwtUtil){
+    public UserJsonService(@Qualifier("userJsonRepository") UserRepository userRepository){
         this.userRepository = userRepository;
-        this.jwtUtil = jwtUtil;
     }
 
 
@@ -43,8 +40,9 @@ public class UserJsonService implements UserService{
             throw new RuntimeException("비밀번호 확인 불일치");
         }
         UserDTO user = new UserDTO();
-        long userNum = userRepository.getAll().size()+1;
+        long userNum = userRepository.getCountUser()+1;
         user.setUserNum(userNum);
+        user.setProfileId(userNum);
         user.setEmail(signUpRequest.email());
         user.setPassword(signUpRequest.password());
         user.setNickname(signUpRequest.nickname());
@@ -54,7 +52,7 @@ public class UserJsonService implements UserService{
     }
 
     @Override
-    public UserResponse signIn(SignInRequest signInRequest) {
+    public UserInfoDTO signIn(SignInRequest signInRequest) {
         UserDTO user = userRepository.findByEmail(signInRequest.email()).orElseThrow(
                 () -> new RuntimeException("이메일 혹은 비밀번호를 확인해 주세요.") // 사용자 지정 예외로 대체 예정
         );
@@ -62,7 +60,7 @@ public class UserJsonService implements UserService{
             throw new RuntimeException("이메일 혹은 비밀번호를 확인해 주세요.");
         }
 
-        return UserResponse.from(user);
+        return UserInfoDTO.from(user);
     }
 
 
@@ -77,19 +75,20 @@ public class UserJsonService implements UserService{
     }
 
     @Override
-    public UserInfoResponse updateUserInfo(String token, UserInfoRequest userInfoRequest) {
-        long userNum = jwtUtil.getUidFromToken(token);
+    public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) {
+        long userNum = signUserInfo.userNum();
 
-        UserInfoDTO userInfoDTO = userRepository.
-               updateUserInfo(new UserInfoDTO(userNum, userInfoRequest.nickname(), userInfoRequest.profileImage(), true));
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum).orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
+        userInfoDTO = userRepository.
+               updateUserInfo(new UserInfoDTO(userNum, userNum, userInfoRequest.nickname(), userInfoRequest.profileImage(), userInfoDTO.userRole(), userInfoDTO.deletedAt()));
         return UserInfoResponse.from(userInfoDTO);
     }
 
     @Override
-    public void changePassword(String token, PasswordChangeRequest passwordChangeRequest) {
-        long userNum = jwtUtil.getUidFromToken(token);
+    public void changePassword(SignUserInfo signUserInfo, PasswordChangeRequest passwordChangeRequest) {
+        long userNum = signUserInfo.userNum();
         UserDTO user = userRepository.findByUserNum(userNum)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         if(!user.passwordConfirm(passwordChangeRequest.password())){
             throw new RuntimeException("현재 패스워드 틀림");
         }
@@ -101,8 +100,8 @@ public class UserJsonService implements UserService{
     }
 
     @Override
-    public UserDeleteResponse deleteUser(String token) {
-        long userNum = jwtUtil.getUidFromToken(token);
+    public UserDeleteResponse deleteUser(SignUserInfo signUserInfo) {
+        long userNum = signUserInfo.userNum();
 
         return userRepository.deleteUser(userNum);
     }

@@ -5,12 +5,15 @@ import com.example.community.domain.user.UserRole;
 
 public record UserResponse(
         long userNum,
+        long profileId,
         String email,
         String nickname,
         String profileImage,
         UserRole userRole
 ) {
-        public static UserResponse from(UserDTO user){
-                return new UserResponse(user.getUserNum(), user.getEmail(), user.getNickname(), user.getProfileImage(), user.getUserRole());
+        public static UserResponse from(UserDTO user) {
+                // JSON으로 개발 당시에는 profileID로 분리 전이기 때문에 profileId와 userNum이 동일
+                return new UserResponse(user.getUserNum(), user.getUserNum(), user.getEmail(), user.getNickname(), user.getProfileImage(), user.getUserRole());
         }
+
 }

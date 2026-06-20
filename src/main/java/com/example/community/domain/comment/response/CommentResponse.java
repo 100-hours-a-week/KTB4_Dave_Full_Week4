@@ -3,7 +3,8 @@ package com.example.community.domain.comment.response;
 import com.example.community.domain.comment.CommentDTO;
 import com.example.community.domain.user.response.UserInfoResponse;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 public record CommentResponse(
         long commentNum,
@@ -15,9 +16,10 @@ public record CommentResponse(
         String content,
         boolean edited,
         boolean deleted,
-        LocalDateTime writeTime
+        OffsetDateTime writeAt
         ) {
-        public static CommentResponse from(CommentDTO comment, UserInfoResponse userInfoResponse){
+        public static CommentResponse of(CommentDTO comment, UserInfoResponse userInfoResponse){
+                ZoneOffset kstOffset = ZoneOffset.of("+09:00");
                 return new CommentResponse(
                         comment.getCommentNum(),
                         comment.getPostNum(),
@@ -26,9 +28,9 @@ public record CommentResponse(
                         userInfoResponse.nickname(),
                         userInfoResponse.profileImage(),
                         comment.getContent(),
-                        comment.isEdited(),
+                        comment.getEditedAt() != null,
                         comment.isDeleted(),
-                        comment.getWriteTime()
+                        comment.getWriteAt().atOffset(kstOffset)
                 );
         }
 }

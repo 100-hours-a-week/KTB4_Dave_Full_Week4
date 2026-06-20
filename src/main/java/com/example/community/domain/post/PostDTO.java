@@ -2,7 +2,7 @@ package com.example.community.domain.post;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -18,29 +18,29 @@ public class PostDTO {
     private int like = 0;
     private int report = 0;
     private int numberOfComments = 0;
-    private boolean edited = false;
-    private boolean deleted = false;
-    private LocalDateTime saveTime = LocalDateTime.now();
-    private LocalDateTime writeTime = LocalDateTime.now();
+    private Instant deletedAt;
+    private Instant editedAt;
+    private Instant writeTime = Instant.now();
 
     public void update(PostDTO post){
         this.title = post.getTitle();
         this.content = post.getContent();
         this.image = post.getImage();
-        this.edited = true;
-        this.saveTime = LocalDateTime.now();
+        this.editedAt = Instant.now();
     }
 
     public void update(String title, String content, String image){
         this.title = title;
         this.content = content;
         this.image = image;
-        this.edited = true;
-        this.saveTime = LocalDateTime.now();
+        this.editedAt = Instant.now();
     }
 
+    public boolean isDeleted(){
+        return this.deletedAt != null;
+    }
     public void delete(){
-        deleted = true;
+        deletedAt = Instant.now();
     }
     public void view(){ view = view+1;}
     public void like(){
