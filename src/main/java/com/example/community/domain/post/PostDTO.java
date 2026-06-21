@@ -1,6 +1,5 @@
 package com.example.community.domain.post;
 
-import com.example.community.domain.user.UserInfo;
 import lombok.*;
 
 import java.time.Instant;

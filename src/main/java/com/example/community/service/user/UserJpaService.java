@@ -15,10 +15,8 @@ import com.example.community.domain.user.response.UserDeleteResponse;
 import com.example.community.domain.user.response.UserInfoResponse;
 import com.example.community.repository.user.UserRepository;
 import com.example.community.resolver.SignUserInfo;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 
 
 @Service

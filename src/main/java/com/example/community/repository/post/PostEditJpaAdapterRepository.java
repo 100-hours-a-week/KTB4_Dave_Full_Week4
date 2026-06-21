@@ -1,6 +1,5 @@
 package com.example.community.repository.post;
 
-import com.example.community.domain.exception.NotFoundException;
 import com.example.community.domain.post.Post;
 import com.example.community.domain.post.PostEditRecord;
 import com.example.community.domain.post.PostEditRecordDTO;

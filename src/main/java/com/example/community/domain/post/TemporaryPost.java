@@ -8,7 +8,6 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Getter

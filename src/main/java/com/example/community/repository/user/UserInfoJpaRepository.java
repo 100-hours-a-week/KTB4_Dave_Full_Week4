@@ -1,7 +1,6 @@
 package com.example.community.repository.user;
 
 import com.example.community.domain.user.UserInfo;
-import com.example.community.domain.user.UserInfoDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

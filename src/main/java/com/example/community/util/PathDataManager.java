@@ -1,10 +1,8 @@
 package com.example.community.util;
 
 import tools.jackson.core.JacksonException;
-import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 public class PathDataManager<T> implements DataManager<T>{

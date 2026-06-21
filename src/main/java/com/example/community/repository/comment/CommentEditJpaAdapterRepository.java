@@ -3,7 +3,6 @@ package com.example.community.repository.comment;
 import com.example.community.domain.comment.Comment;
 import com.example.community.domain.comment.CommentDTO;
 import com.example.community.domain.comment.CommentEditRecord;
-import com.example.community.domain.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 

@@ -67,13 +67,13 @@ public class PostController {
     public ResponseEntity<ApiResponse<PostReportResponse>> reportPost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
         // 신고를 누가 하는지는 저장안하지만 로그인한 유저만 신고할 수 있도록 토큰 검사
 
-        return  ResponseEntity.ok(new ApiResponse<>("성공", postService.reportPost(postNum)));
+        return  ResponseEntity.ok(new ApiResponse<>("신고 완료", postService.reportPost(postNum)));
     }
 
     @DeleteMapping("/{postNum}")
     public ResponseEntity<ApiResponse<Object>> deletePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
         postService.deletePost(signUserInfo, postNum);
-        return  ResponseEntity.ok(new ApiResponse<>("성공", null));
+        return  ResponseEntity.ok(new ApiResponse<>("삭제 완료", null));
     }
 
 }

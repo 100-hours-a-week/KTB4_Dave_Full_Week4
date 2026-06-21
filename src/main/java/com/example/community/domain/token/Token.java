@@ -4,7 +4,6 @@ import com.example.community.domain.user.UserInfo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 @Entity
 @Getter

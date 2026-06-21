@@ -1,7 +1,6 @@
 package com.example.community.domain.post.response;
 import com.example.community.domain.post.PostDTO;
 import com.example.community.domain.user.UserInfoDTO;
-import com.example.community.domain.user.response.UserInfoResponse;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;

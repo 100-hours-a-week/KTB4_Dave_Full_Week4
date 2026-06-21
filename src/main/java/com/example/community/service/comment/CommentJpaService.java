@@ -14,7 +14,6 @@ import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.UserRole;
 import com.example.community.domain.user.response.UserInfoResponse;
 import com.example.community.repository.comment.CommentEditJpaAdapterRepository;
-import com.example.community.repository.comment.CommentEditJpaRepository;
 import com.example.community.repository.comment.CommentRepository;
 import com.example.community.repository.post.PostRepository;
 import com.example.community.repository.user.UserRepository;
@@ -22,7 +21,6 @@ import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
