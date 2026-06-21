@@ -5,6 +5,7 @@ import com.example.community.domain.comment.request.CommentEditRequest;
 import com.example.community.domain.comment.request.CommentToCommentRequest;
 import com.example.community.domain.comment.request.CommentToPostRequest;
 import com.example.community.domain.comment.response.CommentAddResponse;
+import com.example.community.domain.comment.response.CommentListResponse;
 import com.example.community.domain.comment.response.CommentResponse;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
@@ -36,7 +37,7 @@ public class CommentController {
     }
 
     @GetMapping("/list/{postNum}")
-    public ResponseEntity<ApiResponse<List<CommentResponse>>> getPostCommentList(@PathVariable long postNum){
+    public ResponseEntity<ApiResponse<List<CommentListResponse>>> getPostCommentList(@PathVariable long postNum){
         return ResponseEntity.ok(new ApiResponse<>("댓글 조회 성공", commentService.getPostCommentList(postNum)));
     }
 

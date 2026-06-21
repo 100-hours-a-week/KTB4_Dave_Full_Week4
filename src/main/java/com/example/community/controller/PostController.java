@@ -1,12 +1,8 @@
 package com.example.community.controller;
 
 import com.example.community.domain.ApiResponse;
-import com.example.community.domain.post.request.PostEditRequest;
 import com.example.community.domain.post.request.PostRequest;
-import com.example.community.domain.post.response.PostLikeResponse;
-import com.example.community.domain.post.response.PostSliceResponse;
-import com.example.community.domain.post.response.PostReportResponse;
-import com.example.community.domain.post.response.PostResponse;
+import com.example.community.domain.post.response.*;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.service.post.PostService;
@@ -27,8 +23,8 @@ public class PostController {
     }
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<PostSliceResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int offset){
-        PostSliceResponse posts =postService.getPostsByPage(page, offset);
+    public ResponseEntity<ApiResponse<PostSliceResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        PostSliceResponse posts =postService.getPostsByPage(page, size);
         return ResponseEntity.ok(new ApiResponse<>("게시글 조회 성공", posts));
     }
 
@@ -46,9 +42,19 @@ public class PostController {
     }
 
     @PatchMapping("/{postNum}")
-    public ResponseEntity<ApiResponse<PostResponse>> updatePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum , @RequestBody @Valid PostEditRequest postEditRequest) {
+    public ResponseEntity<ApiResponse<PostResponse>> updatePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum , @RequestBody @Valid PostRequest postRequest) {
 
-        return ResponseEntity.ok(new ApiResponse<>("게시글 수정 성공", postService.updatePost(signUserInfo, postNum, postEditRequest)));
+        return ResponseEntity.ok(new ApiResponse<>("게시글 수정 성공", postService.updatePost(signUserInfo, postNum, postRequest)));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<PostPageResponse>> getMyPost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(new ApiResponse<>("내가 쓴 게시글 목록 불러오기 성공", postService.getPostsByProfileId(signUserInfo.profileId(), page, size)));
+    }
+
+    @GetMapping("/myLike")
+    public ResponseEntity<ApiResponse<PostPageResponse>> getMyLikePost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(new ApiResponse<>("좋아요 한 게시글 목록 불러오기 성공", postService.getLikePosts(signUserInfo.profileId(), page, size)));
     }
 
     @PostMapping("/{postNum}/like")

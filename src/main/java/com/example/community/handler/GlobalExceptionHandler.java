@@ -40,4 +40,9 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleIllegalArgument(IllegalArgumentException exception){
         return ErrorResponse.of(exception.getMessage());
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ErrorResponse handleIllegalState(IllegalStateException exception){
+        return ErrorResponse.of(exception.getMessage());
+    }
 }

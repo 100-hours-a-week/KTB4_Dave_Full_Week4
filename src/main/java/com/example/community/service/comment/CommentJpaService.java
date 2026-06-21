@@ -6,6 +6,7 @@ import com.example.community.domain.comment.request.CommentEditRequest;
 import com.example.community.domain.comment.request.CommentToCommentRequest;
 import com.example.community.domain.comment.request.CommentToPostRequest;
 import com.example.community.domain.comment.response.CommentAddResponse;
+import com.example.community.domain.comment.response.CommentListResponse;
 import com.example.community.domain.comment.response.CommentResponse;
 import com.example.community.domain.exception.ForbiddenException;
 import com.example.community.domain.exception.NotFoundException;
@@ -21,6 +22,7 @@ import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -78,15 +80,67 @@ public class CommentJpaService implements CommentService{
     }
 
     @Override
-    public List<CommentResponse> getPostCommentList(long postNum) {
+    public List<CommentListResponse> getPostCommentList(long postNum) {
         List<CommentDTO> commentDTOS = commentRepository.getCommentsByPostNum(postNum);
         List<Long> users = commentDTOS.stream().map(CommentDTO::getProfileId).toList();
-        List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(users);
+        List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(users)
+                .stream().map(ui -> ui.deletedAt() != null ?
+                        new UserInfoDTO(ui.userNum(), ui.profileId()
+                                , "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
         Map<Long, UserInfoResponse> userInfoResponseMap = userInfoDTOS.stream()
                 .collect(Collectors.toMap(UserInfoDTO::profileId, UserInfoResponse::from));
 
-        return  commentDTOS.stream()
+        List<CommentResponse> commentResponses = commentDTOS.stream()
                 .map(c -> CommentResponse.of(c, userInfoResponseMap.get(c.getProfileId()))).toList();
+
+        return  getCommentListResponse(commentResponses);
+    }
+
+    private List<CommentListResponse> getCommentListResponse(List<CommentResponse> commentResponses){
+        List<CommentResponse> zeroDepth = commentResponses.stream().filter(c -> c.depth() == 0).toList();
+        List<CommentResponse> firstDepth = commentResponses.stream().filter(c -> c.depth() == 1).toList();
+        List<CommentResponse> secondDepth = commentResponses.stream().filter(c -> c.depth() == 2).toList();
+        List<CommentResponse> thirdDepth = commentResponses.stream().filter(c -> c.depth() == 3).toList();
+        List<CommentListResponse> result = zeroDepth.stream().map(CommentListResponse::of).toList();
+
+        Map<Long, List<CommentListResponse>> firstChild = firstDepth.stream()
+                .collect(Collectors.groupingBy(CommentResponse::commentNum,
+                        Collectors.mapping(CommentListResponse::of, Collectors.toList())));
+        for(CommentListResponse commentListResponse: result){
+            commentListResponse.addChild(
+                    firstChild.getOrDefault(
+                            commentListResponse.getComment().commentNum(),
+                            List.of()
+                    )
+            );
+        }
+
+        Map<Long, List<CommentListResponse>> secondChild = secondDepth.stream()
+                .collect(Collectors.groupingBy(CommentResponse::commentNum,
+                        Collectors.mapping(CommentListResponse::of, Collectors.toList())));
+        List<CommentListResponse> firstChildList = firstChild.values().stream().flatMap(List::stream).toList();
+        for(CommentListResponse commentListResponse: firstChildList){
+            commentListResponse.addChild(
+                    secondChild.getOrDefault(
+                            commentListResponse.getComment().commentNum(),
+                            List.of()
+                    )
+            );
+        }
+
+        Map<Long, List<CommentListResponse>> thirdChild = thirdDepth.stream()
+                .collect(Collectors.groupingBy(CommentResponse::commentNum,
+                        Collectors.mapping(CommentListResponse::of, Collectors.toList())));
+        List<CommentListResponse> secondChildList = secondChild.values().stream().flatMap(List::stream).toList();
+        for(CommentListResponse commentListResponse: secondChildList){
+            commentListResponse.addChild(
+                    thirdChild.getOrDefault(
+                            commentListResponse.getComment().commentNum(),
+                            List.of()
+                    )
+            );
+        }
+        return result;
     }
 
     @Override

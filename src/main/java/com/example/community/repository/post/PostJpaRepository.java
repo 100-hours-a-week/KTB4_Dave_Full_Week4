@@ -7,6 +7,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -14,6 +15,7 @@ import java.util.Optional;
 public interface PostJpaRepository extends JpaRepository<Post, Long> {
     Slice<Post> findAllByOrderByPostNumDesc(Pageable pageable);
     Optional<Post> findByPostNum(Long postNum);
+    List<Post> findByPostNumIn(List<Long> postNums);
     Page<Post> findByUserInfo_ProfileIdOrderByPostNumDesc(Long profileId, Pageable pageable);
 
 }

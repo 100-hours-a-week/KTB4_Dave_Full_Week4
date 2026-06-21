@@ -33,9 +33,6 @@ public class TemporaryPost {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private UserInfo userInfo;
 
-    @Column(name = "temporaryKey", nullable = false, unique = true)
-    private UUID temporaryKey;
-
     @Column(name = "title", nullable = false)
     private String title;
 
@@ -46,10 +43,16 @@ public class TemporaryPost {
     private String image;
 
     @Column(name = "writeAt", nullable = false)
-    private Instant writeAt;
+    private Instant writeAt = Instant.now();
 
-    public TemporaryPost(UserInfo userInfo, UUID temporaryKey){
+    public TemporaryPost(UserInfo userInfo){
         this.userInfo = userInfo;
-        this.temporaryKey = temporaryKey;
+    }
+
+    public void update(String title, String content, String image){
+        this.title = title;
+        this.content = content;
+        this.image = image;
+        writeAt = Instant.now();
     }
 }

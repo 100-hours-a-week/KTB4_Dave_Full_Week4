@@ -1,17 +1,22 @@
 package com.example.community.domain.comment.response;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
 @ToString
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class CommentListResponse {
     CommentResponse comment;
     List<CommentListResponse> childComments;
+
+    public static CommentListResponse of(CommentResponse comment){
+        return new CommentListResponse(comment, new ArrayList<>());
+    }
+    public void addChild(List<CommentListResponse> commentListResponse){
+        childComments.addAll(commentListResponse);
+    }
 }

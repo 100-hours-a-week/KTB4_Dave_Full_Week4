@@ -7,6 +7,9 @@ import com.example.community.domain.user.UserLikePost;
 import com.example.community.domain.user.UserLikePostDTO;
 import com.example.community.repository.post.PostJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,9 +22,10 @@ public class UserLikeJpaAdapterRepository implements UserLikeRepository{
     private final PostJpaRepository postJpaRepository;
 
     @Override
-    public List<UserLikePostDTO> getUserLikePosts(long profileId) {
-        return userLikeJpaRepository.findByUserInfo_ProfileId(profileId)
-                .stream().map(UserLikePostDTO::from).toList();
+    public Page<UserLikePostDTO> getUserLikePosts(long profileId, Pageable pageable) {
+        Page<UserLikePost> userLikePosts = userLikeJpaRepository.findByUserInfo_ProfileId(profileId, pageable);
+        List<UserLikePostDTO> userLikePostDTOS = userLikePosts.stream().map(UserLikePostDTO::from).toList();
+        return new PageImpl<>(userLikePostDTOS, pageable, userLikePosts.getTotalElements());
     }
 
     @Override

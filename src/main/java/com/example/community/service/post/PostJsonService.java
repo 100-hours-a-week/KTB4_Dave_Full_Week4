@@ -4,7 +4,6 @@ import com.example.community.domain.exception.ForbiddenException;
 import com.example.community.domain.exception.NotFoundException;
 import com.example.community.domain.post.PostDTO;
 import com.example.community.domain.post.PostEditRecordDTO;
-import com.example.community.domain.post.request.PostEditRequest;
 import com.example.community.domain.post.request.PostRequest;
 import com.example.community.domain.post.response.*;
 import com.example.community.domain.user.UserInfoDTO;
@@ -18,6 +17,8 @@ import com.example.community.repository.user.UserRepository;
 import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
@@ -56,8 +57,8 @@ public class PostJsonService implements PostService{
 
 
     @Override
-    public PostSliceResponse getPostsByPage(int index, int offset) {
-        Slice<PostDTO> posts = postRepository.getPostsByPage(index, offset);
+    public PostSliceResponse getPostsByPage(int page, int size) {
+        Slice<PostDTO> posts = postRepository.getPostsByPage(page, size);
         List<Long> userNums = posts.stream().map(PostDTO::getProfileId).toList();
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
                 .stream().map(ui ->
@@ -90,8 +91,8 @@ public class PostJsonService implements PostService{
     }
 
     @Override
-    public PostPageResponse getPostsByProfileId(long profileId, int index, int offset) {
-        Page<PostDTO> posts = postRepository.getPostsByProfileId(profileId, index, offset+1);
+    public PostPageResponse getPostsByProfileId(long profileId, int page, int size) {
+        Page<PostDTO> posts = postRepository.getPostsByProfileId(profileId, page, size +1);
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(profileId)
                 .orElseThrow(()->new NotFoundException("존재하지 않는 유저"));
         if(userInfoDTO.deletedAt() != null){
@@ -103,6 +104,29 @@ public class PostJsonService implements PostService{
 
         return new PostPageResponse(result, posts.getNumber(), posts.getSize(), posts.getNumberOfElements()
                 , posts.getTotalElements(), posts.getTotalPages());
+    }
+
+    @Override
+    public PostPageResponse getLikePosts(long profileId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UserLikePostDTO> userLikePostDTOS = userLikeRepository.getUserLikePosts(profileId, pageable);
+        List<Long> postNums = userLikePostDTOS.getContent().stream().map(UserLikePostDTO::getPostNum).toList();
+        List<PostDTO> postDTOS = postRepository.getPosts(postNums);
+        List<Long> userNums = postDTOS.stream().map(PostDTO::getProfileId).toList();
+        List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
+                .stream().map(ui ->
+                        ui.deletedAt() != null ? new UserInfoDTO(ui.userNum(), ui.profileId()
+                                , "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
+        Map<Long, UserInfoResponse> userInfoMap = userInfoDTOS.stream()
+                .collect(Collectors.toMap(
+                        UserInfoDTO::profileId,
+                        UserInfoResponse::from
+                ));
+        List<PostTitleResponse> postTitleResponses = postDTOS.stream()
+                .map(p ->  PostTitleResponse.from(p, userInfoMap.get(p.getProfileId()))).toList();
+
+        return new PostPageResponse(postTitleResponses, page, size, userLikePostDTOS.getNumberOfElements(),
+                userLikePostDTOS.getTotalElements(), userLikePostDTOS.getTotalPages());
     }
 
 
@@ -124,14 +148,14 @@ public class PostJsonService implements PostService{
     }
 
     @Override
-    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostEditRequest postEditRequest) {
+    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostRequest postRequest) {
         long userNum = signUserInfo.userNum();
 
         checkUserAuthority(signUserInfo, postNum);
         PostDTO post = postRepository.getPost(postNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"));
         postEditRepository.addPostEditRecord(PostEditRecordDTO.from(post));
-        post = postRepository.updatePost(postNum, postEditRequest.title(), postEditRequest.content(), postEditRequest.image());
+        post = postRepository.updatePost(postNum, postRequest.title(), postRequest.content(), postRequest.image());
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
 

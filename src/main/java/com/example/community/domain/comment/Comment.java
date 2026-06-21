@@ -52,7 +52,7 @@ public class Comment {
     private final Instant writeAt = Instant.now();
 
     @Column(name = "version", nullable = false)
-    private Integer version = 1;
+    private int version;
 
     public Comment(Post post, Comment comment, UserInfo userInfo, String content){
         if(post == null || userInfo == null || comment == null || content.isBlank()){
@@ -84,7 +84,6 @@ public class Comment {
     public void update(String content){
         this.content = content;
         editedAt = Instant.now();
-        version = version+1;
     }
 
     public void delete(){

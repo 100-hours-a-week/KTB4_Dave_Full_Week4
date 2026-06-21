@@ -31,7 +31,13 @@ public class PostJpaAdapterRepository implements PostRepository{
     public Optional<PostDTO> getPost(long postNum) {
 
         return Optional.of(PostDTO.from(postJpaRepository.findByPostNum(postNum)
-                .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"))));
+                .get()));
+    }
+
+    @Override
+    public List<PostDTO> getPosts(List<Long> postNums) {
+        return postJpaRepository.findByPostNumIn(postNums)
+                .stream().map(PostDTO::from).toList();
     }
 
     @Override

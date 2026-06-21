@@ -56,6 +56,11 @@ public class PostJsonRepository implements PostRepository{
     }
 
     @Override
+    public List<PostDTO> getPosts(List<Long> postNums) {
+        return List.of();
+    }
+
+    @Override
     public Page<PostDTO> getPostsByProfileId(long userNum, int index, int offset) {
         List<PostDTO> posts = dataManager.readData();
         List<PostDTO> userPosts = new ArrayList<>();

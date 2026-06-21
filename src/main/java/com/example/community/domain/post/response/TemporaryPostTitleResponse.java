@@ -5,18 +5,17 @@ import com.example.community.domain.post.TemporaryPost;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
-public record TemporaryPostResponse(
+public record TemporaryPostTitleResponse(
+        Long temporaryPostId,
         String title,
-        String content,
-        String image,
         OffsetDateTime writeAt
 ) {
-    public static TemporaryPostResponse from(TemporaryPost temporaryPost){
+    public static TemporaryPostTitleResponse from(TemporaryPost temporaryPost){
         ZoneOffset kstOffset = ZoneOffset.of("+09:00");
-        return new TemporaryPostResponse(
+
+        return new TemporaryPostTitleResponse(
+                temporaryPost.getTemporaryId(),
                 temporaryPost.getTitle(),
-                temporaryPost.getContent(),
-                temporaryPost.getImage(),
                 temporaryPost.getWriteAt().atOffset(kstOffset)
         );
     }

@@ -55,7 +55,7 @@ public class Post {
     private final Instant writeAt = Instant.now();
 
     @Column(name = "version", nullable = false)
-    private Integer version = 1;
+    private Integer version = 0;
 
     public Post(UserInfo userInfo, String title, String content, String image){
         this.userInfo = userInfo;
