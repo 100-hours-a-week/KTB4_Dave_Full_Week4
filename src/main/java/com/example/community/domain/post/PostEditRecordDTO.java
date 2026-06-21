@@ -17,7 +17,7 @@ public record PostEditRecordDTO(
                 post.getTitle(),
                 post.getContent(),
                 post.getImage(),
-                post.getEditedAt()
+                post.getEditedAt() != null ? post.getEditedAt() : post.getWriteAt()
                 );
     }
     public static PostEditRecordDTO from(PostEditRecord postEditRecord){

@@ -25,7 +25,6 @@ public class SignUserArgumentResolver implements HandlerMethodArgumentResolver {
                                             NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
         SignUser signUser = parameter.getParameterAnnotation(SignUser.class);
         // supportsParameter에서 true를 반환한 값만 resolveArgument에 도달하기 때문에 signUser는 null일 수 없음.
-        boolean required = signUser.required();
 
         HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
         if (request == null) {
@@ -35,12 +34,8 @@ public class SignUserArgumentResolver implements HandlerMethodArgumentResolver {
         Long userNum = (Long) request.getAttribute("userNum");
         Long profileId = (Long) request.getAttribute("profileId");
         UserRole role = (UserRole) request.getAttribute("role");
-        if ((userNum == null || profileId == null || role == null) && required) {
-            throw new UnAuthorizedException("로그인이 필요합니다.");
-        }
-
         if (userNum == null || profileId == null || role == null) {
-            return null;
+            throw new UnAuthorizedException("로그인이 필요합니다.");
         }
         return new SignUserInfo(userNum, profileId, role);
     }

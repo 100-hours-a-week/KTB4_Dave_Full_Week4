@@ -33,16 +33,16 @@ public class Post {
     @Column(name = "image")
     private String image;
 
-    @Column(name = "view", nullable = false)
+    @Column(name = "viewCount")
     private Integer viewCount = 0;
 
-    @Column(name = "like", nullable = false)
+    @Column(name = "likeCount")
     private Integer likeCount = 0;
 
-    @Column(name = "report", nullable = false)
+    @Column(name = "reportCount")
     private Integer reportCount = 0;
 
-    @Column(name = "numberOfComment", nullable = false)
+    @Column(name = "commentCount")
     private Integer commentCount = 0;
 
     @Column(name = "deletedAt")
@@ -54,8 +54,8 @@ public class Post {
     @Column(name = "writeAt", nullable = false)
     private final Instant writeAt = Instant.now();
 
-    @Column(name = "version", nullable = false)
-    private Integer version = 0;
+    @Column(name = "version")
+    private Integer version = 1;
 
     public Post(UserInfo userInfo, String title, String content, String image){
         this.userInfo = userInfo;

@@ -15,11 +15,12 @@ import java.time.Instant;
 @Table(name="UserInfo")
 public class UserInfo {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "profileId")
     private Long profileId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profileId", nullable = false, unique = true)
+    @JoinColumn(name = "userNum", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private SignInfo signInfo;
 

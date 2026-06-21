@@ -21,15 +21,11 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
 
         registry.addInterceptor(signInterceptor)
-                .addPathPatterns("/**")
-                .excludePathPatterns(
-                        "/users",
-                        "/users/email-availability",
-                        "/users/nickname-availability",
-                        "/sessions",
-                        "/sessions/current/jwtToken",
-                        "/images",
-                        "/images/*"
+                .addPathPatterns(
+                        "/posts/**",
+                        "/comments/**",
+                        "/temporaryPost/**",
+                        "/users/**"
                 );
     }
 

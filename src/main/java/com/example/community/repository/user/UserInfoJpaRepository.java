@@ -14,5 +14,5 @@ public interface UserInfoJpaRepository extends JpaRepository<UserInfo, Long>{
     Optional<UserInfo> findByNickname(String nickname);
     Optional<UserInfo> findByProfileId(Long profileId);
     boolean existsByNickname(String nickname);
-    List<UserInfoDTO> findByProfileIdIn(List<Long> profileId);
+    List<UserInfo> findByProfileIdIn(List<Long> profileId);
 }

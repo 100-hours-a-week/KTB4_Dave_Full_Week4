@@ -44,8 +44,9 @@ public class CommentJpaAdapterRepository implements CommentRepository{
 
     @Override
     public Optional<CommentDTO> getComment(long commentNum) {
-        return Optional.of(CommentDTO.from(commentJpaRepository.findByCommentNum(commentNum)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글"))));
+        Optional<Comment> comment = commentJpaRepository.findByCommentNum(commentNum);
+
+        return comment.map(CommentDTO::from);
     }
 
     @Override
@@ -58,6 +59,7 @@ public class CommentJpaAdapterRepository implements CommentRepository{
         Comment comment = commentJpaRepository.findByCommentNum(commentNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글"));
         comment.update(content);
+        commentJpaRepository.save(comment);
         return CommentDTO.from(comment);
     }
 

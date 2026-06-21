@@ -21,7 +21,8 @@ public class CommentEditJpaAdapterRepository {
 
     public void addCommentEdit(CommentDTO commentDTO){
         Comment comment = commentJpaRepository.findByCommentNum(commentDTO.getCommentNum())
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글"));
+                .orElse(null);
+        if(comment == null) return;
 
         CommentEditRecord commentEditRecord = new CommentEditRecord(comment);
         commentEditJpaRepository.save(commentEditRecord);

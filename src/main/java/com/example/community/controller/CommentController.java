@@ -43,11 +43,11 @@ public class CommentController {
 
     @PatchMapping("/{commentNum}")
     public ResponseEntity<ApiResponse<CommentResponse>> updateComment(@SignUser SignUserInfo signUserInfo, @PathVariable long commentNum, @RequestBody @Valid CommentEditRequest  commentEditRequest){
-        return ResponseEntity.ok(new ApiResponse<>("댓글 조회 성공",commentService.updateComment(signUserInfo, commentNum, commentEditRequest)));
+        return ResponseEntity.ok(new ApiResponse<>("댓글 수정 성공",commentService.updateComment(signUserInfo, commentNum, commentEditRequest)));
     }
 
     @DeleteMapping("/{commentNum}")
-    public ResponseEntity<ApiResponse<Object>> updateComment(@SignUser SignUserInfo signUserInfo, @PathVariable long commentNum){
+    public ResponseEntity<ApiResponse<Object>> deleteComment(@SignUser SignUserInfo signUserInfo, @PathVariable long commentNum){
         commentService.deleteComment(signUserInfo, commentNum);
         return ResponseEntity.ok(new ApiResponse<>("댓글 삭제 성공",null));
     }

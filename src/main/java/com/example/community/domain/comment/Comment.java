@@ -51,7 +51,8 @@ public class Comment {
     @Column(name = "writeAt", nullable = false)
     private final Instant writeAt = Instant.now();
 
-    @Column(name = "version", nullable = false)
+    @Column(name = "version")
+    @Version
     private int version;
 
     public Comment(Post post, Comment comment, UserInfo userInfo, String content){

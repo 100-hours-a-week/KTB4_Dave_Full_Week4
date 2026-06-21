@@ -46,7 +46,7 @@ public class PostJpaService implements PostService{
     @Override
     public void checkUserAuthority(SignUserInfo signUserInfo, long postNum) {
         PostDTO post = postRepository.getPost(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
-        if(post.getProfileId().equals(signUserInfo.profileId()) && signUserInfo.userRole() != UserRole.ADMIN){
+        if(!post.getProfileId().equals(signUserInfo.profileId()) && signUserInfo.userRole() != UserRole.ADMIN){
             throw new ForbiddenException("접근 권한 부족");
         }
     }
@@ -128,7 +128,7 @@ public class PostJpaService implements PostService{
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
         PostDTO postDTO = new PostDTO(signUserInfo.profileId(), postRequest.title(),
                 postRequest.content(), postRequest.image());
-        postRepository.addPost(postDTO);
+        postDTO = postRepository.addPost(postDTO);
 
         return PostResponse.from(postDTO, userInfoDTO);
     }
@@ -142,7 +142,7 @@ public class PostJpaService implements PostService{
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
 
         postEditRepository.addPostEditRecord(PostEditRecordDTO.from(postDTO));
-        postRepository.updatePost(postNum, postRequest.title(), postRequest.content(),
+        postDTO = postRepository.updatePost(postNum, postRequest.title(), postRequest.content(),
                 postRequest.image());
 
         return PostResponse.from(postDTO, userInfoDTO);

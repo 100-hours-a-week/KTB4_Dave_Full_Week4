@@ -71,9 +71,11 @@ public class CommentJpaService implements CommentService{
         postRepository.getPost(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         CommentDTO parentComment = commentRepository.getComment(commentRequest.parentNum())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글"));
+        System.out.println("부모댓글 불러오기 성공");
         CommentDTO commentDTO = new CommentDTO(postNum, parentComment.getCommentNum(), parentComment.getDepth()+1
                 , signUserInfo.profileId(), commentRequest.content());
         commentDTO = commentRepository.addComment(commentDTO);
+        System.out.println("add success");
 
         return new CommentAddResponse(postRepository.addComment(postNum), CommentResponse.of(commentDTO, userInfoDTO));
 
@@ -104,7 +106,7 @@ public class CommentJpaService implements CommentService{
         List<CommentListResponse> result = zeroDepth.stream().map(CommentListResponse::of).toList();
 
         Map<Long, List<CommentListResponse>> firstChild = firstDepth.stream()
-                .collect(Collectors.groupingBy(CommentResponse::commentNum,
+                .collect(Collectors.groupingBy(CommentResponse::parentNum,
                         Collectors.mapping(CommentListResponse::of, Collectors.toList())));
         for(CommentListResponse commentListResponse: result){
             commentListResponse.addChild(
@@ -116,7 +118,7 @@ public class CommentJpaService implements CommentService{
         }
 
         Map<Long, List<CommentListResponse>> secondChild = secondDepth.stream()
-                .collect(Collectors.groupingBy(CommentResponse::commentNum,
+                .collect(Collectors.groupingBy(CommentResponse::parentNum,
                         Collectors.mapping(CommentListResponse::of, Collectors.toList())));
         List<CommentListResponse> firstChildList = firstChild.values().stream().flatMap(List::stream).toList();
         for(CommentListResponse commentListResponse: firstChildList){
@@ -129,7 +131,7 @@ public class CommentJpaService implements CommentService{
         }
 
         Map<Long, List<CommentListResponse>> thirdChild = thirdDepth.stream()
-                .collect(Collectors.groupingBy(CommentResponse::commentNum,
+                .collect(Collectors.groupingBy(CommentResponse::parentNum,
                         Collectors.mapping(CommentListResponse::of, Collectors.toList())));
         List<CommentListResponse> secondChildList = secondChild.values().stream().flatMap(List::stream).toList();
         for(CommentListResponse commentListResponse: secondChildList){

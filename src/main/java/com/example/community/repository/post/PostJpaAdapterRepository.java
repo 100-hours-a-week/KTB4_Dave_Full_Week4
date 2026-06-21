@@ -29,9 +29,8 @@ public class PostJpaAdapterRepository implements PostRepository{
 
     @Override
     public Optional<PostDTO> getPost(long postNum) {
-
-        return Optional.of(PostDTO.from(postJpaRepository.findByPostNum(postNum)
-                .get()));
+        Optional<Post> post = postJpaRepository.findByPostNum(postNum);
+        return post.map(PostDTO::from);
     }
 
     @Override
@@ -69,6 +68,7 @@ public class PostJpaAdapterRepository implements PostRepository{
         Post post = postJpaRepository.findByPostNum(postNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"));
         post.update(title, content, image);
+        postJpaRepository.save(post);
         return PostDTO.from(post);
     }
 
@@ -77,6 +77,7 @@ public class PostJpaAdapterRepository implements PostRepository{
         Post post = postJpaRepository.findByPostNum(postNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"));
         post.view();
+        postJpaRepository.save(post);
     }
 
     @Override
@@ -84,6 +85,7 @@ public class PostJpaAdapterRepository implements PostRepository{
         Post post = postJpaRepository.findByPostNum(postNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"));
         post.like();
+        postJpaRepository.save(post);
         return post.getLikeCount();
     }
 
@@ -92,6 +94,7 @@ public class PostJpaAdapterRepository implements PostRepository{
         Post post = postJpaRepository.findByPostNum(postNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"));
         post.unlike();
+        postJpaRepository.save(post);
         return post.getLikeCount();
     }
 
@@ -100,6 +103,7 @@ public class PostJpaAdapterRepository implements PostRepository{
         Post post = postJpaRepository.findByPostNum(postNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"));
         post.report();
+        postJpaRepository.save(post);
         return post.getReportCount();
     }
 
@@ -108,6 +112,7 @@ public class PostJpaAdapterRepository implements PostRepository{
         Post post = postJpaRepository.findByPostNum(postNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"));
         post.addComment();
+        postJpaRepository.save(post);
         return post.getCommentCount();
     }
 
@@ -116,5 +121,6 @@ public class PostJpaAdapterRepository implements PostRepository{
         Post post = postJpaRepository.findByPostNum(postNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"));
         post.delete();
+        postJpaRepository.save(post);
     }
 }

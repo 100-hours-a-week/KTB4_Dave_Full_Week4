@@ -38,7 +38,10 @@ public class UserJpaRepository implements UserRepository{
     @Override
     public Optional<UserDTO> findByProfileId(long userNum) {
         SignInfo signInfo = signInfoJPARepository.findByUserNum(userNum)
-                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
+                .orElse(null);
+        if(signInfo == null){
+            return Optional.empty();
+        }
 
         UserInfo userInfo = userInfoJPARepository.findBySignInfo_UserNum(userNum).getFirst();
 
@@ -47,8 +50,10 @@ public class UserJpaRepository implements UserRepository{
 
     @Override
     public Optional<UserDTO> findByEmail(String email) {
-        SignInfo signInfo = signInfoJPARepository.findByEmail(email).
-                orElseThrow(()-> new NotFoundException("존재하지 않는 이메일"));
+        SignInfo signInfo = signInfoJPARepository.findByEmail(email).orElse(null);
+        if(signInfo == null){
+            return Optional.empty();
+        }
         UserInfo userInfo = userInfoJPARepository.findBySignInfo_UserNum(signInfo.getUserNum()).getFirst();
 
         return Optional.of(UserDTO.of(signInfo, userInfo));
@@ -57,8 +62,8 @@ public class UserJpaRepository implements UserRepository{
     @Override
     public Optional<UserInfoDTO> findByNickname(String nickname) {
 
-        return Optional.of(UserInfoDTO.from(userInfoJPARepository.findByNickname(nickname)
-                .orElseThrow(()->new NotFoundException("존재하지 않는 닉네임"))));
+        return userInfoJPARepository.findByNickname(nickname)
+                .map(UserInfoDTO::from);
     }
 
     @Override
@@ -108,6 +113,7 @@ public class UserJpaRepository implements UserRepository{
 
     @Override
     public List<UserInfoDTO> getUserInfos(List<Long> profileIds) {
-        return userInfoJPARepository.findByProfileIdIn(profileIds);
+        return userInfoJPARepository.findByProfileIdIn(profileIds).stream()
+                .map(UserInfoDTO::from).toList();
     }
 }

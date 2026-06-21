@@ -75,6 +75,8 @@ public class CommentJsonService implements CommentService{
     public CommentAddResponse addCommentToComment(SignUserInfo signUserInfo, long postNum, CommentToCommentRequest commentRequest) {
         long userNum = signUserInfo.userNum();
 
+        CommentDTO parent = commentRepository.getComment(commentRequest.parentNum())
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
         CommentDTO comment = new CommentDTO();
         long commentNum = commentRepository.getCommentCount()+1;
         comment.setCommentNum(commentNum);
@@ -82,7 +84,7 @@ public class CommentJsonService implements CommentService{
         comment.setContent(commentRequest.content());
         comment.setProfileId(userNum);
         comment.setParentNum(commentRequest.parentNum());
-        comment.setDepth(commentRequest.depth());
+        comment.setDepth(parent.getDepth()+1);
         comment = commentRepository.addComment(comment);
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
                 .orElseThrow(()->new NotFoundException("존재하지 않는 유저"));

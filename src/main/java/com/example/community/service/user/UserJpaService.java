@@ -20,7 +20,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-@Validated
+
 @Service
 public class UserJpaService implements UserService{
     private final UserRepository userRepository;
@@ -31,7 +31,7 @@ public class UserJpaService implements UserService{
 
 
     @Override
-    public SignUpResponse signUp(@Valid SignUpRequest signUpRequest) {
+    public SignUpResponse signUp( SignUpRequest signUpRequest) {
         if(userRepository.isExistEmail(signUpRequest.email())){
             throw new DuplicateException("중복 이메일 존재");
         }

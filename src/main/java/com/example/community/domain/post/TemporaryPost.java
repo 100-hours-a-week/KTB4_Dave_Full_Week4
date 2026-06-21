@@ -13,15 +13,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(
-        name = "TemporaryPost",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "UK_TemporaryPost_userNum_temporaryKey",
-                        columnNames = {"profileId", "temporaryKey"}
-                )
-        }
-)
+@Table(name = "TemporaryPost")
 public class TemporaryPost {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,10 +25,10 @@ public class TemporaryPost {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private UserInfo userInfo;
 
-    @Column(name = "title", nullable = false)
+    @Column(name = "title")
     private String title;
 
-    @Column(name = "content", nullable = false)
+    @Column(name = "content")
     private String content;
 
     @Column(name = "image")
@@ -47,6 +39,7 @@ public class TemporaryPost {
 
     public TemporaryPost(UserInfo userInfo){
         this.userInfo = userInfo;
+        writeAt = Instant.now();
     }
 
     public void update(String title, String content, String image){

@@ -47,6 +47,6 @@ public class CommentEditRecord {
         this.comment = comment;
         this.version = comment.getVersion();
         this.content = comment.getContent();
-        this.writeAt = comment.getEditedAt();
+        this.writeAt = comment.getEditedAt() != null ? comment.getEditedAt() : comment.getWriteAt();
     }
 }

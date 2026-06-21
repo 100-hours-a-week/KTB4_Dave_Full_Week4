@@ -37,7 +37,7 @@ public class JWTUtil {
         return Jwts.builder()
                 .subject(String.valueOf(userNum))
                 .claim(CLAIM_PROFILE_ID, profileId)
-                .claim(CLAIM_ROLE, role)
+                .claim(CLAIM_ROLE, role.name())
                 .claim(CLAIM_TYPE, TOKEN_TYPE_ACCESS)
                 .issuedAt(now)
                 .expiration(expiryDate)

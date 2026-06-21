@@ -31,7 +31,7 @@ public class PostEditRecord {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Post post;
 
-    @Column(name = "version", nullable = false)
+    @Column(name = "version")
     private Integer version;
 
     @Column(name = "title", nullable = false)

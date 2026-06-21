@@ -10,7 +10,7 @@ import java.time.ZoneOffset;
 public record CommentResponse(
         long commentNum,
         long postNum,
-        long parentNum,
+        Long parentNum,
         int depth,
         String nickname,
         String profileImage,
