@@ -1,12 +1,10 @@
-package com.example.community.service;
+package com.example.community.service.user;
 
 import com.example.community.domain.exception.BadRequestException;
 import com.example.community.domain.exception.DuplicateException;
 import com.example.community.domain.exception.NotFoundException;
 import com.example.community.domain.exception.UnAuthorizedException;
-import com.example.community.domain.user.SignInfo;
 import com.example.community.domain.user.UserDTO;
-import com.example.community.domain.user.UserInfo;
 import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.request.PasswordChangeRequest;
 import com.example.community.domain.user.request.SignInRequest;
@@ -15,8 +13,7 @@ import com.example.community.domain.user.request.UserInfoRequest;
 import com.example.community.domain.user.response.SignUpResponse;
 import com.example.community.domain.user.response.UserDeleteResponse;
 import com.example.community.domain.user.response.UserInfoResponse;
-import com.example.community.domain.user.response.UserResponse;
-import com.example.community.repository.UserRepository;
+import com.example.community.repository.user.UserRepository;
 import com.example.community.resolver.SignUserInfo;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,10 +22,10 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated
 @Service
-public class UserJPAService implements UserService{
+public class UserJpaService implements UserService{
     private final UserRepository userRepository;
 
-    public UserJPAService(@Qualifier("userJPARepository") UserRepository userRepository){
+    public UserJpaService(@Qualifier("userJpaRepository") UserRepository userRepository){
         this.userRepository = userRepository;
     }
 
@@ -73,7 +70,7 @@ public class UserJPAService implements UserService{
 
     @Override
     public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) {
-        UserDTO userDTO = userRepository.findByUserNum(signUserInfo.userNum())
+        UserDTO userDTO = userRepository.findByProfileId(signUserInfo.userNum())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
         if(isExistNickname(userInfoRequest.nickname())){
@@ -85,7 +82,7 @@ public class UserJPAService implements UserService{
 
     @Override
     public void changePassword(SignUserInfo signUserInfo, PasswordChangeRequest passwordChangeRequest) {
-        UserDTO userDTO = userRepository.findByUserNum(signUserInfo.userNum())
+        UserDTO userDTO = userRepository.findByProfileId(signUserInfo.userNum())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
         if(!userDTO.passwordConfirm(passwordChangeRequest.password())){

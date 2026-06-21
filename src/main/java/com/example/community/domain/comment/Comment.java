@@ -1,5 +1,6 @@
 package com.example.community.domain.comment;
 
+import com.example.community.domain.exception.BadRequestException;
 import com.example.community.domain.post.Post;
 import com.example.community.domain.user.UserInfo;
 import jakarta.persistence.*;
@@ -52,6 +53,33 @@ public class Comment {
 
     @Column(name = "version", nullable = false)
     private Integer version = 1;
+
+    public Comment(Post post, Comment comment, UserInfo userInfo, String content){
+        if(post == null || userInfo == null || comment == null || content.isBlank()){
+            throw new IllegalArgumentException("필수 인자가 비어있습니다.");
+        }
+        if (comment.getDepth() >= 3) {
+            throw new BadRequestException("답글을 달 수 없는 댓글입니다.");
+        }
+        commentNum = null;
+        this.post = post;
+        this.comment = comment;
+        this.depth = comment.getDepth()+1;
+        this.userInfo = userInfo;
+        this.content = content;
+    }
+
+    public Comment(Post post,UserInfo userInfo, String content){
+        if(post == null || userInfo == null || content.isBlank()){
+            throw new IllegalArgumentException("필수 인자가 비어있습니다.");
+        }
+        commentNum = null;
+        this.post = post;
+        this.comment = null;
+        this.depth = 0;
+        this.userInfo = userInfo;
+        this.content = content;
+    }
 
     public void update(String content){
         this.content = content;

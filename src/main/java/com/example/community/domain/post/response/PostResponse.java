@@ -1,5 +1,6 @@
 package com.example.community.domain.post.response;
 import com.example.community.domain.post.PostDTO;
+import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.response.UserInfoResponse;
 
 import java.time.OffsetDateTime;
@@ -19,21 +20,22 @@ public record PostResponse(
         boolean isEdited,
         OffsetDateTime writeAt
 ) {
-    public static PostResponse from(PostDTO post, UserInfoResponse userInfoResponse){
+
+    public static PostResponse from(PostDTO post, UserInfoDTO userInfoDTO){
         ZoneOffset kstOffset = ZoneOffset.of("+09:00");
         return new PostResponse(
                 post.getPostNum(),
-                userInfoResponse.nickname(),
-                userInfoResponse.profileImage(),
+                userInfoDTO.nickname(),
+                userInfoDTO.profileImage(),
                 post.getTitle(),
                 post.getContent(),
                 post.getImage(),
-                post.getView(),
-                post.getLike(),
-                post.getReport(),
-                post.getNumberOfComments(),
+                post.getViewCount(),
+                post.getLikeCount(),
+                post.getReportCount(),
+                post.getCommentCount(),
                 post.getEditedAt() != null,
-                post.getWriteTime().atOffset(kstOffset)
+                post.getWriteAt().atOffset(kstOffset)
         );
     }
 }

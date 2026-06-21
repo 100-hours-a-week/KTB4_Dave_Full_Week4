@@ -4,7 +4,7 @@ import java.time.Instant;
 
 public record PostEditRecordDTO(
         long postNum,
-        long userNum,
+        int version,
         String title,
         String content,
         String image,
@@ -13,11 +13,21 @@ public record PostEditRecordDTO(
     public static PostEditRecordDTO from(PostDTO post){
         return new PostEditRecordDTO(
                 post.getPostNum(),
-                post.getUserNum(),
+                post.getVersion(),
                 post.getTitle(),
                 post.getContent(),
                 post.getImage(),
                 post.getEditedAt()
                 );
+    }
+    public static PostEditRecordDTO from(PostEditRecord postEditRecord){
+        return new PostEditRecordDTO(
+                postEditRecord.getPost().getPostNum(),
+                postEditRecord.getVersion(),
+                postEditRecord.getTitle(),
+                postEditRecord.getContent(),
+                postEditRecord.getImage(),
+                postEditRecord.getWriteAt()
+        );
     }
 }

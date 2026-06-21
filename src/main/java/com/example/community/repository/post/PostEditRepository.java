@@ -1,4 +1,4 @@
-package com.example.community.repository;
+package com.example.community.repository.post;
 
 import com.example.community.domain.post.PostEditRecordDTO;
 

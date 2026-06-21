@@ -1,17 +1,17 @@
-package com.example.community.repository;
+package com.example.community.repository.post;
 
 import com.example.community.domain.post.PostDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface PostRepository {
-    List<PostDTO> getAllPosts();
-    List<PostDTO> getPostsByPage(int index, int offset);
+    Slice<PostDTO> getPostsByPage(int index, int offset);
     Optional<PostDTO> getPost(long postNum);
-    List<PostDTO> getPostsByUserNum(long userNum, int index, int offset);
+    Page<PostDTO> getPostsByProfileId(long profileId, int index, int offset);
     // boolean canAddPost(long profileId); // 당일 작성한 게시글 개수 확인
-    int getPostCount();
+    long getPostCount();
     PostDTO addPost(PostDTO post);
     PostDTO updatePost(long postNum, String title, String content, String image);
     void view(long postNum);

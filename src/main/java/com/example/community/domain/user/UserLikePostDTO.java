@@ -1,19 +1,20 @@
 package com.example.community.domain.user;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @Getter
 @Setter
 @ToString
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class UserLikePostDTO {
-    private long userNum;
+    private long profileId;
     private long postNum;
 
+    public static UserLikePostDTO from(UserLikePost userLikePost){
+        return new UserLikePostDTO(userLikePost.getUserInfo().getProfileId(), userLikePost.getPost().getPostNum());
+    }
+
     public boolean equals(UserLikePostDTO userLikePost){
-        return userNum == userLikePost.userNum && postNum == userLikePost.postNum;
+        return profileId == userLikePost.profileId && postNum == userLikePost.postNum;
     }
 }

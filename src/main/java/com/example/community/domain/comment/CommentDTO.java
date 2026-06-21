@@ -8,16 +8,42 @@ import java.time.Instant;
 @Setter
 @ToString
 @RequiredArgsConstructor
+@AllArgsConstructor
 public class CommentDTO {
     private long commentNum;
     private long postNum;
-    private long parentNum;
+    private Long parentNum;
     private int depth;
-    private long userNum;
+    private long profileId;
     private String content;
     private Instant editedAt;
     private Instant deletedAt;
     private Instant writeAt = Instant.now();
+
+    public CommentDTO(long postNum, Long parentNum, int depth, long profileId, String content){
+        this.postNum = postNum;
+        this.parentNum = parentNum;
+        this.depth = depth;
+        this.profileId = profileId;
+        this.content = content;
+    }
+    public CommentDTO(long postNum, long profileId, String content){
+        this.postNum = postNum;
+        this.parentNum = null;
+        this.depth = 0;
+        this.profileId = profileId;
+        this.content = content;
+    }
+
+    public static CommentDTO from(Comment comment){
+        return new CommentDTO(comment.getCommentNum(),
+                comment.getPost().getPostNum(),
+                comment.getComment() != null ? comment.getComment().getCommentNum() : null,
+                comment.getDepth(),
+                comment.getUserInfo().getProfileId(),
+                comment.getContent(), comment.getEditedAt(),
+                comment.getDeletedAt(), comment.getWriteAt());
+    }
 
     public void update(String content){
         this.content = content;

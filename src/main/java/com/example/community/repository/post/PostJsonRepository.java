@@ -1,10 +1,10 @@
-package com.example.community.repository;
+package com.example.community.repository.post;
 
 import com.example.community.domain.exception.NotFoundException;
 import com.example.community.domain.post.PostDTO;
 import com.example.community.util.DataManager;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -19,26 +19,27 @@ public class PostJsonRepository implements PostRepository{
         this.dataManager = dataManager;
     }
 
-    @Override
-    public List<PostDTO> getAllPosts() {
-        return dataManager.readData().stream()
-                .filter(p -> !p.isDeleted()).toList();
-    }
 
     @Override
-    public List<PostDTO> getPostsByPage(int index, int offset) {
+    public Slice<PostDTO> getPostsByPage(int index, int offset) {
         List<PostDTO> posts = dataManager.readData().stream()
                 .filter(p -> !p.isDeleted()).toList();
         int end = posts.size();
         if(end > (index+1)*offset){
-            end = (index+1)*offset;
+            end = (index+1)*offset+1;
         }
         List<PostDTO> result = new ArrayList<>();
         for(int i = index*offset; i < end; i++){
             result.add(posts.get(i));
         }
+        boolean hasNext = false;
+        if(result.size() > offset){
+            hasNext = true;
+            result.removeLast();
+        }
+        Pageable pageable = PageRequest.of(index, offset);
 
-        return result;
+        return new SliceImpl<>(result, pageable, hasNext);
     }
 
     @Override
@@ -55,12 +56,12 @@ public class PostJsonRepository implements PostRepository{
     }
 
     @Override
-    public List<PostDTO> getPostsByUserNum(long userNum, int index, int offset) {
+    public Page<PostDTO> getPostsByProfileId(long userNum, int index, int offset) {
         List<PostDTO> posts = dataManager.readData();
         List<PostDTO> userPosts = new ArrayList<>();
         List<PostDTO> results = new ArrayList<>();
         for(PostDTO p : posts){
-            if(p.getUserNum() == userNum && !p.isDeleted()){
+            if(p.getProfileId() == userNum && !p.isDeleted()){
                 userPosts.add(p);
             }
         }
@@ -74,11 +75,11 @@ public class PostJsonRepository implements PostRepository{
             results.add(userPosts.get(i));
         }
 
-        return results;
+        return new PageImpl<>(results, PageRequest.of(index, offset), userPosts.size());
     }
 
     @Override
-    public int getPostCount() {
+    public long getPostCount() {
         List<PostDTO> posts = dataManager.readData().stream()
                 .filter(p -> !p.isDeleted()).toList();
 
@@ -131,7 +132,7 @@ public class PostJsonRepository implements PostRepository{
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.like();
                 dataManager.writeData(posts);
-                return p.getLike();
+                return p.getLikeCount();
             }
         }
         throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외
@@ -144,7 +145,7 @@ public class PostJsonRepository implements PostRepository{
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.unlike();
                 dataManager.writeData(posts);
-                return p.getLike();
+                return p.getLikeCount();
             }
         }
         throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외
@@ -157,7 +158,7 @@ public class PostJsonRepository implements PostRepository{
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.report();
                 dataManager.writeData(posts);
-                return p.getReport();
+                return p.getReportCount();
             }
         }
         throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외
@@ -170,7 +171,7 @@ public class PostJsonRepository implements PostRepository{
             if(p.getPostNum() == postNum && !p.isDeleted()){
                 p.addComment();
                 dataManager.writeData(posts);
-                return p.getNumberOfComments();
+                return p.getCommentCount();
             }
         }
         throw new NotFoundException("존재하지 않는 게시글"); // 커스텀 예외

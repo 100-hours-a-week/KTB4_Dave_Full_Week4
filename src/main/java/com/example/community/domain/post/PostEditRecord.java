@@ -24,7 +24,7 @@ public class PostEditRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "postEditId")
-    private Long postEditId;
+    private Long editId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "postNum", nullable = false)

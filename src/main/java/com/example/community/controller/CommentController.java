@@ -8,7 +8,7 @@ import com.example.community.domain.comment.response.CommentAddResponse;
 import com.example.community.domain.comment.response.CommentResponse;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
-import com.example.community.service.CommentService;
+import com.example.community.service.comment.CommentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -21,7 +21,7 @@ import java.util.List;
 public class CommentController {
     private final CommentService commentService;
 
-    public CommentController(@Qualifier("commentJsonService") CommentService commentService){
+    public CommentController(@Qualifier("commentJpaService") CommentService commentService){
         this.commentService = commentService;
     }
 

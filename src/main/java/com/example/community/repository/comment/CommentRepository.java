@@ -1,4 +1,4 @@
-package com.example.community.repository;
+package com.example.community.repository.comment;
 
 import com.example.community.domain.comment.CommentDTO;
 import java.util.List;
@@ -8,7 +8,7 @@ public interface CommentRepository {
     CommentDTO addComment(CommentDTO comment);
     List<CommentDTO> getCommentsByPostNum(long postNum);
     Optional<CommentDTO> getComment(long commentNum);
-    int getCommentCount();
-    Optional<CommentDTO> updateComment(long commentNum, String content);
+    long getCommentCount();
+    CommentDTO updateComment(long commentNum, String content);
     void deleteComment(long commentNum);
 }

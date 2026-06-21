@@ -1,7 +1,7 @@
 package com.example.community.service;
 
 import com.example.community.domain.token.TokenDTO;
-import com.example.community.repository.RefreshTokenRepository;
+import com.example.community.repository.refreshToken.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 

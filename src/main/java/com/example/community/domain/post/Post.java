@@ -34,16 +34,16 @@ public class Post {
     private String image;
 
     @Column(name = "view", nullable = false)
-    private Integer view = 0;
+    private Integer viewCount = 0;
 
     @Column(name = "like", nullable = false)
-    private Integer like = 0;
+    private Integer likeCount = 0;
 
     @Column(name = "report", nullable = false)
-    private Integer report = 0;
+    private Integer reportCount = 0;
 
     @Column(name = "numberOfComment", nullable = false)
-    private Integer numberOfComment = 0;
+    private Integer commentCount = 0;
 
     @Column(name = "deletedAt")
     private Instant deletedAt;
@@ -52,10 +52,19 @@ public class Post {
     private Instant editedAt;
 
     @Column(name = "writeAt", nullable = false)
-    private final Instant writeTime = Instant.now();
+    private final Instant writeAt = Instant.now();
 
     @Column(name = "version", nullable = false)
     private Integer version = 1;
+
+    public Post(UserInfo userInfo, String title, String content, String image){
+        this.userInfo = userInfo;
+        this.title = title;
+        this.content = content;
+        this.image = image;
+        deletedAt = null;
+        editedAt = null;
+    }
 
 
     public void update(String title, String content, String image){
@@ -69,19 +78,19 @@ public class Post {
     public void delete(){
         deletedAt = Instant.now();
     }
-    public void view(){ view = view+1;}
+    public void view(){ viewCount = viewCount +1;}
     public void like(){
-        like = like +1;
+        likeCount = likeCount +1;
     }
     public void unlike(){
-        like = like -1;
+        likeCount = likeCount -1;
     }
 
     public void report(){
-        report = report + 1;
+        reportCount = reportCount + 1;
     }
 
     public void addComment(){
-        numberOfComment = numberOfComment + 1;
+        commentCount = commentCount + 1;
     }
 }

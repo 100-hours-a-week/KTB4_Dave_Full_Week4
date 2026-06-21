@@ -1,4 +1,4 @@
-package com.example.community.service;
+package com.example.community.service.user;
 
 import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.request.PasswordChangeRequest;
@@ -8,7 +8,6 @@ import com.example.community.domain.user.request.UserInfoRequest;
 import com.example.community.domain.user.response.SignUpResponse;
 import com.example.community.domain.user.response.UserDeleteResponse;
 import com.example.community.domain.user.response.UserInfoResponse;
-import com.example.community.domain.user.response.UserResponse;
 import com.example.community.resolver.SignUserInfo;
 
 public interface UserService {

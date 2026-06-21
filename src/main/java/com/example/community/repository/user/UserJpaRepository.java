@@ -1,4 +1,4 @@
-package com.example.community.repository;
+package com.example.community.repository.user;
 
 import com.example.community.domain.exception.NotFoundException;
 import com.example.community.domain.user.SignInfo;
@@ -14,9 +14,9 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class UserJPARepository implements UserRepository{
-    private final SignInfoJPARepository signInfoJPARepository;
-    private final UserInfoJPARepository userInfoJPARepository;
+public class UserJpaRepository implements UserRepository{
+    private final SignInfoJpaRepository signInfoJPARepository;
+    private final UserInfoJpaRepository userInfoJPARepository;
 
     @Override
     public long addUser(UserDTO user) {
@@ -36,7 +36,7 @@ public class UserJPARepository implements UserRepository{
     }
 
     @Override
-    public Optional<UserDTO> findByUserNum(long userNum) {
+    public Optional<UserDTO> findByProfileId(long userNum) {
         SignInfo signInfo = signInfoJPARepository.findByUserNum(userNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
@@ -77,7 +77,6 @@ public class UserJPARepository implements UserRepository{
         UserInfo userInfo = userInfoJPARepository.findByProfileId(userInfoDTO.profileId())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 프로필"));
         userInfo.update(userInfoDTO.nickname(), userInfoDTO.profileImage());
-        userInfoJPARepository.save(userInfo);
 
         return UserInfoDTO.from(userInfo);
     }
@@ -88,7 +87,6 @@ public class UserJPARepository implements UserRepository{
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
         signInfo.changePassword(nextPassword);
-        signInfoJPARepository.save(signInfo);
     }
 
     @Override
@@ -100,8 +98,6 @@ public class UserJPARepository implements UserRepository{
             ui.delete();
         }
         signInfo.delete();
-        signInfoJPARepository.save(signInfo);
-        userInfoJPARepository.saveAll(userInfo);
         return UserDeleteResponse.from(signInfo);
     }
 

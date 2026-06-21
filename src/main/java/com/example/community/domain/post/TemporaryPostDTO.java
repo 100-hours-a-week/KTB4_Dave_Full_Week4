@@ -14,5 +14,5 @@ public class TemporaryPostDTO {
     private String title;
     private String content;
     private String image;
-    private Instant saveTime;
+    private Instant writeAt;
 }

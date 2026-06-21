@@ -1,4 +1,4 @@
-package com.example.community.repository;
+package com.example.community.repository.user;
 
 import com.example.community.util.DataManager;
 import com.example.community.domain.user.UserLikePostDTO;
@@ -17,7 +17,7 @@ public class UserLikeJsonRepository implements UserLikeRepository{
 
     @Override
     public List<UserLikePostDTO> getUserLikePosts(long userNum) {
-        return dataManager.readData().stream().filter(ul -> ul.getUserNum() == userNum).toList();
+        return dataManager.readData().stream().filter(ul -> ul.getProfileId() == userNum).toList();
     }
 
     @Override
@@ -32,11 +32,10 @@ public class UserLikeJsonRepository implements UserLikeRepository{
     }
 
     @Override
-    public UserLikePostDTO addUserLikePost(UserLikePostDTO userLikePost) {
+    public void addUserLikePost(UserLikePostDTO userLikePost) {
         List<UserLikePostDTO> userLikePosts = dataManager.readData();
         userLikePosts.add(userLikePost);
         dataManager.writeData(userLikePosts);
-        return userLikePost;
     }
 
     @Override

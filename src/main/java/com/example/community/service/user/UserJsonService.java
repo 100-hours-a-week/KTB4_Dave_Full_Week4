@@ -1,4 +1,4 @@
-package com.example.community.service;
+package com.example.community.service.user;
 
 import com.example.community.domain.exception.NotFoundException;
 import com.example.community.domain.user.UserDTO;
@@ -11,11 +11,9 @@ import com.example.community.domain.user.request.UserInfoRequest;
 import com.example.community.domain.user.response.SignUpResponse;
 import com.example.community.domain.user.response.UserDeleteResponse;
 import com.example.community.domain.user.response.UserInfoResponse;
-import com.example.community.domain.user.response.UserResponse;
-import com.example.community.repository.UserRepository;
+import com.example.community.repository.user.UserRepository;
 import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -87,7 +85,7 @@ public class UserJsonService implements UserService{
     @Override
     public void changePassword(SignUserInfo signUserInfo, PasswordChangeRequest passwordChangeRequest) {
         long userNum = signUserInfo.userNum();
-        UserDTO user = userRepository.findByUserNum(userNum)
+        UserDTO user = userRepository.findByProfileId(userNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         if(!user.passwordConfirm(passwordChangeRequest.password())){
             throw new RuntimeException("현재 패스워드 틀림");

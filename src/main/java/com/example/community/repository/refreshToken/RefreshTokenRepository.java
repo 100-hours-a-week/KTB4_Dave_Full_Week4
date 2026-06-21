@@ -1,6 +1,5 @@
-package com.example.community.repository;
+package com.example.community.repository.refreshToken;
 
-import com.example.community.domain.token.Token;
 import com.example.community.domain.token.TokenDTO;
 
 public interface RefreshTokenRepository {

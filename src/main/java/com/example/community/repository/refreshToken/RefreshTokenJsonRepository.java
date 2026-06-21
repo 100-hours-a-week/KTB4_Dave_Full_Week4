@@ -1,4 +1,4 @@
-package com.example.community.repository;
+package com.example.community.repository.refreshToken;
 
 import com.example.community.domain.token.TokenDTO;
 import com.example.community.util.DataManager;

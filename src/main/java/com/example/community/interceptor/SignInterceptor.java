@@ -39,8 +39,10 @@ public class SignInterceptor implements HandlerInterceptor {
         }
         try {
             Long userNum = jwtUtil.getUserNumFromToken(accessToken);
+            Long profileId = jwtUtil.getProfileIdFromToken(accessToken);
             UserRole userRole = jwtUtil.getRoleFromToken(accessToken);
-            request.setAttribute("profileId", userNum);
+            request.setAttribute("userNum", userNum);
+            request.setAttribute("profileId", profileId);
             request.setAttribute("role", userRole);
             return true;
         } catch (JwtException | IllegalArgumentException e) {

@@ -31,7 +31,8 @@ public class SignUserArgumentResolver implements HandlerMethodArgumentResolver {
             throw new IllegalStateException("HttpServletRequest를 찾을 수 없습니다.");
         }
 
-        Long userNum = (Long) request.getAttribute("profileId");
+        Long userNum = (Long) request.getAttribute("userNum");
+        Long profileId = (Long) request.getAttribute("profileId");
         UserRole role = (UserRole) request.getAttribute("role");
         if ((userNum == null || role == null) && required) {
             throw new UnAuthorizedException("로그인이 필요합니다.");
@@ -40,6 +41,6 @@ public class SignUserArgumentResolver implements HandlerMethodArgumentResolver {
         if (userNum == null || role == null) {
             return null;
         }
-        return new SignUserInfo(userNum, role);
+        return new SignUserInfo(userNum, profileId, role);
     }
 }

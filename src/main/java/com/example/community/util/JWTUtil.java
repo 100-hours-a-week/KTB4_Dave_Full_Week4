@@ -17,6 +17,7 @@ public class JWTUtil {
     private final SecretKey secretKey;
     private final long accessExpiration;
     private final long refreshExpiration;
+    private final String CLAIM_PROFILE_ID = "profileID";
     private final String CLAIM_ROLE = "role";
     private final String CLAIM_TYPE = "type";
     private final String TOKEN_TYPE_ACCESS = "access";
@@ -29,12 +30,13 @@ public class JWTUtil {
         this.refreshExpiration = refreshExpiration;
     }
 
-    public String generateAccessToken(Long userNum, UserRole role) {
+    public String generateAccessToken(Long userNum, Long profileId, UserRole role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessExpiration);
 
         return Jwts.builder()
                 .subject(String.valueOf(userNum))
+                .claim(CLAIM_PROFILE_ID, profileId)
                 .claim(CLAIM_ROLE, role)
                 .claim(CLAIM_TYPE, TOKEN_TYPE_ACCESS)
                 .issuedAt(now)
@@ -43,12 +45,13 @@ public class JWTUtil {
                 .compact();
     }
 
-    public String generateAccessToken(Long userNum, UserRole role, long expirationMs) {
+    public String generateAccessToken(Long userNum, Long profileId, UserRole role, long expirationMs) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
                 .subject(String.valueOf(userNum))
+                .claim(CLAIM_PROFILE_ID, profileId)
                 .claim(CLAIM_ROLE, role.name())
                 .claim(CLAIM_TYPE, TOKEN_TYPE_ACCESS)
                 .issuedAt(now)
@@ -82,6 +85,11 @@ public class JWTUtil {
     public Long getUserNumFromToken(String token) {
         Claims claims = validateToken(token);
         return Long.parseLong(claims.getSubject());
+    }
+
+    public Long getProfileIdFromToken(String token) {
+        Claims claims = validateToken(token);
+        return claims.get(CLAIM_PROFILE_ID, Long.class);
     }
 
     public UserRole getRoleFromToken(String token) {

@@ -24,7 +24,7 @@ public class CommentEditRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "commentEditId")
-    private Long commentEditId;
+    private Long editId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "commentNum")
@@ -40,22 +40,13 @@ public class CommentEditRecord {
     @Column(name = "writeAt", nullable = false)
     private Instant writeAt = Instant.now();
 
-    public CommentEditRecord(Comment comment, Integer version,  String content, Instant writeAt){
+    public CommentEditRecord(Comment comment){
         if(comment == null){
-            throw new IllegalArgumentException("post가 null");
-        }
-        if(version == null || version < 1){
-            throw new IllegalArgumentException("version은 양수여야 함");
-        }
-        if( content == null || content.isBlank()){
-            throw new IllegalArgumentException("제목과 내용은 비어있으면 안됨");
-        }
-        if(writeAt == null){
-            throw new IllegalArgumentException("writeTime이 null");
+            throw new IllegalArgumentException("comment가 null");
         }
         this.comment = comment;
-        this.version = version;
-        this.content = content;
-        this.writeAt = writeAt;
+        this.version = comment.getVersion();
+        this.content = comment.getContent();
+        this.writeAt = comment.getEditedAt();
     }
 }

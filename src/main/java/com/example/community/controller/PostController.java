@@ -4,13 +4,12 @@ import com.example.community.domain.ApiResponse;
 import com.example.community.domain.post.request.PostEditRequest;
 import com.example.community.domain.post.request.PostRequest;
 import com.example.community.domain.post.response.PostLikeResponse;
-import com.example.community.domain.post.response.PostListResponse;
+import com.example.community.domain.post.response.PostSliceResponse;
 import com.example.community.domain.post.response.PostReportResponse;
 import com.example.community.domain.post.response.PostResponse;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
-import com.example.community.service.PostService;
-import com.example.community.util.JWTUtil;
+import com.example.community.service.post.PostService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
@@ -23,13 +22,13 @@ import java.net.URI;
 public class PostController {
     private final PostService postService;
 
-    public PostController(@Qualifier("postJsonService") PostService postService){
+    public PostController(@Qualifier("postJpaService") PostService postService){
         this.postService = postService;
     }
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<PostListResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int offset){
-        PostListResponse posts =postService.getPostsByPage(page, offset);
+    public ResponseEntity<ApiResponse<PostSliceResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int offset){
+        PostSliceResponse posts =postService.getPostsByPage(page, offset);
         return ResponseEntity.ok(new ApiResponse<>("게시글 조회 성공", posts));
     }
 

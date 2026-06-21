@@ -1,4 +1,4 @@
-package com.example.community.service;
+package com.example.community.service.post;
 
 import com.example.community.domain.exception.ForbiddenException;
 import com.example.community.domain.exception.NotFoundException;
@@ -11,13 +11,14 @@ import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.UserLikePostDTO;
 import com.example.community.domain.user.UserRole;
 import com.example.community.domain.user.response.UserInfoResponse;
-import com.example.community.repository.PostEditRepository;
-import com.example.community.repository.PostRepository;
-import com.example.community.repository.UserLikeRepository;
-import com.example.community.repository.UserRepository;
+import com.example.community.repository.post.PostEditRepository;
+import com.example.community.repository.post.PostRepository;
+import com.example.community.repository.user.UserLikeRepository;
+import com.example.community.repository.user.UserRepository;
 import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -46,40 +47,18 @@ public class PostJsonService implements PostService{
         long userNum = signUserInfo.userNum();
         UserRole role = signUserInfo.userRole();
         PostDTO post = postRepository.getPost(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
-        if(userNum != post.getUserNum()){
+        if(userNum != post.getProfileId()){
             if(role != UserRole.ADMIN){
-                throw new ForbiddenException("작성자만 수정 가능", HttpStatus.FORBIDDEN);
+                throw new ForbiddenException("작성자만 수정 가능");
             }
         }
     }
 
-    @Override
-    public List<PostTitleResponse> getAllPosts() {
-        List<PostDTO> posts = postRepository.getAllPosts();
-
-        List<Long> userNums = posts.stream().map(PostDTO::getUserNum).toList();
-        List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
-                .stream().map(ui ->
-                        ui.deletedAt() != null ? new UserInfoDTO(ui.userNum(), ui.profileId()
-                                , "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
-        Map<Long, UserInfoResponse> userInfoMap = userInfoDTOS.stream()
-                .collect(Collectors.toMap(
-                        UserInfoDTO::profileId,
-                        UserInfoResponse::from
-                ));
-
-        return posts.stream()
-                .map(p ->  PostTitleResponse.from(p, userInfoMap.get(p.getUserNum()))).toList();
-    }
 
     @Override
-    public PostListResponse getPostsByPage(int index, int offset) {
-        List<PostDTO> posts = postRepository.getPostsByPage(index, offset+1);
-        boolean hasNext = posts.size() > offset;
-        if(hasNext) {
-            posts.removeLast();
-        }
-        List<Long> userNums = posts.stream().map(PostDTO::getUserNum).toList();
+    public PostSliceResponse getPostsByPage(int index, int offset) {
+        Slice<PostDTO> posts = postRepository.getPostsByPage(index, offset);
+        List<Long> userNums = posts.stream().map(PostDTO::getProfileId).toList();
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
                 .stream().map(ui ->
                         ui.deletedAt() != null ? new UserInfoDTO(ui.userNum(), ui.profileId()
@@ -90,9 +69,9 @@ public class PostJsonService implements PostService{
                         UserInfoResponse::from
                 ));
         List<PostTitleResponse> postTitleResponses = posts.stream()
-                .map(p ->  PostTitleResponse.from(p, userInfoMap.get(p.getUserNum()))).toList();
+                .map(p ->  PostTitleResponse.from(p, userInfoMap.get(p.getProfileId()))).toList();
 
-        return new PostListResponse(postTitleResponses, hasNext);
+        return new PostSliceResponse(postTitleResponses, posts.hasNext());
     }
 
     @Override
@@ -100,24 +79,20 @@ public class PostJsonService implements PostService{
         postRepository.view(postNum);
         PostDTO post = postRepository.getPost(postNum)
                 .orElseThrow(()->new NotFoundException("존재하지 않는 게시글"));
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(post.getUserNum())
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(post.getProfileId())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         if(userInfoDTO.deletedAt() != null){
             userInfoDTO = new UserInfoDTO(userInfoDTO.userNum(), userInfoDTO.profileId()
                     , "알수없음", null, userInfoDTO.userRole(), userInfoDTO.deletedAt());
         }
 
-        return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
+        return PostResponse.from(post, userInfoDTO);
     }
 
     @Override
-    public PostListResponse getPostsByUserNum(long userNum, int index, int offset) {
-        List<PostDTO> posts = postRepository.getPostsByUserNum(userNum, index, offset+1);
-        boolean hasNext = posts.size() > offset;
-        if(hasNext){
-            posts.removeLast();
-        }
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
+    public PostPageResponse getPostsByProfileId(long profileId, int index, int offset) {
+        Page<PostDTO> posts = postRepository.getPostsByProfileId(profileId, index, offset+1);
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(profileId)
                 .orElseThrow(()->new NotFoundException("존재하지 않는 유저"));
         if(userInfoDTO.deletedAt() != null){
             userInfoDTO = new UserInfoDTO(userInfoDTO.userNum(), userInfoDTO.profileId()
@@ -126,7 +101,8 @@ public class PostJsonService implements PostService{
         UserInfoDTO finalUserInfoDTO = userInfoDTO;
         List<PostTitleResponse> result = posts.stream().map(p->PostTitleResponse.from(p, UserInfoResponse.from(finalUserInfoDTO))).toList();
 
-        return new PostListResponse(result, hasNext);
+        return new PostPageResponse(result, posts.getNumber(), posts.getSize(), posts.getNumberOfElements()
+                , posts.getTotalElements(), posts.getTotalPages());
     }
 
 
@@ -136,7 +112,7 @@ public class PostJsonService implements PostService{
         long postNum = postRepository.getPostCount()+1;
         PostDTO post = new PostDTO();
         post.setPostNum(postNum);
-        post.setUserNum(userNum);
+        post.setProfileId(userNum);
         post.setTitle(postRequest.title());
         post.setContent(postRequest.content());
         post.setImage(postRequest.image());
@@ -144,7 +120,7 @@ public class PostJsonService implements PostService{
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
 
-        return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
+        return PostResponse.from(post, userInfoDTO);
     }
 
     @Override
@@ -159,16 +135,14 @@ public class PostJsonService implements PostService{
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
 
-        return PostResponse.from(post, UserInfoResponse.from(userInfoDTO));
+        return PostResponse.from(post, userInfoDTO);
     }
 
     @Override
     public PostLikeResponse likePost(SignUserInfo signUserInfo, long postNum) {
         long userNum = signUserInfo.userNum();
 
-        UserLikePostDTO userLikePost = new UserLikePostDTO();
-        userLikePost.setUserNum(userNum);
-        userLikePost.setPostNum(postNum);
+        UserLikePostDTO userLikePost = new UserLikePostDTO(userNum, postNum);
         int like;
         if(userLikeRepository.isUserLikePost(userLikePost)){
             userLikeRepository.deleteUserLikePost(userLikePost);

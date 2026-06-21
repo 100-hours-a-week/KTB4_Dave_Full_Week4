@@ -1,4 +1,4 @@
-package com.example.community.service;
+package com.example.community.service.comment;
 
 import com.example.community.domain.comment.request.CommentEditRequest;
 import com.example.community.domain.comment.request.CommentToCommentRequest;

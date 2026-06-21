@@ -1,6 +1,7 @@
-package com.example.community.repository;
+package com.example.community.repository.comment;
 
 import com.example.community.domain.comment.CommentDTO;
+import com.example.community.domain.exception.NotFoundException;
 import com.example.community.util.DataManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
@@ -42,21 +43,21 @@ public class CommentJsonRepository implements CommentRepository{
     }
 
     @Override
-    public int getCommentCount() {
+    public long getCommentCount() {
         return dataManager.readData().size();
     }
 
     @Override
-    public Optional<CommentDTO> updateComment(long commentNum, String content) {
+    public CommentDTO updateComment(long commentNum, String content) {
         List<CommentDTO> comments = dataManager.readData();
         for(CommentDTO c : comments){
             if(c.getCommentNum() == commentNum){
                 c.update(content);
                 dataManager.writeData(comments);
-                return Optional.of(c);
+                return c;
             }
         }
-        return Optional.empty();
+        throw new NotFoundException("존재하지 않는 댓글");
     }
 
     @Override

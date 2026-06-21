@@ -10,7 +10,7 @@ import com.example.community.domain.user.response.*;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.service.RefreshTokenService;
-import com.example.community.service.UserService;
+import com.example.community.service.user.UserService;
 import com.example.community.util.JWTUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,7 +29,7 @@ public class UserController {
     private final RefreshTokenService refreshTokenService;
     private final JWTUtil jwtUtil;
 
-    public UserController(@Qualifier("userJPAService") UserService userService,
+    public UserController(@Qualifier("userJpaService") UserService userService,
                           @Qualifier("refreshTokenJsonService") RefreshTokenService refreshTokenService,
                           JWTUtil jwtUtil){
         this.userService = userService;
@@ -45,12 +45,12 @@ public class UserController {
 
     @PostMapping("/state")
     public ResponseEntity<ApiResponse<SignInResponse>> signIn(@RequestBody @Valid SignInRequest signInRequest){
-        UserInfoDTO userResponse = userService.signIn(signInRequest);
-        String accessToken = jwtUtil.generateAccessToken(userResponse.userNum(), userResponse.userRole());
-        String refreshToken = jwtUtil.generateRefreshToken(userResponse.userNum());
-        SignInResponse signInResponse = SignInResponse.of(userResponse, accessToken);
+        UserInfoDTO userInfoDTO = userService.signIn(signInRequest);
+        String accessToken = jwtUtil.generateAccessToken(userInfoDTO.userNum(), userInfoDTO.profileId(), userInfoDTO.userRole());
+        String refreshToken = jwtUtil.generateRefreshToken(userInfoDTO.userNum());
+        SignInResponse signInResponse = SignInResponse.of(userInfoDTO, accessToken);
 
-        refreshTokenService.addRefreshToken(userResponse.userNum(), refreshToken);
+        refreshTokenService.addRefreshToken(userInfoDTO.userNum(), refreshToken);
 
         ResponseCookie cookie = ResponseCookie.from("refresh", refreshToken)
                 .httpOnly(true)
@@ -66,7 +66,7 @@ public class UserController {
     @DeleteMapping("/state")
     public ResponseEntity<ApiResponse<Object>> signOut(@SignUser SignUserInfo signUserInfo, @CookieValue(value = "refresh") String refreshToken){
 
-        refreshTokenService.deleteRefreshToken("");
+        refreshTokenService.deleteRefreshToken(refreshToken);
         return ResponseEntity.ok(ApiResponse.of("로그아웃 성공", null));
     }
 

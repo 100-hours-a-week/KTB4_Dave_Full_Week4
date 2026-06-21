@@ -1,4 +1,4 @@
-package com.example.community.repository;
+package com.example.community.repository.user;
 
 import com.example.community.domain.exception.NotFoundException;
 import com.example.community.util.DataManager;
@@ -39,7 +39,7 @@ public class UserJsonRepository implements UserRepository{
     }
 
     @Override
-    public Optional<UserDTO> findByUserNum(long userNum) {
+    public Optional<UserDTO> findByProfileId(long userNum) {
         for(UserDTO u : getAll()){
             if(u.getUserNum() == userNum){
                 return Optional.of(u);
