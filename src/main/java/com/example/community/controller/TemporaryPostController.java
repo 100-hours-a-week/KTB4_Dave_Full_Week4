@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -28,7 +29,7 @@ public class TemporaryPostController {
     }
 
     @PutMapping("/{temporaryId}")
-    public ResponseEntity<ApiResponse<TemporaryPostResponse>> updateTemporaryPost(@SignUser SignUserInfo signUserInfo, @PathVariable Long temporaryId, @RequestBody @Valid PostRequest postRequest){
+    public ResponseEntity<ApiResponse<TemporaryPostResponse>> updateTemporaryPost(@SignUser SignUserInfo signUserInfo, @PathVariable Long temporaryId, @RequestBody @Valid PostRequest postRequest) throws IOException {
         return ResponseEntity.ok(new ApiResponse<>("임시저장 완료",temporaryPostService.updateTemporaryPost(signUserInfo, temporaryId, postRequest)));
     }
 

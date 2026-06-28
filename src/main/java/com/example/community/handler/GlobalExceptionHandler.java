@@ -5,6 +5,7 @@ import com.example.community.domain.exception.BusinessException;
 import com.example.community.domain.exception.DuplicateException;
 import com.example.community.domain.exception.ForbiddenException;
 import com.example.community.domain.exception.NotFoundException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -12,37 +13,48 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
-    public ErrorResponse handleBusiness(BusinessException exception){
-        return ErrorResponse.of(exception.getCode());
+    public ResponseEntity<ErrorResponse> handleBusiness(BusinessException exception){
+        return ResponseEntity.status(exception.getStatus()).body(ErrorResponse.of(exception.getCode()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ErrorResponse handleNotValid(MethodArgumentNotValidException exception){
-        return ErrorResponse.of(exception.getMessage());
+    public ResponseEntity<ErrorResponse> handleNotValid(MethodArgumentNotValidException exception){
+        return ResponseEntity.status(400).body(ErrorResponse.of("입력데이터가 유효하지 않습니다." + exception.getMessage()));
     }
 
     @ExceptionHandler(NotFoundException.class)
-    public ErrorResponse handleNotFound(NotFoundException exception){
-        return ErrorResponse.of(exception.getCode());
+    public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException exception){
+        return ResponseEntity.status(exception.getStatus()).body(ErrorResponse.of(exception.getCode()));
     }
 
     @ExceptionHandler(ForbiddenException.class)
-    public ErrorResponse handleForbidden(ForbiddenException exception){
-        return ErrorResponse.of(exception.getCode());
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException exception){
+        return ResponseEntity.status(exception.getStatus()).body(ErrorResponse.of(exception.getCode()));
     }
 
     @ExceptionHandler(DuplicateException.class)
-    public ErrorResponse handleDuplicate(DuplicateException exception){
-        return ErrorResponse.of(exception.getCode());
+    public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateException exception){
+        return ResponseEntity.status(exception.getStatus()).body(ErrorResponse.of(exception.getCode()));
+
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ErrorResponse handleIllegalArgument(IllegalArgumentException exception){
-        return ErrorResponse.of(exception.getMessage());
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException exception){
+        return ResponseEntity.status(400).body(ErrorResponse.of(exception.getMessage()));
+    }
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException exception) {
+        return ResponseEntity
+                .status(409)
+                .body(ErrorResponse.of(exception.getMessage()));
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ErrorResponse handleIllegalState(IllegalStateException exception){
-        return ErrorResponse.of(exception.getMessage());
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleException(Exception exception) {
+        exception.printStackTrace(); // 개발 중에는 실제 원인 확인용
+
+        return ResponseEntity
+                .status(500)
+                .body(ErrorResponse.of("서버 내부 오류가 발생했습니다."));
     }
 }

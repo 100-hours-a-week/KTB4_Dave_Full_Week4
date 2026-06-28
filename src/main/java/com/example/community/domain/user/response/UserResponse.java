@@ -13,7 +13,7 @@ public record UserResponse(
 ) {
         public static UserResponse from(UserDTO user) {
                 // JSON으로 개발 당시에는 profileID로 분리 전이기 때문에 profileId와 userNum이 동일
-                return new UserResponse(user.getUserNum(), user.getUserNum(), user.getEmail(), user.getNickname(), user.getProfileImage(), user.getUserRole());
+                return new UserResponse(user.getUserNum(), user.getProfileId(), user.getEmail(), user.getNickname(), user.getProfileImage(), user.getUserRole());
         }
 
 }

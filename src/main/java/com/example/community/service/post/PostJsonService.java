@@ -21,9 +21,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -63,7 +68,7 @@ public class PostJsonService implements PostService{
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
                 .stream().map(ui ->
                         ui.deletedAt() != null ? new UserInfoDTO(ui.userNum(), ui.profileId()
-                                , "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
+                                , null, "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
         Map<Long, UserInfoResponse> userInfoMap = userInfoDTOS.stream()
                 .collect(Collectors.toMap(
                         UserInfoDTO::profileId,
@@ -84,7 +89,7 @@ public class PostJsonService implements PostService{
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         if(userInfoDTO.deletedAt() != null){
             userInfoDTO = new UserInfoDTO(userInfoDTO.userNum(), userInfoDTO.profileId()
-                    , "알수없음", null, userInfoDTO.userRole(), userInfoDTO.deletedAt());
+                    , null, "알수없음", null, userInfoDTO.userRole(), userInfoDTO.deletedAt());
         }
 
         return PostResponse.from(post, userInfoDTO);
@@ -97,7 +102,7 @@ public class PostJsonService implements PostService{
                 .orElseThrow(()->new NotFoundException("존재하지 않는 유저"));
         if(userInfoDTO.deletedAt() != null){
             userInfoDTO = new UserInfoDTO(userInfoDTO.userNum(), userInfoDTO.profileId()
-                    , "알수없음", null, userInfoDTO.userRole(), userInfoDTO.deletedAt());
+                    , null, "알수없음", null, userInfoDTO.userRole(), userInfoDTO.deletedAt());
         }
         UserInfoDTO finalUserInfoDTO = userInfoDTO;
         List<PostTitleResponse> result = posts.stream().map(p->PostTitleResponse.from(p, UserInfoResponse.from(finalUserInfoDTO))).toList();
@@ -116,7 +121,7 @@ public class PostJsonService implements PostService{
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(userNums)
                 .stream().map(ui ->
                         ui.deletedAt() != null ? new UserInfoDTO(ui.userNum(), ui.profileId()
-                                , "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
+                                , null, "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
         Map<Long, UserInfoResponse> userInfoMap = userInfoDTOS.stream()
                 .collect(Collectors.toMap(
                         UserInfoDTO::profileId,
@@ -129,9 +134,35 @@ public class PostJsonService implements PostService{
                 userLikePostDTOS.getTotalElements(), userLikePostDTOS.getTotalPages());
     }
 
+    public String updatePostImage(MultipartFile file) throws IOException {
+        String extension = extractExtension(file.getOriginalFilename());
+        String storedFileName = UUID.randomUUID() + "." + extension;
 
+        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app", "uploads", "posts");
+        Path targetPath = uploadPath.resolve(storedFileName);
+
+        file.transferTo(targetPath);
+
+        String imageUrl = "/images/posts/" + storedFileName;
+
+        return imageUrl;
+    }
+
+    private String extractExtension(String originalFilename) {
+        if (originalFilename == null || originalFilename.isBlank()) {
+            throw new IllegalArgumentException("파일명이 비어 있습니다.");
+        }
+
+        int dotIndex = originalFilename.lastIndexOf(".");
+
+        if (dotIndex == -1 || dotIndex == originalFilename.length() - 1) {
+            throw new IllegalArgumentException("파일 확장자가 없습니다.");
+        }
+
+        return originalFilename.substring(dotIndex + 1).toLowerCase();
+    }
     @Override
-    public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) {
+    public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) throws IOException {
         long userNum = signUserInfo.userNum();
         long postNum = postRepository.getPostCount()+1;
         PostDTO post = new PostDTO();
@@ -139,7 +170,7 @@ public class PostJsonService implements PostService{
         post.setProfileId(userNum);
         post.setTitle(postRequest.title());
         post.setContent(postRequest.content());
-        post.setImage(postRequest.image());
+        post.setImage(updatePostImage(postRequest.image()));
         post = postRepository.addPost(post);
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
@@ -148,14 +179,14 @@ public class PostJsonService implements PostService{
     }
 
     @Override
-    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostRequest postRequest) {
+    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostRequest postRequest) throws IOException {
         long userNum = signUserInfo.userNum();
 
         checkUserAuthority(signUserInfo, postNum);
         PostDTO post = postRepository.getPost(postNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 게시글"));
         postEditRepository.addPostEditRecord(PostEditRecordDTO.from(post));
-        post = postRepository.updatePost(postNum, postRequest.title(), postRequest.content(), postRequest.image());
+        post = postRepository.updatePost(postNum, postRequest.title(), postRequest.content(), updatePostImage(postRequest.image()));
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
 

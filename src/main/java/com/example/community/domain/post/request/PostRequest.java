@@ -2,6 +2,7 @@ package com.example.community.domain.post.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.springframework.web.multipart.MultipartFile;
 
 public record PostRequest(
         @NotBlank
@@ -9,6 +10,6 @@ public record PostRequest(
         String title,
         @NotBlank
         String content,
-        String image
+        MultipartFile image
 ) {
 }

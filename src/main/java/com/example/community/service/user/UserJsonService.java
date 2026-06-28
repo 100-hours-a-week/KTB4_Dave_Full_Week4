@@ -15,6 +15,12 @@ import com.example.community.repository.user.UserRepository;
 import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 @Service
 public class UserJsonService implements UserService{
@@ -26,7 +32,7 @@ public class UserJsonService implements UserService{
 
 
     @Override
-    public SignUpResponse signUp(SignUpRequest signUpRequest) {
+    public SignUpResponse signUp(SignUpRequest signUpRequest) throws IOException {
         if(isExistEmail(signUpRequest.email())){
             throw new RuntimeException("이메일 중복");
         }
@@ -44,9 +50,37 @@ public class UserJsonService implements UserService{
         user.setEmail(signUpRequest.email());
         user.setPassword(signUpRequest.password());
         user.setNickname(signUpRequest.nickname());
-        user.setProfileImage(signUpRequest.profileImage());
+        user.setProfileImage(updateProfileImage(signUpRequest.imageFile()));
         user.setUserRole(UserRole.USER);
         return new SignUpResponse(userRepository.addUser(user));
+    }
+
+    public String updateProfileImage(MultipartFile file) throws IOException {
+        String extension = extractExtension(file.getOriginalFilename());
+        String storedFileName = UUID.randomUUID() + "." + extension;
+
+        Path uploadPath = Paths.get("/app/uploads/profiles");
+        Path targetPath = uploadPath.resolve(storedFileName);
+
+        file.transferTo(targetPath);
+
+        String imageUrl = "/images/profiles/" + storedFileName;
+
+        return imageUrl;
+    }
+
+    private String extractExtension(String originalFilename) {
+        if (originalFilename == null || originalFilename.isBlank()) {
+            throw new IllegalArgumentException("파일명이 비어 있습니다.");
+        }
+
+        int dotIndex = originalFilename.lastIndexOf(".");
+
+        if (dotIndex == -1 || dotIndex == originalFilename.length() - 1) {
+            throw new IllegalArgumentException("파일 확장자가 없습니다.");
+        }
+
+        return originalFilename.substring(dotIndex + 1).toLowerCase();
     }
 
     @Override
@@ -73,12 +107,12 @@ public class UserJsonService implements UserService{
     }
 
     @Override
-    public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) {
+    public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) throws IOException {
         long userNum = signUserInfo.userNum();
 
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(userNum).orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         userInfoDTO = userRepository.
-               updateUserInfo(new UserInfoDTO(userNum, userNum, userInfoRequest.nickname(), userInfoRequest.profileImage(), userInfoDTO.userRole(), userInfoDTO.deletedAt()));
+               updateUserInfo(new UserInfoDTO(userNum, userNum, null, userInfoRequest.nickname(), updateProfileImage(userInfoRequest.imageFile()), userInfoDTO.userRole(), userInfoDTO.deletedAt()));
         return UserInfoResponse.from(userInfoDTO);
     }
 

@@ -1,6 +1,7 @@
 package com.example.community.controller;
 
 import com.example.community.domain.ApiResponse;
+import com.example.community.domain.ErrorResponse;
 import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.request.PasswordChangeRequest;
 import com.example.community.domain.user.request.SignInRequest;
@@ -15,10 +16,12 @@ import com.example.community.util.JWTUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 
@@ -38,10 +41,25 @@ public class UserController {
     }
 
     @PostMapping()
-    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@RequestBody @Valid SignUpRequest signUpRequest){
+    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@ModelAttribute @Valid SignUpRequest signUpRequest) throws IOException {
         return ResponseEntity.created(URI.create("/users/state")).
                 body(ApiResponse.of("회원가입 성공", userService.signUp(signUpRequest)));
     }
+
+    @PostMapping("/email")
+    public ResponseEntity<ApiResponse<Object>> checkEmailDuplicate(@RequestBody String email){
+        return userService.isExistEmail(email)?
+                ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.of("중복 이메일 존재", null)) :
+                ResponseEntity.ok(ApiResponse.of("가입 가능한 이메일", null));
+    }
+
+    @PostMapping("/nickname")
+    public ResponseEntity<ApiResponse<Object>> checkNicknameDuplicate(@RequestBody String nickname){
+        return userService.isExistNickname(nickname)?
+                ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.of("중복 닉네임 존재", null)) :
+                ResponseEntity.ok(ApiResponse.of("사용 가능한 닉네임", null));
+    }
+
 
     @PostMapping("/state")
     public ResponseEntity<ApiResponse<SignInResponse>> signIn(@RequestBody @Valid SignInRequest signInRequest){
@@ -70,7 +88,7 @@ public class UserController {
     }
 
     @PatchMapping("/info")
-    public ResponseEntity<ApiResponse<UserInfoResponse>> updateInfo(@SignUser SignUserInfo signUserInfo, @RequestBody @Valid UserInfoRequest userInfoRequest){
+    public ResponseEntity<ApiResponse<UserInfoResponse>> updateInfo(@SignUser SignUserInfo signUserInfo, @ModelAttribute @Valid UserInfoRequest userInfoRequest) throws IOException {
         return ResponseEntity.ok(ApiResponse.of("회원정보 수정 완료",userService.updateUserInfo(signUserInfo,userInfoRequest)));
     }
 

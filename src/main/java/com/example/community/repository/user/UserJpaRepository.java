@@ -92,6 +92,7 @@ public class UserJpaRepository implements UserRepository{
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
         signInfo.changePassword(nextPassword);
+        signInfoJPARepository.save(signInfo);
     }
 
     @Override

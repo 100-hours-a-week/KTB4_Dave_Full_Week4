@@ -17,6 +17,12 @@ import com.example.community.repository.user.UserRepository;
 import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 
 @Service
@@ -29,7 +35,7 @@ public class UserJpaService implements UserService{
 
 
     @Override
-    public SignUpResponse signUp( SignUpRequest signUpRequest) {
+    public SignUpResponse signUp( SignUpRequest signUpRequest) throws IOException {
         if(userRepository.isExistEmail(signUpRequest.email())){
             throw new DuplicateException("중복 이메일 존재");
         }
@@ -40,7 +46,12 @@ public class UserJpaService implements UserService{
             throw new BadRequestException("비밀번호 확인 불일치");
         }
 
-        return new SignUpResponse(userRepository.addUser(UserDTO.of(signUpRequest)));
+        UserDTO userDTO = UserDTO.of(signUpRequest);
+        if(signUpRequest.imageFile() != null) {
+            userDTO.setProfileImage(updateProfileImage(signUpRequest.imageFile()));
+        }
+
+        return new SignUpResponse(userRepository.addUser(userDTO));
     }
 
     @Override
@@ -67,7 +78,7 @@ public class UserJpaService implements UserService{
     }
 
     @Override
-    public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) {
+    public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) throws IOException {
         UserDTO userDTO = userRepository.findByProfileId(signUserInfo.userNum())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
@@ -75,7 +86,39 @@ public class UserJpaService implements UserService{
             throw new DuplicateException("중복 이메일 존재");
         }
         userDTO.update(userInfoRequest);
+        if(userInfoRequest.imageFile() != null) {
+            String profileImage = updateProfileImage(userInfoRequest.imageFile());
+            userDTO.setProfileImage(profileImage);
+        }
         return UserInfoResponse.from(userRepository.updateUserInfo(UserInfoDTO.from(userDTO)));
+    }
+
+    public String updateProfileImage(MultipartFile file) throws IOException {
+        String extension = extractExtension(file.getOriginalFilename());
+        String storedFileName = UUID.randomUUID() + "." + extension;
+
+        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app", "uploads", "profiles");
+        Path targetPath = uploadPath.resolve(storedFileName);
+
+        file.transferTo(targetPath);
+
+        String imageUrl = "/images/profiles/" + storedFileName;
+
+        return imageUrl;
+    }
+
+    private String extractExtension(String originalFilename) {
+        if (originalFilename == null || originalFilename.isBlank()) {
+            throw new IllegalArgumentException("파일명이 비어 있습니다.");
+        }
+
+        int dotIndex = originalFilename.lastIndexOf(".");
+
+        if (dotIndex == -1 || dotIndex == originalFilename.length() - 1) {
+            throw new IllegalArgumentException("파일 확장자가 없습니다.");
+        }
+
+        return originalFilename.substring(dotIndex + 1).toLowerCase();
     }
 
     @Override

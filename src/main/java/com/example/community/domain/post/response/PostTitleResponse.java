@@ -12,9 +12,9 @@ public record PostTitleResponse(
         String nickname,
         String profileImage,
         String title,
-        int view,
-        int like,
-        int report,
+        int viewCount,
+        int likeCount,
+        int reportCount,
         int numberOfComments,
         OffsetDateTime writeAt
 ) {

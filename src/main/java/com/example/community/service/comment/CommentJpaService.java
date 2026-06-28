@@ -46,7 +46,7 @@ public class CommentJpaService implements CommentService{
     public void checkUserAuthority(SignUserInfo signUserInfo, long commentNum) {
         CommentDTO commentDTO = commentRepository.getComment(commentNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글"));
-        if(commentDTO.getCommentNum() != signUserInfo.profileId() && signUserInfo.userRole() != UserRole.ADMIN){
+        if(commentDTO.getProfileId() != signUserInfo.profileId() && signUserInfo.userRole() != UserRole.ADMIN){
             throw new ForbiddenException("접근 권한 부족");
         }
     }
@@ -86,7 +86,7 @@ public class CommentJpaService implements CommentService{
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(users)
                 .stream().map(ui -> ui.deletedAt() != null ?
                         new UserInfoDTO(ui.userNum(), ui.profileId()
-                                , "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
+                                , null, "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
         Map<Long, UserInfoResponse> userInfoResponseMap = userInfoDTOS.stream()
                 .collect(Collectors.toMap(UserInfoDTO::profileId, UserInfoResponse::from));
 

@@ -10,12 +10,14 @@ import com.example.community.domain.user.response.UserDeleteResponse;
 import com.example.community.domain.user.response.UserInfoResponse;
 import com.example.community.resolver.SignUserInfo;
 
+import java.io.IOException;
+
 public interface UserService {
-    SignUpResponse signUp(SignUpRequest signUpRequest);
+    SignUpResponse signUp(SignUpRequest signUpRequest) throws IOException;
     UserInfoDTO signIn(SignInRequest signInRequest);
     boolean isExistEmail(String email);
     boolean isExistNickname(String nickname);
-    UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest);
+    UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) throws IOException;
     void changePassword(SignUserInfo signUserInfo, PasswordChangeRequest passwordChangeRequest);
     UserDeleteResponse deleteUser(SignUserInfo signUserInfo);
 }

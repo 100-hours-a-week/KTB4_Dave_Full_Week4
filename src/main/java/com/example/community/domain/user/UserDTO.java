@@ -23,7 +23,7 @@ public class UserDTO {
 
     public static UserDTO of(SignUpRequest signUpRequest){
         return new UserDTO(null, null, signUpRequest.email(), signUpRequest.password(), signUpRequest.nickname(),
-                signUpRequest.profileImage(), null, UserRole.USER);
+                null, null, UserRole.USER);
     }
 
     public static UserDTO of(SignInfo signInfo, UserInfo userInfo){
@@ -41,7 +41,6 @@ public class UserDTO {
 
     public void update(UserInfoRequest userInfoRequest){
         this.nickname = userInfoRequest.nickname();
-        this.profileImage = userInfoRequest.profileImage();
     }
 
     public boolean passwordConfirm(String password){
