@@ -86,10 +86,15 @@ public class CommentJpaService implements CommentService{
         List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(users)
                 .stream().map(ui -> ui.deletedAt() != null ?
                         new UserInfoDTO(ui.userNum(), ui.profileId()
-                                , null, "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
+                                , null , "알수없음", null, ui.userRole(), ui.deletedAt()) : ui).toList();
         Map<Long, UserInfoResponse> userInfoResponseMap = userInfoDTOS.stream()
                 .collect(Collectors.toMap(UserInfoDTO::profileId, UserInfoResponse::from));
 
+        for(CommentDTO c : commentDTOS){
+            if(c.getDeletedAt() != null){
+                c.setContent("삭제된 댓글");
+            }
+        }
         List<CommentResponse> commentResponses = commentDTOS.stream()
                 .map(c -> CommentResponse.of(c, userInfoResponseMap.get(c.getProfileId()))).toList();
 

@@ -160,8 +160,12 @@ public class PostJpaService implements PostService{
     public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) throws IOException {
         UserInfoDTO userInfoDTO = userRepository.getUserInfo(signUserInfo.profileId())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
+        String image = null;
+        if(postRequest.image() != null){
+            image = updatePostImage(postRequest.image());
+        }
         PostDTO postDTO = new PostDTO(signUserInfo.profileId(), postRequest.title(),
-                postRequest.content(), updatePostImage(postRequest.image()));
+                postRequest.content(), image);
         postDTO = postRepository.addPost(postDTO);
 
         return PostResponse.from(postDTO, userInfoDTO);
@@ -176,8 +180,12 @@ public class PostJpaService implements PostService{
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
 
         postEditRepository.addPostEditRecord(PostEditRecordDTO.from(postDTO));
+        String image = null;
+        if(postRequest.image() != null){
+            image = updatePostImage(postRequest.image());
+        }
         postDTO = postRepository.updatePost(postNum, postRequest.title(), postRequest.content(),
-                updatePostImage(postRequest.image()));
+                image);
 
         return PostResponse.from(postDTO, userInfoDTO);
     }
@@ -197,6 +205,14 @@ public class PostJpaService implements PostService{
         }
 
         return new PostLikeResponse(likeCount);
+    }
+
+    @Override
+    public boolean isLikePost(SignUserInfo signUserInfo, long postNum) {
+        UserInfoDTO userInfoDTO = userRepository.getUserInfo(signUserInfo.profileId())
+                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
+        UserLikePostDTO userLikePostDTO = new UserLikePostDTO(userInfoDTO.profileId(), postNum);
+        return userLikeRepository.isUserLikePost(userLikePostDTO);
     }
 
     @Override

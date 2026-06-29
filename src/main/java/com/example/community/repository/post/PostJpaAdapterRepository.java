@@ -21,7 +21,7 @@ public class PostJpaAdapterRepository implements PostRepository{
     @Override
     public Slice<PostDTO> getPostsByPage(int index, int offset) {
         Pageable pageable = PageRequest.of(index, offset);
-        Slice<Post> posts = postJpaRepository.findAllByOrderByPostNumDesc(pageable);
+        Slice<Post> posts = postJpaRepository.findPostByPage(pageable);
         List<PostDTO> postDTOS = posts.getContent()
                 .stream().map(PostDTO::from).toList();
         return new SliceImpl<>(postDTOS, posts.getPageable(), posts.hasNext());

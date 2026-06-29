@@ -12,10 +12,10 @@ public record PostResponse(
         String title,
         String content,
         String image,
-        int view,
-        int like,
-        int report,
-        int numberOfComments,
+        int viewCount,
+        int likeCount,
+        int reportCount,
+        int commentCount,
         boolean isEdited,
         OffsetDateTime writeAt
 ) {

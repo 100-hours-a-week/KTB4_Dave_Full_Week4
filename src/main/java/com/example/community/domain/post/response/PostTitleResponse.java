@@ -15,7 +15,7 @@ public record PostTitleResponse(
         int viewCount,
         int likeCount,
         int reportCount,
-        int numberOfComments,
+        int commentCount,
         OffsetDateTime writeAt
 ) {
     public static PostTitleResponse from(PostDTO post, UserInfoResponse userInfoResponse){

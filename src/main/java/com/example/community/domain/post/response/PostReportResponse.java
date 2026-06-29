@@ -1,6 +1,6 @@
 package com.example.community.domain.post.response;
 
 public record PostReportResponse(
-        int report
+        int reportCount
 ) {
 }

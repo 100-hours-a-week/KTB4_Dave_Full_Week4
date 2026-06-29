@@ -43,7 +43,7 @@ public class PostController {
     }
 
     @PatchMapping("/{postNum}")
-    public ResponseEntity<ApiResponse<PostResponse>> updatePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum , @RequestBody @Valid PostRequest postRequest) throws IOException {
+    public ResponseEntity<ApiResponse<PostResponse>> updatePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum , @ModelAttribute @Valid PostRequest postRequest) throws IOException {
 
         return ResponseEntity.ok(new ApiResponse<>("게시글 수정 성공", postService.updatePost(signUserInfo, postNum, postRequest)));
     }
@@ -62,6 +62,12 @@ public class PostController {
     public ResponseEntity<ApiResponse<PostLikeResponse>> likePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
 
         return  ResponseEntity.ok(new ApiResponse<>("성공", postService.likePost(signUserInfo, postNum)));
+    }
+
+    @GetMapping("/{postNum}/like")
+    public ResponseEntity<ApiResponse<Boolean>> isLikePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
+
+        return  ResponseEntity.ok(new ApiResponse<>("성공", postService.isLikePost(signUserInfo, postNum)));
     }
 
     @PatchMapping("/{postNum}/report")

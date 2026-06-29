@@ -210,6 +210,14 @@ public class PostJsonService implements PostService{
         return new PostLikeResponse(like);
     }
 
+    @Override
+    public boolean isLikePost(SignUserInfo signUserInfo, long postNum) {
+        long userNum = signUserInfo.userNum();
+
+        UserLikePostDTO userLikePost = new UserLikePostDTO(userNum, postNum);
+        return userLikeRepository.isUserLikePost(userLikePost);
+    }
+
 
     @Override
     public PostReportResponse reportPost(long postNum) {

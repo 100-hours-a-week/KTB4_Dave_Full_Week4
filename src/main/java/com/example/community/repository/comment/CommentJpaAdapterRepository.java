@@ -68,5 +68,6 @@ public class CommentJpaAdapterRepository implements CommentRepository{
         Comment comment = commentJpaRepository.findByCommentNum(commentNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글"));
         comment.delete();
+        commentJpaRepository.save(comment);
     }
 }

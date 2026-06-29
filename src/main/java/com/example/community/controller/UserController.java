@@ -1,7 +1,6 @@
 package com.example.community.controller;
 
 import com.example.community.domain.ApiResponse;
-import com.example.community.domain.ErrorResponse;
 import com.example.community.domain.user.UserInfoDTO;
 import com.example.community.domain.user.request.PasswordChangeRequest;
 import com.example.community.domain.user.request.SignInRequest;
@@ -73,7 +72,9 @@ public class UserController {
         ResponseCookie cookie = ResponseCookie.from("refresh", refreshToken)
                 .httpOnly(true)
                 .secure(false)
+                .path("/")
                 .maxAge(Duration.ofMinutes(30))
+                .sameSite("Lax")
                 .build();
 
         return ResponseEntity.ok()
@@ -83,6 +84,7 @@ public class UserController {
 
     @DeleteMapping("/state")
     public ResponseEntity<ApiResponse<Object>> signOut(@SignUser SignUserInfo signUserInfo, @CookieValue(value = "refresh") String refreshToken){
+        System.out.println(signUserInfo.toString());
         refreshTokenService.deleteRefreshToken(refreshToken);
         return ResponseEntity.ok(ApiResponse.of("로그아웃 성공", null));
     }

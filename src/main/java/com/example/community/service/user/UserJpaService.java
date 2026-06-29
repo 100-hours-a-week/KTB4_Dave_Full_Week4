@@ -63,6 +63,9 @@ public class UserJpaService implements UserService{
         if(!userDTO.passwordConfirm(signInRequest.password())){
             throw new UnAuthorizedException("로그인 실패");
         }
+        if(userDTO.isDeleted()){
+            throw new UnAuthorizedException("탈퇴한 유저");
+        }
 
         return UserInfoDTO.from(userDTO);
     }

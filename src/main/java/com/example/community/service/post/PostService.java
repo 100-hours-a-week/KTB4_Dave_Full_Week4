@@ -16,6 +16,7 @@ public interface PostService {
     PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) throws IOException;
     PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostRequest postRequest) throws IOException;
     PostLikeResponse likePost(SignUserInfo signUserInfo, long postNum);
+    boolean isLikePost(SignUserInfo signUserInfo, long postNum);
     PostReportResponse reportPost(long postNum);
     void deletePost(SignUserInfo signUserInfo, long postNum);
 }

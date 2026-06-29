@@ -30,7 +30,6 @@ public class SignInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-
         if (CorsUtils.isPreFlightRequest(request)) {
             return true;
         }
@@ -48,7 +47,6 @@ public class SignInterceptor implements HandlerInterceptor {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (header == null || !header.startsWith(BEARER_PREFIX)) {
-            System.out.println("Bearer 불만족, 또는 헤더 null");
             throw new UnAuthorizedException("유효하지 않은 토큰");
         }
 
