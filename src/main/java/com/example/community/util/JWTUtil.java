@@ -92,9 +92,9 @@ public class JWTUtil {
         return claims.get(CLAIM_PROFILE_ID, Long.class);
     }
 
-    public UserRole getRoleFromToken(String token) {
+    public String getRoleFromToken(String token) {
         Claims claims = validateToken(token);
-        return UserRole.valueOf(claims.get(CLAIM_ROLE, String.class));
+        return claims.get(CLAIM_ROLE, String.class);
     }
 
     public String getTokenType(String token) {

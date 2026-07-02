@@ -5,8 +5,8 @@ public record TokenDTO(
         long userNum,
         String jwtToken
 ){
-    public static TokenDTO from(Token token){
-        return new TokenDTO(token.getUserInfo().getSignInfo().getUserNum(), token.getToken());
+    public static TokenDTO from(RefreshToken refreshToken){
+        return new TokenDTO(refreshToken.getSignInfo().getUserNum(), refreshToken.getToken());
     }
 
 }

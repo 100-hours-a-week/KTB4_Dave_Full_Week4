@@ -1,10 +1,13 @@
 package com.example.community.resolver;
 
 import com.example.community.domain.exception.UnAuthorizedException;
+import com.example.community.domain.user.CustomUserDetails;
 import com.example.community.domain.user.UserRole;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.MethodParameter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -23,18 +26,15 @@ public class SignUserArgumentResolver implements HandlerMethodArgumentResolver {
     @Override
     public @Nullable Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
                                             NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
-        SignUser signUser = parameter.getParameterAnnotation(SignUser.class);
-        // supportsParameter에서 true를 반환한 값만 resolveArgument에 도달하기 때문에 signUser는 null일 수 없음.
-
-        HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
-        if (request == null) {
-            throw new IllegalStateException("HttpServletRequest를 찾을 수 없습니다.");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if(authentication == null || authentication.getPrincipal().equals("anonymousUser")){
+            return null;
         }
-
-        Long userNum = (Long) request.getAttribute("userNum");
-        Long profileId = (Long) request.getAttribute("profileId");
-        UserRole role = (UserRole) request.getAttribute("role");
-        if (userNum == null || profileId == null || role == null) {
+        CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
+        Long userNum = user.getUserNum();
+        Long profileId = user.getProfileId();
+        UserRole role = UserRole.valueOf(user.getRole());
+        if (userNum == null || profileId == null ) {
             throw new UnAuthorizedException("로그인이 필요합니다.");
         }
         return new SignUserInfo(userNum, profileId, role);
