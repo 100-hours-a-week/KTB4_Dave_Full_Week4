@@ -1,6 +1,6 @@
 package com.example.community.util;
 
-import com.example.community.domain.user.UserRole;
+import com.example.community.user.entity.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;

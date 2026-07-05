@@ -1,0 +1,135 @@
+package com.example.community.user.repository;
+
+import com.example.community.handler.exception.NotFoundException;
+import com.example.community.user.dto.SignInfoDTO;
+import com.example.community.user.entity.SignInfo;
+import com.example.community.user.dto.UserDTO;
+import com.example.community.user.entity.UserInfo;
+import com.example.community.user.dto.UserInfoDTO;
+import com.example.community.user.dto.response.UserDeleteResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+@RequiredArgsConstructor
+public class UserJpaRepository implements UserRepository{
+    private final SignInfoJpaRepository signInfoJPARepository;
+    private final UserInfoJpaRepository userInfoJPARepository;
+
+    @Override
+    public UserDTO addUser(UserDTO user) {
+        SignInfo signInfo = new SignInfo(user.getEmail(), user.getPassword());
+        signInfoJPARepository.save(signInfo);
+
+        UserInfo userInfo = new UserInfo(signInfo, user.getNickname(),
+                user.getProfileImage());
+        userInfoJPARepository.save(userInfo);
+
+        return UserDTO.of(signInfo,userInfo);
+    }
+
+    @Override
+    public long getCountUser() {
+        return signInfoJPARepository.count();
+    }
+
+    @Override
+    public Optional<UserDTO> findByUserNum(long userNum) {
+        SignInfo signInfo = signInfoJPARepository.findByUserNum(userNum)
+                .orElse(null);
+        if(signInfo == null){
+            return Optional.empty();
+        }
+        UserInfo userInfo = userInfoJPARepository.findBySignInfo_UserNum(userNum).getFirst();
+
+
+        return Optional.of(UserDTO.of(signInfo, userInfo));
+    }
+
+    @Override
+    public Optional<UserInfoDTO> findByProfileId(long userNum) {
+        SignInfo signInfo = signInfoJPARepository.findByUserNum(userNum)
+                .orElse(null);
+        if(signInfo == null){
+            return Optional.empty();
+        }
+
+        UserInfo userInfo = userInfoJPARepository.findBySignInfo_UserNum(userNum).getFirst();
+
+        return Optional.of(UserInfoDTO.from(userInfo));
+    }
+
+    @Override
+    public Optional<UserDTO> findByEmail(String email) {
+        SignInfo signInfo = signInfoJPARepository.findByEmail(email).orElse(null);
+        if(signInfo == null){
+            return Optional.empty();
+        }
+        UserInfo userInfo = userInfoJPARepository.findBySignInfo_UserNum(signInfo.getUserNum()).getFirst();
+
+        return Optional.of(UserDTO.of(signInfo, userInfo));
+    }
+
+    @Override
+    public Optional<UserInfoDTO> findByNickname(String nickname) {
+
+        return userInfoJPARepository.findByNickname(nickname)
+                .map(UserInfoDTO::from);
+    }
+
+    @Override
+    public boolean isExistEmail(String email) {
+        return signInfoJPARepository.existsByEmail(email);
+    }
+
+    @Override
+    public boolean isExistNickname(String nickname) {
+        return userInfoJPARepository.existsByNickname(nickname);
+    }
+
+    @Override
+    public UserInfoDTO updateUserInfo(long profileId, String nickname, String profileImage)
+    {
+        UserInfo userInfo = userInfoJPARepository.findByProfileId(profileId)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 프로필"));
+        userInfo.update(nickname, profileImage);
+
+        return UserInfoDTO.from(userInfo);
+    }
+
+    @Override
+    public void changePassword(long userNum, String nextPassword) {
+        SignInfo signInfo = signInfoJPARepository.findByUserNum(userNum)
+                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
+
+        signInfo.changePassword(nextPassword);
+        signInfoJPARepository.save(signInfo);
+    }
+
+    @Override
+    public Instant deleteUser(long userNum) {
+        SignInfo signInfo = signInfoJPARepository.findByUserNum(userNum)
+                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
+        List<UserInfo> userInfo = userInfoJPARepository.findBySignInfo_UserNum(userNum);
+        for(UserInfo ui : userInfo){
+            ui.delete();
+        }
+        signInfo.delete();
+        return signInfo.getDeletedAt();
+    }
+
+    @Override
+    public Optional<UserInfoDTO> getUserInfo(long userNum) {
+        return Optional.of(UserInfoDTO.from(userInfoJPARepository.findBySignInfo_UserNum(userNum).getFirst()));
+    }
+
+    @Override
+    public List<UserInfoDTO> getUserInfos(List<Long> profileIds) {
+        return userInfoJPARepository.findByProfileIdIn(profileIds).stream()
+                .map(UserInfoDTO::from).toList();
+    }
+}

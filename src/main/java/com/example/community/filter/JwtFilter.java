@@ -1,7 +1,6 @@
 package com.example.community.filter;
 
-import com.example.community.domain.user.CustomUserDetails;
-import com.example.community.domain.user.UserRole;
+import com.example.community.user.entity.CustomUserDetails;
 import com.example.community.util.JWTUtil;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;

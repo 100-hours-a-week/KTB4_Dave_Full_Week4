@@ -1,9 +1,8 @@
 package com.example.community.resolver;
 
-import com.example.community.domain.exception.UnAuthorizedException;
-import com.example.community.domain.user.CustomUserDetails;
-import com.example.community.domain.user.UserRole;
-import jakarta.servlet.http.HttpServletRequest;
+import com.example.community.handler.exception.UnAuthorizedException;
+import com.example.community.user.entity.CustomUserDetails;
+import com.example.community.user.entity.UserRole;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;

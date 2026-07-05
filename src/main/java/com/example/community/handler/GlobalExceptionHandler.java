@@ -1,10 +1,10 @@
 package com.example.community.handler;
 
-import com.example.community.domain.ErrorResponse;
-import com.example.community.domain.exception.BusinessException;
-import com.example.community.domain.exception.DuplicateException;
-import com.example.community.domain.exception.ForbiddenException;
-import com.example.community.domain.exception.NotFoundException;
+import com.example.community.response.ErrorResponse;
+import com.example.community.handler.exception.BusinessException;
+import com.example.community.handler.exception.DuplicateException;
+import com.example.community.handler.exception.ForbiddenException;
+import com.example.community.handler.exception.NotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;

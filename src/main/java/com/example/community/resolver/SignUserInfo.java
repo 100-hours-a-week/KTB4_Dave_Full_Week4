@@ -1,6 +1,6 @@
 package com.example.community.resolver;
 
-import com.example.community.domain.user.UserRole;
+import com.example.community.user.entity.UserRole;
 
 public record SignUserInfo(
         Long userNum,
