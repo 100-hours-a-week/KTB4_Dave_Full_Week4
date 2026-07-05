@@ -5,6 +5,7 @@ import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.dto.request.SignUpRequest;
 import com.example.community.user.entity.SignInfo;
 import com.example.community.user.entity.UserInfo;
+import com.example.community.user.entity.UserRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -92,6 +93,8 @@ class UserJpaRepositoryTest {
     @DisplayName("유저 번호로 유저 정보 조회")
     void findByUserNum(){
         UserDTO user = userJpaRepository.addUser(userDTO);
+        Optional<UserDTO> empty = userJpaRepository.findByUserNum(0);
+        assertThat(empty).isEmpty();
         long userNum = user.getUserNum();
         Optional<UserDTO> result = userJpaRepository.findByUserNum(userNum);
 
@@ -192,5 +195,69 @@ class UserJpaRepositoryTest {
         user = userJpaRepository.findByUserNum(user.getUserNum()).orElseThrow();
 
         assertThat(user.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("유저 번호로 유저 정보를 조회")
+    void getUserInfo() {
+        String email = "wns1628@gmail.com";
+        String password = "1234";
+        String nickname = "dave";
+        String profileImage = null;
+
+        SignInfo signInfo = new SignInfo(email, password);
+        signInfoJpaRepository.save(signInfo);
+
+        UserInfo userInfo = new UserInfo(signInfo, nickname, profileImage);
+        userInfoJpaRepository.save(userInfo);
+
+        Optional<UserInfoDTO> result = userJpaRepository.getUserInfo(signInfo.getUserNum());
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getUserNum()).isEqualTo(signInfo.getUserNum());
+        assertThat(result.get().getProfileId()).isEqualTo(userInfo.getProfileId());
+        assertThat(result.get().getNickname()).isEqualTo(nickname);
+        assertThat(result.get().getProfileImage()).isEqualTo(profileImage);
+        assertThat(result.get().getUserRole()).isEqualTo(UserRole.USER);
+        assertThat(result.get().getDeletedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("프로필 번호 목록으로 유저 정보 목록을 조회")
+    void getUserInfos() {
+        SignInfo signInfo1 = new SignInfo("user1@example.com", "1234");
+        SignInfo signInfo2 = new SignInfo("user2@example.com", "1234");
+        SignInfo signInfo3 = new SignInfo("user3@example.com", "1234");
+
+        signInfoJpaRepository.save(signInfo1);
+        signInfoJpaRepository.save(signInfo2);
+        signInfoJpaRepository.save(signInfo3);
+
+        UserInfo userInfo1 = new UserInfo(signInfo1, "dave1", null);
+        UserInfo userInfo2 = new UserInfo(signInfo2, "dave2", null);
+        UserInfo userInfo3 = new UserInfo(signInfo3, "dave3", null);
+
+        userInfoJpaRepository.save(userInfo1);
+        userInfoJpaRepository.save(userInfo2);
+        userInfoJpaRepository.save(userInfo3);
+
+        List<Long> profileIds = List.of(
+                userInfo1.getProfileId(),
+                userInfo3.getProfileId()
+        );
+
+        List<UserInfoDTO> result = userJpaRepository.getUserInfos(profileIds);
+
+        assertThat(result).hasSize(2);
+        assertThat(result)
+                .extracting(UserInfoDTO::getProfileId)
+                .containsExactlyInAnyOrder(
+                        userInfo1.getProfileId(),
+                        userInfo3.getProfileId()
+                );
+
+        assertThat(result)
+                .extracting(UserInfoDTO::getNickname)
+                .containsExactlyInAnyOrder("dave1", "dave3");
     }
 }
