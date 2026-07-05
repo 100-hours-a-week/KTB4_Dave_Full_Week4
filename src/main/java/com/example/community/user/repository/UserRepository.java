@@ -1,9 +1,7 @@
 package com.example.community.user.repository;
 
-import com.example.community.user.dto.SignInfoDTO;
 import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.dto.UserDTO;
-import com.example.community.user.dto.response.UserDeleteResponse;
 
 import java.time.Instant;
 import java.util.List;

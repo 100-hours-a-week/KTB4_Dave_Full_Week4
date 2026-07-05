@@ -1,11 +1,9 @@
 package com.example.community.user.repository;
 
 import com.example.community.handler.exception.NotFoundException;
-import com.example.community.user.dto.SignInfoDTO;
 import com.example.community.util.DataManager;
 import com.example.community.user.dto.UserDTO;
 import com.example.community.user.dto.UserInfoDTO;
-import com.example.community.user.dto.response.UserDeleteResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 

@@ -1,12 +1,10 @@
 package com.example.community.user.repository;
 
 import com.example.community.handler.exception.NotFoundException;
-import com.example.community.user.dto.SignInfoDTO;
 import com.example.community.user.entity.SignInfo;
 import com.example.community.user.dto.UserDTO;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.dto.UserInfoDTO;
-import com.example.community.user.dto.response.UserDeleteResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 

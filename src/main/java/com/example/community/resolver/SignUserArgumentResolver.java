@@ -25,6 +25,7 @@ public class SignUserArgumentResolver implements HandlerMethodArgumentResolver {
     @Override
     public @Nullable Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
                                             NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+        System.out.println("real resolver");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication == null || authentication.getPrincipal().equals("anonymousUser")){
             return null;

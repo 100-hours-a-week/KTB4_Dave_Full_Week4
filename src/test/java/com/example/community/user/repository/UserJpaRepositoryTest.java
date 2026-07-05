@@ -1,6 +1,5 @@
 package com.example.community.user.repository;
 
-import com.example.community.resolver.SignUserInfo;
 import com.example.community.user.dto.UserDTO;
 import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.dto.request.SignUpRequest;

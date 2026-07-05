@@ -4,7 +4,6 @@ import com.example.community.handler.exception.BadRequestException;
 import com.example.community.handler.exception.DuplicateException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.handler.exception.UnAuthorizedException;
-import com.example.community.user.dto.SignInfoDTO;
 import com.example.community.user.dto.UserDTO;
 import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.dto.request.PasswordChangeRequest;
@@ -17,6 +16,7 @@ import com.example.community.user.dto.response.UserInfoResponse;
 import com.example.community.user.repository.UserRepository;
 import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,9 +29,12 @@ import java.util.UUID;
 @Service
 public class UserJpaService implements UserService{
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserJpaService(@Qualifier("userJpaRepository") UserRepository userRepository){
+    public UserJpaService(@Qualifier("userJpaRepository") UserRepository userRepository,
+                          PasswordEncoder passwordEncoder){
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
@@ -48,6 +51,7 @@ public class UserJpaService implements UserService{
         }
 
         UserDTO userDTO = UserDTO.of(signUpRequest);
+        userDTO.setPassword(passwordEncoder.encode(signUpRequest.password()));
         if(signUpRequest.imageFile() != null) {
             userDTO.setProfileImage(updateProfileImage(signUpRequest.imageFile()));
         }
@@ -60,8 +64,7 @@ public class UserJpaService implements UserService{
         UserDTO userDTO = userRepository.findByEmail(signInRequest.email())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 이메일"));
 
-        //현재는 평문이 저장되겠으나 암호화된 값을 비교해야 함.
-        if(!userDTO.passwordConfirm(signInRequest.password())){
+        if(!userDTO.passwordConfirm(passwordEncoder.encode(signInRequest.password()))){
             throw new UnAuthorizedException("로그인 실패");
         }
         if(userDTO.isDeleted()){
@@ -131,14 +134,14 @@ public class UserJpaService implements UserService{
         UserDTO userDTO = userRepository.findByUserNum(signUserInfo.userNum())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
-        if(!userDTO.passwordConfirm(passwordChangeRequest.password())){
+        if(!userDTO.passwordConfirm(passwordEncoder.encode(passwordChangeRequest.password()))){
             throw new BadRequestException("비밀번호가 틀렸습니다.");
         }
         if(!passwordChangeRequest.nextPassword().equals(passwordChangeRequest.passwordConfirm())){
             throw new BadRequestException("비밀번호 확인 불일치");
         }
 
-        userRepository.changePassword(signUserInfo.userNum(), passwordChangeRequest.nextPassword());
+        userRepository.changePassword(signUserInfo.userNum(), passwordEncoder.encode(passwordChangeRequest.nextPassword()));
     }
 
     @Override

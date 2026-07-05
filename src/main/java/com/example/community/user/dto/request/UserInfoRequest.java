@@ -6,8 +6,6 @@ import jakarta.validation.constraints.Size;
 import org.springframework.web.multipart.MultipartFile;
 
 public record UserInfoRequest(
-        @NotNull
-        Long profileId,
         @NotBlank
         @Size(max=10)
         String nickname,

@@ -32,4 +32,5 @@ public class UserInfoDTO {
     public static UserInfoDTO from(UserInfo userInfo){
         return new UserInfoDTO(userInfo.getSignInfo().getUserNum() ,userInfo.getProfileId(), null, userInfo.getNickname(), userInfo.getProfileImage(), userInfo.getRole(), userInfo.getDeletedAt());
     }
+
 }
