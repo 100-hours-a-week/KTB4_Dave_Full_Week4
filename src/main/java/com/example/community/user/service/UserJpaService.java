@@ -15,22 +15,22 @@ import com.example.community.user.dto.response.UserDeleteResponse;
 import com.example.community.user.dto.response.UserInfoResponse;
 import com.example.community.user.repository.UserRepository;
 import com.example.community.resolver.SignUserInfo;
+import com.example.community.util.ImageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
 
 
 @Service
 public class UserJpaService implements UserService{
     private final UserRepository userRepository;
+    private final ImageConverter imageConverter;
 
-    public UserJpaService(@Qualifier("userJpaRepository") UserRepository userRepository){
+    public UserJpaService(@Qualifier("userJpaRepository") UserRepository userRepository,
+                          ImageConverter imageConverter){
         this.userRepository = userRepository;
+        this.imageConverter = imageConverter;
     }
 
 
@@ -48,7 +48,7 @@ public class UserJpaService implements UserService{
 
         UserDTO userDTO = UserDTO.of(signUpRequest);
         if(signUpRequest.imageFile() != null) {
-            userDTO.setProfileImage(updateProfileImage(signUpRequest.imageFile()));
+            userDTO.setProfileImage(imageConverter.updateProfileImage(signUpRequest.imageFile()));
         }
 
         return new SignUpResponse(userRepository.addUser(userDTO).getUserNum());
@@ -91,38 +91,10 @@ public class UserJpaService implements UserService{
         userDTO.setNickname(userInfoRequest.nickname());
         String profileImage = null;
         if(userInfoRequest.imageFile() != null) {
-            profileImage = updateProfileImage(userInfoRequest.imageFile());
+            profileImage = imageConverter.updateProfileImage(userInfoRequest.imageFile());
             userDTO.setProfileImage(profileImage);
         }
         return UserInfoResponse.from(userRepository.updateUserInfo(signUserInfo.profileId(), userInfoRequest.nickname(), profileImage));
-    }
-
-    public String updateProfileImage(MultipartFile file) throws IOException {
-        String extension = extractExtension(file.getOriginalFilename());
-        String storedFileName = UUID.randomUUID() + "." + extension;
-
-        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app", "uploads", "profiles");
-        Path targetPath = uploadPath.resolve(storedFileName);
-
-        file.transferTo(targetPath);
-
-        String imageUrl = "/images/profiles/" + storedFileName;
-
-        return imageUrl;
-    }
-
-    private String extractExtension(String originalFilename) {
-        if (originalFilename == null || originalFilename.isBlank()) {
-            throw new IllegalArgumentException("파일명이 비어 있습니다.");
-        }
-
-        int dotIndex = originalFilename.lastIndexOf(".");
-
-        if (dotIndex == -1 || dotIndex == originalFilename.length() - 1) {
-            throw new IllegalArgumentException("파일 확장자가 없습니다.");
-        }
-
-        return originalFilename.substring(dotIndex + 1).toLowerCase();
     }
 
     @Override

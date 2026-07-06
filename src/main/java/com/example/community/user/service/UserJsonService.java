@@ -1,7 +1,6 @@
 package com.example.community.user.service;
 
 import com.example.community.handler.exception.NotFoundException;
-import com.example.community.user.dto.SignInfoDTO;
 import com.example.community.user.dto.UserDTO;
 import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.entity.UserRole;
@@ -14,21 +13,21 @@ import com.example.community.user.dto.response.UserDeleteResponse;
 import com.example.community.user.dto.response.UserInfoResponse;
 import com.example.community.user.repository.UserRepository;
 import com.example.community.resolver.SignUserInfo;
+import com.example.community.util.ImageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
 
 @Service
 public class UserJsonService implements UserService{
     private final UserRepository userRepository;
+    private final ImageConverter imageConverter;
 
-    public UserJsonService(@Qualifier("userJsonRepository") UserRepository userRepository){
+    public UserJsonService(@Qualifier("userJsonRepository") UserRepository userRepository,
+                           ImageConverter imageConverter){
         this.userRepository = userRepository;
+        this.imageConverter = imageConverter;
     }
 
 
@@ -51,37 +50,9 @@ public class UserJsonService implements UserService{
         user.setEmail(signUpRequest.email());
         user.setPassword(signUpRequest.password());
         user.setNickname(signUpRequest.nickname());
-        user.setProfileImage(updateProfileImage(signUpRequest.imageFile()));
+        user.setProfileImage(imageConverter.updateProfileImage(signUpRequest.imageFile()));
         user.setUserRole(UserRole.USER);
         return new SignUpResponse(userRepository.addUser(user).getUserNum());
-    }
-
-    public String updateProfileImage(MultipartFile file) throws IOException {
-        String extension = extractExtension(file.getOriginalFilename());
-        String storedFileName = UUID.randomUUID() + "." + extension;
-
-        Path uploadPath = Paths.get("/app/uploads/profiles");
-        Path targetPath = uploadPath.resolve(storedFileName);
-
-        file.transferTo(targetPath);
-
-        String imageUrl = "/images/profiles/" + storedFileName;
-
-        return imageUrl;
-    }
-
-    private String extractExtension(String originalFilename) {
-        if (originalFilename == null || originalFilename.isBlank()) {
-            throw new IllegalArgumentException("파일명이 비어 있습니다.");
-        }
-
-        int dotIndex = originalFilename.lastIndexOf(".");
-
-        if (dotIndex == -1 || dotIndex == originalFilename.length() - 1) {
-            throw new IllegalArgumentException("파일 확장자가 없습니다.");
-        }
-
-        return originalFilename.substring(dotIndex + 1).toLowerCase();
     }
 
     @Override
@@ -113,7 +84,7 @@ public class UserJsonService implements UserService{
 
         userRepository.findByProfileId(profileId).orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         UserInfoDTO userInfoDTO = userRepository.
-               updateUserInfo(profileId, userInfoRequest.nickname(), updateProfileImage(userInfoRequest.imageFile()));
+               updateUserInfo(profileId, userInfoRequest.nickname(), imageConverter.updateProfileImage(userInfoRequest.imageFile()));
         return UserInfoResponse.from(userInfoDTO);
     }
 

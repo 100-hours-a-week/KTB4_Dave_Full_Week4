@@ -15,20 +15,17 @@ import com.example.community.post.repository.PostRepository;
 import com.example.community.user.repository.UserLikeRepository;
 import com.example.community.user.repository.UserRepository;
 import com.example.community.resolver.SignUserInfo;
+import com.example.community.util.ImageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,15 +34,18 @@ public class PostJpaService implements PostService{
     private final PostEditRepository postEditRepository;
     private final UserRepository userRepository;
     private final UserLikeRepository userLikeRepository;
+    private final ImageConverter imageConverter;
 
     public PostJpaService(@Qualifier("postJpaAdapterRepository") PostRepository postRepository,
                           @Qualifier("postEditJpaAdapterRepository") PostEditRepository postEditRepository,
                           @Qualifier("userJpaRepository") UserRepository userRepository,
-                          @Qualifier("userLikeJpaAdapterRepository") UserLikeRepository userLikeRepository){
+                          @Qualifier("userLikeJpaAdapterRepository") UserLikeRepository userLikeRepository,
+                          ImageConverter imageConverter){
         this.postRepository = postRepository;
         this.postEditRepository = postEditRepository;
         this.userRepository = userRepository;
         this.userLikeRepository = userLikeRepository;
+        this.imageConverter = imageConverter;
     }
 
     @Override
@@ -127,34 +127,6 @@ public class PostJpaService implements PostService{
         );
     }
 
-    public String updatePostImage(MultipartFile file) throws IOException {
-        String extension = extractExtension(file.getOriginalFilename());
-        String storedFileName = UUID.randomUUID() + "." + extension;
-
-        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app", "uploads", "posts");
-        Path targetPath = uploadPath.resolve(storedFileName);
-
-        file.transferTo(targetPath);
-
-        String imageUrl = "/images/posts/" + storedFileName;
-
-        return imageUrl;
-    }
-
-    private String extractExtension(String originalFilename) {
-        if (originalFilename == null || originalFilename.isBlank()) {
-            throw new IllegalArgumentException("파일명이 비어 있습니다.");
-        }
-
-        int dotIndex = originalFilename.lastIndexOf(".");
-
-        if (dotIndex == -1 || dotIndex == originalFilename.length() - 1) {
-            throw new IllegalArgumentException("파일 확장자가 없습니다.");
-        }
-
-        return originalFilename.substring(dotIndex + 1).toLowerCase();
-    }
-
 
     @Override
     public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) throws IOException {
@@ -162,7 +134,7 @@ public class PostJpaService implements PostService{
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
         String image = null;
         if(postRequest.image() != null){
-            image = updatePostImage(postRequest.image());
+            image = imageConverter.updatePostImage(postRequest.image());
         }
         PostDTO postDTO = new PostDTO(signUserInfo.profileId(), postRequest.title(),
                 postRequest.content(), image);
@@ -182,7 +154,7 @@ public class PostJpaService implements PostService{
         postEditRepository.addPostEditRecord(PostEditRecordDTO.from(postDTO));
         String image = null;
         if(postRequest.image() != null){
-            image = updatePostImage(postRequest.image());
+            image = imageConverter.updatePostImage(postRequest.image());
         }
         postDTO = postRepository.updatePost(postNum, postRequest.title(), postRequest.content(),
                 image);
