@@ -10,11 +10,13 @@ import com.example.community.comment.dto.response.CommentResponse;
 import com.example.community.handler.exception.ForbiddenException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.user.dto.UserInfoDTO;
+import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserRole;
 import com.example.community.user.dto.response.UserInfoResponse;
 import com.example.community.comment.repository.CommentEditJpaAdapterRepository;
 import com.example.community.comment.repository.CommentRepository;
 import com.example.community.post.repository.PostRepository;
+import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.user.repository.UserRepository;
 import com.example.community.resolver.SignUserInfo;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,16 +30,16 @@ import java.util.stream.Collectors;
 public class CommentJpaService implements CommentService{
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final UserInfoRepository userInfoRepository;
     private final CommentEditJpaAdapterRepository commentEditJpaAdapterRepository;
 
     public CommentJpaService(@Qualifier("commentJpaAdapterRepository") CommentRepository commentRepository,
                              @Qualifier("postJpaAdapterRepository") PostRepository postRepository,
-                             @Qualifier("userJpaRepository") UserRepository userRepository,
+                             UserInfoRepository userInfoRepository,
                              CommentEditJpaAdapterRepository commentEditJpaAdapterRepository){
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
-        this.userRepository = userRepository;
+        this.userInfoRepository = userInfoRepository;
         this.commentEditJpaAdapterRepository = commentEditJpaAdapterRepository;
     }
 
@@ -52,18 +54,18 @@ public class CommentJpaService implements CommentService{
 
     @Override
     public CommentAddResponse addCommentToPost(SignUserInfo signUserInfo, long postNum, CommentToPostRequest commentRequest) {
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(signUserInfo.profileId())
+        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         postRepository.getPost(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         CommentDTO commentDTO = new CommentDTO(postNum, signUserInfo.profileId(), commentRequest.content());
         commentDTO = commentRepository.addComment(commentDTO);
 
-        return new CommentAddResponse(postRepository.addComment(postNum), CommentResponse.of(commentDTO, userInfoDTO));
+        return new CommentAddResponse(postRepository.addComment(postNum), CommentResponse.of(commentDTO, userInfo));
     }
 
     @Override
     public CommentAddResponse addCommentToComment(SignUserInfo signUserInfo, long postNum, CommentToCommentRequest commentRequest) {
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(signUserInfo.profileId())
+        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         postRepository.getPost(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         CommentDTO parentComment = commentRepository.getComment(commentRequest.parentNum())
@@ -74,7 +76,7 @@ public class CommentJpaService implements CommentService{
         commentDTO = commentRepository.addComment(commentDTO);
         System.out.println("add success");
 
-        return new CommentAddResponse(postRepository.addComment(postNum), CommentResponse.of(commentDTO, userInfoDTO));
+        return new CommentAddResponse(postRepository.addComment(postNum), CommentResponse.of(commentDTO, userInfo));
 
     }
 
@@ -82,10 +84,10 @@ public class CommentJpaService implements CommentService{
     public List<CommentListResponse> getPostCommentList(long postNum) {
         List<CommentDTO> commentDTOS = commentRepository.getCommentsByPostNum(postNum);
         List<Long> users = commentDTOS.stream().map(CommentDTO::getProfileId).toList();
-        List<UserInfoDTO> userInfoDTOS = userRepository.getUserInfos(users)
+        List<UserInfoDTO> userInfoDTOS = userInfoRepository.findByProfileIdIn(users)
                 .stream().map(ui -> ui.getDeletedAt() != null ?
-                        new UserInfoDTO(ui.getUserNum(), ui.getProfileId()
-                                , null , "알수없음", null, ui.getUserRole(), ui.getDeletedAt()) : ui).toList();
+                        new UserInfoDTO(ui.getSignInfo().getUserNum(), ui.getProfileId()
+                                , null , "알수없음", null, ui.getRole(), ui.getDeletedAt()) : UserInfoDTO.from(ui)).toList();
         Map<Long, UserInfoResponse> userInfoResponseMap = userInfoDTOS.stream()
                 .collect(Collectors.toMap(UserInfoDTO::getProfileId, UserInfoResponse::from));
 
@@ -149,7 +151,7 @@ public class CommentJpaService implements CommentService{
 
     @Override
     public CommentResponse updateComment(SignUserInfo signUserInfo, long commentNum, CommentEditRequest commentEditRequest) {
-        UserInfoDTO userInfoDTO = userRepository.getUserInfo(signUserInfo.profileId())
+        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         checkUserAuthority(signUserInfo, commentNum);
         CommentDTO commentDTO = commentRepository.getComment(commentNum)
@@ -158,7 +160,7 @@ public class CommentJpaService implements CommentService{
         commentEditJpaAdapterRepository.addCommentEdit(commentDTO);
         commentDTO = commentRepository.updateComment(commentNum, commentEditRequest.content());
 
-        return CommentResponse.of(commentDTO, userInfoDTO);
+        return CommentResponse.of(commentDTO, userInfo);
     }
 
     @Override

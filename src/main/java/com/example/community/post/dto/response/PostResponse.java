@@ -1,6 +1,6 @@
 package com.example.community.post.dto.response;
 import com.example.community.post.dto.PostDTO;
-import com.example.community.user.dto.UserInfoDTO;
+import com.example.community.user.entity.UserInfo;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -20,12 +20,12 @@ public record PostResponse(
         OffsetDateTime writeAt
 ) {
 
-    public static PostResponse from(PostDTO post, UserInfoDTO userInfoDTO){
+    public static PostResponse from(PostDTO post, UserInfo userInfo){
         ZoneOffset kstOffset = ZoneOffset.of("+09:00");
         return new PostResponse(
                 post.getPostNum(),
-                userInfoDTO.getNickname(),
-                userInfoDTO.getProfileImage(),
+                userInfo.getNickname(),
+                userInfo.getProfileImage(),
                 post.getTitle(),
                 post.getContent(),
                 post.getImage(),
