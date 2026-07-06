@@ -13,107 +13,133 @@ import com.example.community.user.dto.request.UserInfoRequest;
 import com.example.community.user.dto.response.SignUpResponse;
 import com.example.community.user.dto.response.UserDeleteResponse;
 import com.example.community.user.dto.response.UserInfoResponse;
-import com.example.community.user.repository.UserRepository;
+import com.example.community.user.entity.SignInfo;
+import com.example.community.user.entity.UserInfo;
+import com.example.community.user.repository.SignInfoRepository;
+import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.util.ImageConverter;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 
 
 @Service
 public class UserJpaService implements UserService{
-    private final UserRepository userRepository;
+    private final SignInfoRepository signInfoRepository;
+    private final UserInfoRepository userInfoRepository;
     private final ImageConverter imageConverter;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserJpaService(@Qualifier("userJpaRepository") UserRepository userRepository,
-                          ImageConverter imageConverter){
-        this.userRepository = userRepository;
+    public UserJpaService(SignInfoRepository signInfoRepository,
+                          UserInfoRepository userInfoRepository, ImageConverter imageConverter,
+                          PasswordEncoder passwordEncoder){
+        this.signInfoRepository = signInfoRepository;
+        this.userInfoRepository = userInfoRepository;
         this.imageConverter = imageConverter;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
+    @Transactional
     @Override
-    public SignUpResponse signUp( SignUpRequest signUpRequest) throws IOException {
-        if(userRepository.isExistEmail(signUpRequest.email())){
+    public SignUpResponse signUp(SignUpRequest signUpRequest) throws IOException {
+        if(signInfoRepository.existsByEmail(signUpRequest.email())){
             throw new DuplicateException("중복 이메일 존재");
         }
-        if(userRepository.isExistNickname(signUpRequest.nickname())){
+        if(userInfoRepository.existsByNickname(signUpRequest.nickname())){
             throw new DuplicateException("중복 닉네임 존재");
         }
         if(!signUpRequest.password().equals(signUpRequest.passwordConfirm())){
             throw new BadRequestException("비밀번호 확인 불일치");
         }
 
-        UserDTO userDTO = UserDTO.of(signUpRequest);
+        String image = null;
         if(signUpRequest.imageFile() != null) {
-            userDTO.setProfileImage(imageConverter.updateProfileImage(signUpRequest.imageFile()));
+            image = imageConverter.updateProfileImage(signUpRequest.imageFile());
         }
+        SignInfo signInfo = new SignInfo(signUpRequest.email(), passwordEncoder.encode(signUpRequest.password()));
+        signInfoRepository.save(signInfo);
+        UserInfo userInfo = new UserInfo(signInfo, signUpRequest.nickname(), image);
+        userInfoRepository.save(userInfo);
 
-        return new SignUpResponse(userRepository.addUser(userDTO).getUserNum());
+        return new SignUpResponse(signInfo.getUserNum());
     }
 
+    @Transactional(readOnly = true)
     @Override
     public UserInfoDTO signIn(SignInRequest signInRequest) {
-        UserDTO userDTO = userRepository.findByEmail(signInRequest.email())
+        SignInfo signInfo = signInfoRepository.findByEmail(signInRequest.email())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 이메일"));
 
         //현재는 평문이 저장되겠으나 암호화된 값을 비교해야 함.
-        if(!userDTO.passwordConfirm(signInRequest.password())){
+        if(!signInfo.passwordConfirm(passwordEncoder.encode(signInRequest.password()))){
             throw new UnAuthorizedException("로그인 실패");
         }
-        if(userDTO.isDeleted()){
+        if(signInfo.isDeleted()){
             throw new UnAuthorizedException("탈퇴한 유저");
         }
 
-        return UserInfoDTO.from(userDTO);
+        return UserInfoDTO.from(userInfoRepository.findBySignInfo_UserNum(signInfo.getUserNum()).getFirst());
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean isExistEmail(String email) {
-        return userRepository.isExistEmail(email);
+        return signInfoRepository.existsByEmail(email);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public boolean isExistNickname(String nickname) {
-        return userRepository.isExistNickname(nickname);
+        return userInfoRepository.existsByNickname(nickname);
     }
 
+    @Transactional
     @Override
     public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) throws IOException {
-        UserInfoDTO userDTO = userRepository.findByProfileId(signUserInfo.profileId())
+        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
         if(isExistNickname(userInfoRequest.nickname())){
             throw new DuplicateException("중복 닉네임 존재");
         }
-        userDTO.setNickname(userInfoRequest.nickname());
         String profileImage = null;
         if(userInfoRequest.imageFile() != null) {
             profileImage = imageConverter.updateProfileImage(userInfoRequest.imageFile());
-            userDTO.setProfileImage(profileImage);
         }
-        return UserInfoResponse.from(userRepository.updateUserInfo(signUserInfo.profileId(), userInfoRequest.nickname(), profileImage));
+        userInfo.update(userInfoRequest.nickname(), profileImage);
+        return UserInfoResponse.from(userInfo);
     }
 
+    @Transactional
     @Override
     public void changePassword(SignUserInfo signUserInfo, PasswordChangeRequest passwordChangeRequest) {
-        UserDTO userDTO = userRepository.findByUserNum(signUserInfo.userNum())
+        SignInfo signInfo = signInfoRepository.findByUserNum(signUserInfo.userNum())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
-        if(!userDTO.passwordConfirm(passwordChangeRequest.password())){
+        if(!signInfo.passwordConfirm(passwordChangeRequest.password())){
             throw new BadRequestException("비밀번호가 틀렸습니다.");
         }
         if(!passwordChangeRequest.nextPassword().equals(passwordChangeRequest.passwordConfirm())){
             throw new BadRequestException("비밀번호 확인 불일치");
         }
 
-        userRepository.changePassword(signUserInfo.userNum(), passwordChangeRequest.nextPassword());
+        signInfo.changePassword(passwordChangeRequest.nextPassword());
     }
 
+    @Transactional
     @Override
     public UserDeleteResponse deleteUser(SignUserInfo signUserInfo) {
-        return new UserDeleteResponse(signUserInfo.userNum(), userRepository.deleteUser(signUserInfo.userNum()) != null);
+        SignInfo signInfo = signInfoRepository.findByUserNum(signUserInfo.userNum())
+                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
+        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
+                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
+        signInfo.delete();
+        userInfo.delete();
+
+        return new UserDeleteResponse(signUserInfo.userNum(), signInfo.isDeleted());
     }
 }

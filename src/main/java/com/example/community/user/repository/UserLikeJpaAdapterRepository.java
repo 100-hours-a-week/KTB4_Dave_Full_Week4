@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserLikeJpaAdapterRepository implements UserLikeRepository{
     private final UserLikeJpaRepository userLikeJpaRepository;
-    private final UserInfoJpaRepository userInfoJpaRepository;
+    private final UserInfoRepository userInfoRepository;
     private final PostJpaRepository postJpaRepository;
 
     @Override
@@ -35,7 +35,7 @@ public class UserLikeJpaAdapterRepository implements UserLikeRepository{
 
     @Override
     public void addUserLikePost(UserLikePostDTO userLikePost) {
-        UserInfo userInfo = userInfoJpaRepository.getReferenceById(userLikePost.getProfileId());
+        UserInfo userInfo = userInfoRepository.getReferenceById(userLikePost.getProfileId());
         Post post = postJpaRepository.getReferenceById(userLikePost.getPostNum());
         UserLikePost ulp = new UserLikePost(userInfo, post);
         userLikeJpaRepository.save(ulp);

@@ -10,7 +10,7 @@ import com.example.community.temporaryPost.dto.response.TemporaryPostTitleRespon
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserRole;
 import com.example.community.temporaryPost.repository.TemporaryPostJpaRepository;
-import com.example.community.user.repository.UserInfoJpaRepository;
+import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.resolver.SignUserInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TemporaryPostServiceImpl implements TemporaryPostService{
     private final TemporaryPostJpaRepository temporaryPostJpaRepository;
-    private final UserInfoJpaRepository userInfoJpaRepository;
+    private final UserInfoRepository userInfoRepository;
 
     private void checkAuthority(SignUserInfo signUserInfo, long temporaryId){
         TemporaryPost temporaryPost = temporaryPostJpaRepository.findByTemporaryId(temporaryId)
@@ -39,7 +39,7 @@ public class TemporaryPostServiceImpl implements TemporaryPostService{
     }
 
     public TemporaryKeyResponse issueTemporaryId(SignUserInfo signUserInfo){
-        UserInfo userInfo = userInfoJpaRepository.findByProfileId(signUserInfo.profileId())
+        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
         TemporaryPost temporaryPost = new TemporaryPost(userInfo);
         temporaryPostJpaRepository.save(temporaryPost);

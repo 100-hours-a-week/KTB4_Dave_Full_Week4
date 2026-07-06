@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserInfoJpaRepository extends JpaRepository<UserInfo, Long>{
+public interface UserInfoRepository extends JpaRepository<UserInfo, Long>{
     List<UserInfo> findBySignInfo_UserNum(Long userNum);
     Optional<UserInfo> findByNickname(String nickname);
     Optional<UserInfo> findByProfileId(Long profileId);

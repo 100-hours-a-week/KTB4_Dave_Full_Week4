@@ -4,7 +4,7 @@ import com.example.community.handler.exception.NotFoundException;
 import com.example.community.post.entity.Post;
 import com.example.community.post.dto.PostDTO;
 import com.example.community.user.entity.UserInfo;
-import com.example.community.user.repository.UserInfoJpaRepository;
+import com.example.community.user.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Repository;
@@ -16,7 +16,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PostJpaAdapterRepository implements PostRepository{
     private final PostJpaRepository postJpaRepository;
-    private final UserInfoJpaRepository userInfoJpaRepository;
+    private final UserInfoRepository userInfoRepository;
 
     @Override
     public Slice<PostDTO> getPostsByPage(int index, int offset) {
@@ -56,7 +56,7 @@ public class PostJpaAdapterRepository implements PostRepository{
 
     @Override
     public PostDTO addPost(PostDTO post) {
-        UserInfo userInfo = userInfoJpaRepository.getReferenceById(post.getProfileId());
+        UserInfo userInfo = userInfoRepository.getReferenceById(post.getProfileId());
         Post newPost = new Post(userInfo, post.getTitle(), post.getContent()
                 , post.getImage());
         postJpaRepository.save(newPost);

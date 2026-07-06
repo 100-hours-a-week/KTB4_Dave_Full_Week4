@@ -26,17 +26,17 @@ class UserJpaRepositoryTest {
     private UserJpaRepository userJpaRepository;
 
     @Autowired
-    private SignInfoJpaRepository signInfoJpaRepository;
+    private SignInfoRepository signInfoRepository;
 
     @Autowired
-    private UserInfoJpaRepository userInfoJpaRepository;
+    private UserInfoRepository userInfoRepository;
 
     private UserDTO userDTO;
 
     @BeforeEach
     void init() {
-        userInfoJpaRepository.deleteAll();
-        signInfoJpaRepository.deleteAll();
+        userInfoRepository.deleteAll();
+        signInfoRepository.deleteAll();
         userDTO = UserDTO.of(
                 new SignUpRequest(
                         "wns1628@gmail.com",
@@ -59,13 +59,13 @@ class UserJpaRepositoryTest {
         assertThat(userNum).isPositive();
 
         Optional<SignInfo> signInfo =
-                signInfoJpaRepository.findByUserNum(userNum);
+                signInfoRepository.findByUserNum(userNum);
 
         List<UserInfo> userInfos =
-                userInfoJpaRepository.findBySignInfo_UserNum(userNum);
+                userInfoRepository.findBySignInfo_UserNum(userNum);
 
         List<UserInfo> savedUserInfos =
-                userInfoJpaRepository.findBySignInfo_UserNum(userNum);
+                userInfoRepository.findBySignInfo_UserNum(userNum);
 
         assertThat(signInfo).isPresent();
         assertThat(signInfo.get().getEmail()).isEqualTo(userDTO.getEmail());
@@ -85,7 +85,7 @@ class UserJpaRepositoryTest {
         assertThat(userJpaRepository.getCountUser()).isEqualTo(0);
         userJpaRepository.addUser(userDTO);
         assertThat(userJpaRepository.getCountUser()).isEqualTo(1);
-        signInfoJpaRepository.deleteAll();
+        signInfoRepository.deleteAll();
         assertThat(userJpaRepository.getCountUser()).isEqualTo(0);
     }
 
@@ -206,10 +206,10 @@ class UserJpaRepositoryTest {
         String profileImage = null;
 
         SignInfo signInfo = new SignInfo(email, password);
-        signInfoJpaRepository.save(signInfo);
+        signInfoRepository.save(signInfo);
 
         UserInfo userInfo = new UserInfo(signInfo, nickname, profileImage);
-        userInfoJpaRepository.save(userInfo);
+        userInfoRepository.save(userInfo);
 
         Optional<UserInfoDTO> result = userJpaRepository.getUserInfo(signInfo.getUserNum());
 
@@ -229,17 +229,17 @@ class UserJpaRepositoryTest {
         SignInfo signInfo2 = new SignInfo("user2@example.com", "1234");
         SignInfo signInfo3 = new SignInfo("user3@example.com", "1234");
 
-        signInfoJpaRepository.save(signInfo1);
-        signInfoJpaRepository.save(signInfo2);
-        signInfoJpaRepository.save(signInfo3);
+        signInfoRepository.save(signInfo1);
+        signInfoRepository.save(signInfo2);
+        signInfoRepository.save(signInfo3);
 
         UserInfo userInfo1 = new UserInfo(signInfo1, "dave1", null);
         UserInfo userInfo2 = new UserInfo(signInfo2, "dave2", null);
         UserInfo userInfo3 = new UserInfo(signInfo3, "dave3", null);
 
-        userInfoJpaRepository.save(userInfo1);
-        userInfoJpaRepository.save(userInfo2);
-        userInfoJpaRepository.save(userInfo3);
+        userInfoRepository.save(userInfo1);
+        userInfoRepository.save(userInfo2);
+        userInfoRepository.save(userInfo3);
 
         List<Long> profileIds = List.of(
                 userInfo1.getProfileId(),

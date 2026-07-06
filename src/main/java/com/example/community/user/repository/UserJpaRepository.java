@@ -15,34 +15,34 @@ import java.util.Optional;
 @Repository
 @RequiredArgsConstructor
 public class UserJpaRepository implements UserRepository{
-    private final SignInfoJpaRepository signInfoJPARepository;
-    private final UserInfoJpaRepository userInfoJPARepository;
+    private final SignInfoRepository signInfoRepository;
+    private final UserInfoRepository userInfoRepository;
 
     @Override
     public UserDTO addUser(UserDTO user) {
         SignInfo signInfo = new SignInfo(user.getEmail(), user.getPassword());
-        signInfoJPARepository.save(signInfo);
+        signInfoRepository.save(signInfo);
 
         UserInfo userInfo = new UserInfo(signInfo, user.getNickname(),
                 user.getProfileImage());
-        userInfoJPARepository.save(userInfo);
+        userInfoRepository.save(userInfo);
 
         return UserDTO.of(signInfo,userInfo);
     }
 
     @Override
     public long getCountUser() {
-        return signInfoJPARepository.count();
+        return signInfoRepository.count();
     }
 
     @Override
     public Optional<UserDTO> findByUserNum(long userNum) {
-        SignInfo signInfo = signInfoJPARepository.findByUserNum(userNum)
+        SignInfo signInfo = signInfoRepository.findByUserNum(userNum)
                 .orElse(null);
         if(signInfo == null){
             return Optional.empty();
         }
-        UserInfo userInfo = userInfoJPARepository.findBySignInfo_UserNum(userNum).getFirst();
+        UserInfo userInfo = userInfoRepository.findBySignInfo_UserNum(userNum).getFirst();
 
 
         return Optional.of(UserDTO.of(signInfo, userInfo));
@@ -50,24 +50,24 @@ public class UserJpaRepository implements UserRepository{
 
     @Override
     public Optional<UserInfoDTO> findByProfileId(long userNum) {
-        SignInfo signInfo = signInfoJPARepository.findByUserNum(userNum)
+        SignInfo signInfo = signInfoRepository.findByUserNum(userNum)
                 .orElse(null);
         if(signInfo == null){
             return Optional.empty();
         }
 
-        UserInfo userInfo = userInfoJPARepository.findBySignInfo_UserNum(userNum).getFirst();
+        UserInfo userInfo = userInfoRepository.findBySignInfo_UserNum(userNum).getFirst();
 
         return Optional.of(UserInfoDTO.from(userInfo));
     }
 
     @Override
     public Optional<UserDTO> findByEmail(String email) {
-        SignInfo signInfo = signInfoJPARepository.findByEmail(email).orElse(null);
+        SignInfo signInfo = signInfoRepository.findByEmail(email).orElse(null);
         if(signInfo == null){
             return Optional.empty();
         }
-        UserInfo userInfo = userInfoJPARepository.findBySignInfo_UserNum(signInfo.getUserNum()).getFirst();
+        UserInfo userInfo = userInfoRepository.findBySignInfo_UserNum(signInfo.getUserNum()).getFirst();
 
         return Optional.of(UserDTO.of(signInfo, userInfo));
     }
@@ -75,24 +75,24 @@ public class UserJpaRepository implements UserRepository{
     @Override
     public Optional<UserInfoDTO> findByNickname(String nickname) {
 
-        return userInfoJPARepository.findByNickname(nickname)
+        return userInfoRepository.findByNickname(nickname)
                 .map(UserInfoDTO::from);
     }
 
     @Override
     public boolean isExistEmail(String email) {
-        return signInfoJPARepository.existsByEmail(email);
+        return signInfoRepository.existsByEmail(email);
     }
 
     @Override
     public boolean isExistNickname(String nickname) {
-        return userInfoJPARepository.existsByNickname(nickname);
+        return userInfoRepository.existsByNickname(nickname);
     }
 
     @Override
     public UserInfoDTO updateUserInfo(long profileId, String nickname, String profileImage)
     {
-        UserInfo userInfo = userInfoJPARepository.findByProfileId(profileId)
+        UserInfo userInfo = userInfoRepository.findByProfileId(profileId)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 프로필"));
         userInfo.update(nickname, profileImage);
 
@@ -101,18 +101,18 @@ public class UserJpaRepository implements UserRepository{
 
     @Override
     public void changePassword(long userNum, String nextPassword) {
-        SignInfo signInfo = signInfoJPARepository.findByUserNum(userNum)
+        SignInfo signInfo = signInfoRepository.findByUserNum(userNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
         signInfo.changePassword(nextPassword);
-        signInfoJPARepository.save(signInfo);
+        signInfoRepository.save(signInfo);
     }
 
     @Override
     public Instant deleteUser(long userNum) {
-        SignInfo signInfo = signInfoJPARepository.findByUserNum(userNum)
+        SignInfo signInfo = signInfoRepository.findByUserNum(userNum)
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
-        List<UserInfo> userInfo = userInfoJPARepository.findBySignInfo_UserNum(userNum);
+        List<UserInfo> userInfo = userInfoRepository.findBySignInfo_UserNum(userNum);
         for(UserInfo ui : userInfo){
             ui.delete();
         }
@@ -122,12 +122,12 @@ public class UserJpaRepository implements UserRepository{
 
     @Override
     public Optional<UserInfoDTO> getUserInfo(long userNum) {
-        return Optional.of(UserInfoDTO.from(userInfoJPARepository.findBySignInfo_UserNum(userNum).getFirst()));
+        return Optional.of(UserInfoDTO.from(userInfoRepository.findBySignInfo_UserNum(userNum).getFirst()));
     }
 
     @Override
     public List<UserInfoDTO> getUserInfos(List<Long> profileIds) {
-        return userInfoJPARepository.findByProfileIdIn(profileIds).stream()
+        return userInfoRepository.findByProfileIdIn(profileIds).stream()
                 .map(UserInfoDTO::from).toList();
     }
 }

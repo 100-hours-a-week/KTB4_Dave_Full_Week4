@@ -1,6 +1,7 @@
 package com.example.community.user.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
@@ -11,6 +12,7 @@ import java.time.Instant;
 @Entity
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 @Table(name="UserInfo")
 public class UserInfo {
     @Id
@@ -41,6 +43,10 @@ public class UserInfo {
         this.signInfo = signInfo;
         this.nickname = nickname;
         this.profileImage = profileImage;
+    }
+
+    public void setProfileId(long profileId){
+        this.profileId = profileId;
     }
 
     public void update(String nickname, String profileImage){

@@ -2,6 +2,7 @@ package com.example.community.user.dto.response;
 
 import com.example.community.user.dto.UserDTO;
 import com.example.community.user.dto.UserInfoDTO;
+import com.example.community.user.entity.UserInfo;
 
 public record UserInfoResponse(
         String nickname,
@@ -13,5 +14,9 @@ public record UserInfoResponse(
 
         public static UserInfoResponse from(UserInfoDTO userInfoDTO){
                 return new UserInfoResponse(userInfoDTO.getNickname(), userInfoDTO.getProfileImage());
+        }
+
+        public static UserInfoResponse from(UserInfo userInfo){
+                return new UserInfoResponse(userInfo.getNickname(), userInfo.getProfileImage());
         }
 }

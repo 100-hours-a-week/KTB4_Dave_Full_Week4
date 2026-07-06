@@ -6,7 +6,7 @@ import com.example.community.handler.exception.NotFoundException;
 import com.example.community.post.entity.Post;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.post.repository.PostJpaRepository;
-import com.example.community.user.repository.UserInfoJpaRepository;
+import com.example.community.user.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -17,13 +17,13 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CommentJpaAdapterRepository implements CommentRepository{
     private final CommentJpaRepository commentJpaRepository;
-    private final UserInfoJpaRepository userInfoJpaRepository;
+    private final UserInfoRepository userInfoRepository;
     private final PostJpaRepository postJpaRepository;
 
     @Override
     public CommentDTO addComment(CommentDTO comment) {
         Post post = postJpaRepository.getReferenceById(comment.getPostNum());
-        UserInfo userInfo = userInfoJpaRepository.getReferenceById(comment.getProfileId());
+        UserInfo userInfo = userInfoRepository.getReferenceById(comment.getProfileId());
         Comment newComment;
         if(comment.getParentNum() != null){
             Comment parent = commentJpaRepository.getReferenceById(comment.getParentNum());
