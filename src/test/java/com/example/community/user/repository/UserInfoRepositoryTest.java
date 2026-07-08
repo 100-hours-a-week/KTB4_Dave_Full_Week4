@@ -23,14 +23,8 @@ class UserInfoRepositoryTest {
     private final SignInfo SIGN_INFO =  new SignInfo(null, "wns1628@gmail.com", "!234", null, Instant.now());
     private final UserInfo USER_INFO = new UserInfo(null, SIGN_INFO, "dave", null, UserRole.USER, null);
 
-    @BeforeAll
-    static void addUser(){
-        
-    }
     @BeforeEach
     void init(){
-        signInfoRepository.deleteAll();
-        userInfoRepository.deleteAll();
         signInfoRepository.save(SIGN_INFO);
     }
 
@@ -74,7 +68,7 @@ class UserInfoRepositoryTest {
 
     @Test
     void findByProfileIdIn() {
-        userInfoRepository.save(USER_INFO);
+            userInfoRepository.save(USER_INFO);
         SignInfo signInfo = new SignInfo(null, "test@test.com", "1234", null, Instant.now());
         signInfoRepository.save(signInfo);
         UserInfo userInfo = new UserInfo(null, signInfo, "test", null, UserRole.USER, null);

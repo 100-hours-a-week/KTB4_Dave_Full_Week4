@@ -16,10 +16,7 @@ class SignInfoRepositoryTest {
     @Autowired
     private SignInfoRepository signInfoRepository;
     private final SignInfo SIGN_INFO =  new SignInfo(null, "wns1628@gmail.com", "!234", null, Instant.now());
-    @BeforeEach
-    void init(){
-        signInfoRepository.deleteAll();
-    }
+
 
     @Test
     void findByEmail() {
