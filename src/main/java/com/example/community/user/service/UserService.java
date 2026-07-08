@@ -1,5 +1,6 @@
 package com.example.community.user.service;
 
+import com.example.community.resolver.SignUserInfo;
 import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.dto.request.PasswordChangeRequest;
 import com.example.community.user.dto.request.SignInRequest;
@@ -8,7 +9,6 @@ import com.example.community.user.dto.request.UserInfoRequest;
 import com.example.community.user.dto.response.SignUpResponse;
 import com.example.community.user.dto.response.UserDeleteResponse;
 import com.example.community.user.dto.response.UserInfoResponse;
-import com.example.community.resolver.SignUserInfo;
 
 import java.io.IOException;
 

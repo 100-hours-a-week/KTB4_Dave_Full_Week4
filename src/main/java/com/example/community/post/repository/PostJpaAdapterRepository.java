@@ -1,8 +1,8 @@
 package com.example.community.post.repository;
 
 import com.example.community.handler.exception.NotFoundException;
-import com.example.community.post.entity.Post;
 import com.example.community.post.dto.PostDTO;
+import com.example.community.post.entity.Post;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,7 @@
 package com.example.community.comment.repository;
 
-import com.example.community.comment.entity.Comment;
 import com.example.community.comment.dto.CommentDTO;
+import com.example.community.comment.entity.Comment;
 import com.example.community.comment.entity.CommentEditRecord;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;

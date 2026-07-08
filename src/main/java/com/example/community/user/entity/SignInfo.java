@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.util.Assert;
 
 import java.time.Instant;
-import java.util.Objects;
 
 @Entity
 @Getter

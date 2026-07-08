@@ -1,7 +1,10 @@
 package com.example.community.user.dto;
 
 import com.example.community.user.entity.UserLikePost;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter

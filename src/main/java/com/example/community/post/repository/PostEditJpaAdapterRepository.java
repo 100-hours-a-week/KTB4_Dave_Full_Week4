@@ -1,8 +1,8 @@
 package com.example.community.post.repository;
 
+import com.example.community.post.dto.PostEditRecordDTO;
 import com.example.community.post.entity.Post;
 import com.example.community.post.entity.PostEditRecord;
-import com.example.community.post.dto.PostEditRecordDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 

@@ -1,20 +1,21 @@
 package com.example.community.comment.controller;
 
-import com.example.community.response.ApiResponse;
 import com.example.community.comment.dto.request.CommentEditRequest;
 import com.example.community.comment.dto.request.CommentToCommentRequest;
 import com.example.community.comment.dto.request.CommentToPostRequest;
 import com.example.community.comment.dto.response.CommentAddResponse;
 import com.example.community.comment.dto.response.CommentListResponse;
 import com.example.community.comment.dto.response.CommentResponse;
+import com.example.community.comment.service.CommentService;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
-import com.example.community.comment.service.CommentService;
+import com.example.community.response.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController

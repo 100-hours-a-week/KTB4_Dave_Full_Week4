@@ -1,7 +1,7 @@
 package com.example.community.user.dto.response;
 
-import com.example.community.user.entity.SignInfo;
 import com.example.community.user.dto.UserDTO;
+import com.example.community.user.entity.SignInfo;
 
 public record UserDeleteResponse(
         long userNum,

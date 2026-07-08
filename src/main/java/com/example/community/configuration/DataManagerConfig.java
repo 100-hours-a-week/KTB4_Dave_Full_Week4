@@ -1,14 +1,14 @@
 package com.example.community.configuration;
 
-import com.example.community.util.DataManager;
-import com.example.community.util.PathDataManager;
 import com.example.community.comment.dto.CommentDTO;
 import com.example.community.post.dto.PostDTO;
 import com.example.community.post.dto.PostEditRecordDTO;
-import com.example.community.temporaryPost.dto.TemporaryPostDTO;
 import com.example.community.refreshToken.dto.TokenDTO;
+import com.example.community.temporaryPost.dto.TemporaryPostDTO;
 import com.example.community.user.dto.UserDTO;
 import com.example.community.user.dto.UserLikePostDTO;
+import com.example.community.util.DataManager;
+import com.example.community.util.PathDataManager;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

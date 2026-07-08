@@ -1,10 +1,10 @@
 package com.example.community.user.dto;
 
+import com.example.community.user.dto.request.SignUpRequest;
+import com.example.community.user.dto.request.UserInfoRequest;
 import com.example.community.user.entity.SignInfo;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserRole;
-import com.example.community.user.dto.request.SignUpRequest;
-import com.example.community.user.dto.request.UserInfoRequest;
 import lombok.*;
 
 import java.time.Instant;
