@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 
 
 @ExtendWith(MockitoExtension.class)
-class UserJpaServiceTest {
+class UserServiceTest {
     @Mock
     private SignInfoRepository signInfoRepository;
     @Mock
@@ -48,7 +48,7 @@ class UserJpaServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
     @InjectMocks
-    private UserJpaService userJpaService;
+    private UserService userService;
 
     private String email;
     private String password;
@@ -69,7 +69,7 @@ class UserJpaServiceTest {
         SignUpRequest signUpRequest = new SignUpRequest(email, password, passwordConfirm, nickname, null);
         when(signInfoRepository.existsByEmail(email)).thenReturn(true);
 
-        assertThatThrownBy(() -> userJpaService.signUp(signUpRequest)).isInstanceOf(DuplicateException.class)
+        assertThatThrownBy(() -> userService.signUp(signUpRequest)).isInstanceOf(DuplicateException.class)
                 .hasMessage("중복 이메일 존재");
     }
 
@@ -82,7 +82,7 @@ class UserJpaServiceTest {
         when(signInfoRepository.existsByEmail(email)).thenReturn(false);
         when(userInfoRepository.existsByNickname(nickname)).thenReturn(true);
 
-        assertThatThrownBy(() -> userJpaService.signUp(signUpRequest)).isInstanceOf(DuplicateException.class)
+        assertThatThrownBy(() -> userService.signUp(signUpRequest)).isInstanceOf(DuplicateException.class)
                 .hasMessage("중복 닉네임 존재");
     }
 
@@ -94,7 +94,7 @@ class UserJpaServiceTest {
         when(signInfoRepository.existsByEmail(email)).thenReturn(false);
         when(userInfoRepository.existsByNickname(nickname)).thenReturn(false);
 
-        assertThatThrownBy(() -> userJpaService.signUp(signUpRequest)).isInstanceOf(BadRequestException.class)
+        assertThatThrownBy(() -> userService.signUp(signUpRequest)).isInstanceOf(BadRequestException.class)
                 .hasMessage("비밀번호 확인 불일치");
     }
 
@@ -124,7 +124,7 @@ class UserJpaServiceTest {
 
                     return userInfo;
                 });
-        assertThat(userJpaService.signUp(signUpRequest).userId()).isEqualTo(1);
+        assertThat(userService.signUp(signUpRequest).userId()).isEqualTo(1);
     }
 
     @Test
@@ -132,7 +132,7 @@ class UserJpaServiceTest {
     void signInFailsWhenEmailDoesNotExist() {
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userJpaService.signIn(new SignInRequest(email, password))).isInstanceOf(NotFoundException.class)
+        assertThatThrownBy(() -> userService.signIn(new SignInRequest(email, password))).isInstanceOf(NotFoundException.class)
                 .hasMessage("존재하지 않는 이메일");
     }
 
@@ -143,7 +143,7 @@ class UserJpaServiceTest {
         SignInfo signInfo = new SignInfo(1L, email, password, null, null);
         when(passwordEncoder.matches(wrongPassword, password)).thenReturn(false);
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.of(signInfo));
-        assertThatThrownBy(() -> userJpaService.signIn(new SignInRequest(email, wrongPassword))).isInstanceOf(UnAuthorizedException.class)
+        assertThatThrownBy(() -> userService.signIn(new SignInRequest(email, wrongPassword))).isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("로그인 실패");
     }
 
@@ -155,7 +155,7 @@ class UserJpaServiceTest {
 
         when(passwordEncoder.matches(password, password)).thenReturn(true);
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.of(signInfo));
-        assertThatThrownBy(() -> userJpaService.signIn(new SignInRequest(email, password))).isInstanceOf(UnAuthorizedException.class)
+        assertThatThrownBy(() -> userService.signIn(new SignInRequest(email, password))).isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("탈퇴한 유저");
     }
 
@@ -167,7 +167,7 @@ class UserJpaServiceTest {
         when(passwordEncoder.matches(password,password)).thenReturn(true);
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.of(signInfo));
         when(userInfoRepository.findBySignInfo_UserNum(1L)).thenReturn(Collections.singletonList(userInfo));
-        assertThat(userJpaService.signIn(new SignInRequest(email, password)))
+        assertThat(userService.signIn(new SignInRequest(email, password)))
                 .usingRecursiveComparison()
                 .isEqualTo(UserInfoDTO.from(userInfo));;
     }
@@ -179,7 +179,7 @@ class UserJpaServiceTest {
         when(userInfoRepository.findByProfileId(1L)).thenReturn(Optional.empty());
         UserInfoRequest userInfoRequest = new UserInfoRequest("dave2", null);
 
-        assertThatThrownBy(() -> userJpaService.updateUserInfo(signUserInfo, userInfoRequest)).isInstanceOf(NotFoundException.class)
+        assertThatThrownBy(() -> userService.updateUserInfo(signUserInfo, userInfoRequest)).isInstanceOf(NotFoundException.class)
                 .hasMessage("존재하지 않는 유저");
     }
 
@@ -191,7 +191,7 @@ class UserJpaServiceTest {
         when(userInfoRepository.existsByNickname(any(String.class))).thenReturn(true);
         UserInfoRequest userInfoRequest = new UserInfoRequest("dave2", null);
 
-        assertThatThrownBy(() -> userJpaService.updateUserInfo(signUserInfo, userInfoRequest)).isInstanceOf(DuplicateException.class)
+        assertThatThrownBy(() -> userService.updateUserInfo(signUserInfo, userInfoRequest)).isInstanceOf(DuplicateException.class)
                 .hasMessage("중복 닉네임 존재");
     }
 
@@ -204,7 +204,7 @@ class UserJpaServiceTest {
         UserInfoRequest userInfoRequest = new UserInfoRequest("dave2", null);
         UserInfoDTO updatedUserInfoDTO = new UserInfoDTO(1L, 1L, "wns1628@gmail.com", "dave2", null, UserRole.USER, null);
 
-        assertThat(userJpaService.updateUserInfo(signUserInfo, userInfoRequest)).usingRecursiveComparison()
+        assertThat(userService.updateUserInfo(signUserInfo, userInfoRequest)).usingRecursiveComparison()
                 .isEqualTo(UserInfoResponse.from(updatedUserInfoDTO));
     }
 
@@ -218,7 +218,7 @@ class UserJpaServiceTest {
         when(signInfoRepository.findByUserNum(signUserInfo.userNum()))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userJpaService.changePassword(signUserInfo, passwordChangeRequest))
+        assertThatThrownBy(() -> userService.changePassword(signUserInfo, passwordChangeRequest))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("존재하지 않는 유저");
     }
@@ -233,7 +233,7 @@ class UserJpaServiceTest {
         when(signInfoRepository.findByUserNum(signUserInfo.userNum()))
                 .thenReturn(Optional.of(new SignInfo("wns1628@gmail.com", "1234")));
 
-        assertThatThrownBy(() -> userJpaService.changePassword(signUserInfo, passwordChangeRequest))
+        assertThatThrownBy(() -> userService.changePassword(signUserInfo, passwordChangeRequest))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("비밀번호가 틀렸습니다.");
     }
@@ -249,7 +249,7 @@ class UserJpaServiceTest {
         when(signInfoRepository.findByUserNum(signUserInfo.userNum()))
                 .thenReturn(Optional.of(new SignInfo("wns1628@gmail.com", "1234")));
 
-        assertThatThrownBy(() -> userJpaService.changePassword(signUserInfo, passwordChangeRequest))
+        assertThatThrownBy(() -> userService.changePassword(signUserInfo, passwordChangeRequest))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("비밀번호 확인 불일치");
     }
@@ -266,7 +266,7 @@ class UserJpaServiceTest {
         when(signInfoRepository.findByUserNum(signUserInfo.userNum()))
                 .thenReturn(Optional.of(signInfo));
 
-        userJpaService.changePassword(signUserInfo, passwordChangeRequest);
+        userService.changePassword(signUserInfo, passwordChangeRequest);
         assertThat(signInfo.getPassword()).isEqualTo("12345");
     }
 
@@ -281,7 +281,7 @@ class UserJpaServiceTest {
         when(signInfoRepository.findByUserNum(1L)).thenReturn(Optional.of(signInfo));
         when(userInfoRepository.findByProfileId(1L)).thenReturn(Optional.of(new UserInfo(signInfo, "dave", null)));
 
-        assertThat(userJpaService.deleteUser(signUserInfo))
+        assertThat(userService.deleteUser(signUserInfo))
                 .usingRecursiveComparison()
                 .isEqualTo(userDeleteResponse);
     }

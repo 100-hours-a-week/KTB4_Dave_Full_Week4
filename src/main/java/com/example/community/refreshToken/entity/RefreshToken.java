@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "RefreshToken")
 public class RefreshToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +21,6 @@ public class RefreshToken {
     @JoinColumn(name = "userNum", nullable = false)
     private SignInfo signInfo;
 
-    @Column(name = "jwtToken")
+    @Column(name = "token")
     private String token;
 }
