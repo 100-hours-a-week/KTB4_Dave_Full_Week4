@@ -1,8 +1,7 @@
 package com.example.community.post.dto.response;
 
-import com.example.community.post.dto.PostDTO;
-import com.example.community.user.dto.response.UserInfoResponse;
-import com.example.community.user.entity.UserInfo;
+import com.example.community.post.entity.Post;
+import com.example.community.user.entity.UserLikePost;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -18,26 +17,26 @@ public record PostTitleResponse(
         int commentCount,
         OffsetDateTime writeAt
 ) {
-    public static PostTitleResponse from(PostDTO post, UserInfoResponse userInfoResponse){
+    public static PostTitleResponse from(UserLikePost userLikePost){
         ZoneOffset kstOffset = ZoneOffset.of("+09:00");
         return new PostTitleResponse(
-                post.getPostNum(),
-                userInfoResponse.nickname(),
-                userInfoResponse.profileImage(),
-                post.getTitle(),
-                post.getViewCount(),
-                post.getLikeCount(),
-                post.getReportCount(),
-                post.getCommentCount(),
-                post.getWriteAt().atOffset(kstOffset)
+                userLikePost.getPost().getPostNum(),
+                userLikePost.getUserInfo().getNickname(),
+                userLikePost.getUserInfo().getProfileImage(),
+                userLikePost.getPost().getTitle(),
+                userLikePost.getPost().getViewCount(),
+                userLikePost.getPost().getLikeCount(),
+                userLikePost.getPost().getReportCount(),
+                userLikePost.getPost().getCommentCount(),
+                userLikePost.getPost().getWriteAt().atOffset(kstOffset)
         );
     }
-    public static PostTitleResponse from(PostDTO post, UserInfo userInfo){
+    public static PostTitleResponse from(Post post){
         ZoneOffset kstOffset = ZoneOffset.of("+09:00");
         return new PostTitleResponse(
                 post.getPostNum(),
-                userInfo.getNickname(),
-                userInfo.getProfileImage(),
+                post.getUserInfo().getNickname(),
+                post.getUserInfo().getProfileImage(),
                 post.getTitle(),
                 post.getViewCount(),
                 post.getLikeCount(),

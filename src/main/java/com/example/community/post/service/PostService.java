@@ -1,15 +1,17 @@
 package com.example.community.post.service;
 
-import com.example.community.temporaryPost.dto.response.request.PostRequest;
-import com.example.community.post.dto.response.*;
+import com.example.community.post.dto.response.PostLikeResponse;
+import com.example.community.post.dto.response.PostPageResponse;
+import com.example.community.post.dto.response.PostReportResponse;
+import com.example.community.post.dto.response.PostResponse;
 import com.example.community.resolver.SignUserInfo;
+import com.example.community.temporaryPost.dto.response.request.PostRequest;
 
 import java.io.IOException;
 
 
 public interface PostService {
-    void checkUserAuthority(SignUserInfo signUserInfo, long postNum);
-    PostSliceResponse getPostsByPage(int page, int size);
+    PostPageResponse getPostsByPage(int page, int size);
     PostResponse getPost(long postNum);
     PostPageResponse getPostsByProfileId(long profileId, int page, int size);
     PostPageResponse getLikePosts(long profileId, int page, int size);

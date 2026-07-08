@@ -66,4 +66,14 @@ public class PostEditRecord {
         this.image = image;
         this.writeAt = writeAt;
     }
+    public static PostEditRecord from(Post post){
+        return new PostEditRecord(
+                post,
+                post.getVersion(),
+                post.getTitle(),
+                post.getContent(),
+                post.getImage(),
+                post.getEditedAt()
+        );
+    }
 }

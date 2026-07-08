@@ -4,12 +4,17 @@ import com.example.community.user.entity.UserLikePost;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
 public interface UserLikeJpaRepository extends JpaRepository<UserLikePost, Long> {
+    @Query(
+            "select ul from UserInfo join fetch ul.userInfo " +
+            "Post join fetch ul.post where ul.userInfo.profileId = :profileId"
+    )
     Page<UserLikePost> findByUserInfo_ProfileId(Long profileId, Pageable pageable);
     boolean existsByUserInfo_ProfileIdAndPost_PostNum(Long profileId, Long postNum);
     Optional<UserLikePost> findByUserInfo_ProfileIdAndPost_PostNum(Long profileId, Long postNum);

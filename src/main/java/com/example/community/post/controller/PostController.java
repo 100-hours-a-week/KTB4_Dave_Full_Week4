@@ -1,11 +1,14 @@
 package com.example.community.post.controller;
 
-import com.example.community.response.ApiResponse;
-import com.example.community.temporaryPost.dto.response.request.PostRequest;
-import com.example.community.post.dto.response.*;
+import com.example.community.post.dto.response.PostLikeResponse;
+import com.example.community.post.dto.response.PostPageResponse;
+import com.example.community.post.dto.response.PostReportResponse;
+import com.example.community.post.dto.response.PostResponse;
+import com.example.community.post.service.PostService;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
-import com.example.community.post.service.PostService;
+import com.example.community.response.ApiResponse;
+import com.example.community.temporaryPost.dto.response.request.PostRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +27,8 @@ public class PostController {
     }
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<PostSliceResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        PostSliceResponse posts =postService.getPostsByPage(page, size);
+    public ResponseEntity<ApiResponse<PostPageResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        PostPageResponse posts =postService.getPostsByPage(page, size);
         return ResponseEntity.ok(new ApiResponse<>("게시글 조회 성공", posts));
     }
 

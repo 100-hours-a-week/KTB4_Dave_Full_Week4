@@ -1,11 +1,11 @@
 package com.example.community.comment.repository;
 
-import com.example.community.comment.entity.Comment;
 import com.example.community.comment.dto.CommentDTO;
+import com.example.community.comment.entity.Comment;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.post.entity.Post;
-import com.example.community.user.entity.UserInfo;
 import com.example.community.post.repository.PostJpaRepository;
+import com.example.community.user.entity.UserInfo;
 import com.example.community.user.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
