@@ -60,7 +60,7 @@ public class Comment {
             throw new BadRequestException("답글을 달 수 없는 댓글입니다.");
         }
         comment.addChild();
-        post.getPostState().addComment();
+        post.addComment();
         commentNum = null;
         this.post = post;
         this.comment = comment;
@@ -73,7 +73,7 @@ public class Comment {
         if(post == null || userInfo == null || content.isBlank()){
             throw new IllegalArgumentException("필수 인자가 비어있습니다.");
         }
-        post.getPostState().addComment();
+        post.addComment();
         commentNum = null;
         this.post = post;
         this.comment = null;
@@ -82,7 +82,7 @@ public class Comment {
         this.content = content;
     }
 
-    public String getContent(){
+    public String getMaskedContent(){
         return isDeleted() ? "삭제된 댓글입니다." : content;
     }
 

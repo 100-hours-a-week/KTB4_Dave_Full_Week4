@@ -37,7 +37,7 @@ public class PostDTO {
 
     public static PostDTO from(Post post){
         return new PostDTO(post.getPostNum(), post.getUserInfo().getProfileId(),
-                post.getTitle(), post.getContent(), post.getImage(), post.getPostState().getViewCount(),
+                post.getMaskedTitle(), post.getContent(), post.getImage(), post.getPostState().getViewCount(),
                 post.getPostState().getLikeCount(), post.getPostState().getReportCount(), post.getPostState().getCommentCount(),
                 post.getDeletedAt(), post.getEditedAt(), post.getWriteAt(), post.getVersion());
     }

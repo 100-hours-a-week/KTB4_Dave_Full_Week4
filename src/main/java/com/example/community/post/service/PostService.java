@@ -61,11 +61,46 @@ public class PostService {
         return PostPageResponse.from(posts);
     }
 
+    @Transactional(readOnly = true)
+    public PostPageResponse adminGetPostsByPage(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> posts = postRepository.findPostByPage(pageable);
+
+        return PostPageResponse.adminFrom(posts);
+    }
+
+    @Transactional(readOnly = true)
+    public PostEditPageResponse getPostEditsByPage(long postNum, int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PostEditRecord> postEdits = postEditRepository.findByPost_PostNumOrderByEditIdDesc(postNum, pageable);
+        return PostEditPageResponse.from(postEdits);
+    }
+
+    @Transactional(readOnly = true)
+    public PostEditResponse getPostEdit(long editId){
+        PostEditRecord postEditRecord = postEditRepository.findById(editId)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 수정 이력"));
+
+        return PostEditResponse.from(postEditRecord);
+    }
+
+    @Transactional
     public PostResponse getPost(long postNum) {
         Post post = postRepository.findByPostNum(postNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
+        if(post.isBlind()){
+            throw new ForbiddenException("신고 처리된 게시글");
+        }
         post.view();
         postRepository.save(post);
+
+        return PostResponse.from(post);
+    }
+
+    @Transactional(readOnly = true)
+    public PostResponse adminGetPost(long postNum){
+        Post post = postRepository.findByPostNum(postNum)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
 
         return PostResponse.from(post);
     }
@@ -79,23 +114,6 @@ public class PostService {
 
         return new PostPageResponse(postTitleResponses, posts.getNumber(), posts.getSize()
         , posts.getNumberOfElements(), posts.getTotalElements(), posts.getTotalPages());
-    }
-
-    @Transactional(readOnly = true)
-    public PostPageResponse getLikePosts(long profileId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<UserLikePost> userLikePosts = userLikeRepository.findByUserInfo_ProfileId(profileId, pageable);
-        List<PostTitleResponse> postTitleResponses = userLikePosts.stream()
-                .map(PostTitleResponse::from).toList();
-
-        return new PostPageResponse(
-                postTitleResponses,
-                page,
-                size,
-                userLikePosts.getNumberOfElements(),
-                userLikePosts.getTotalElements(),
-                userLikePosts.getTotalPages()
-        );
     }
 
     @Transactional

@@ -23,4 +23,15 @@ public record PostPageResponse(
                 postPage.getTotalPages()
         );
     }
+
+    public static PostPageResponse adminFrom(Page<Post> postPage){
+        return new PostPageResponse(
+                postPage.getContent().stream().map(PostTitleResponse::adminFrom).toList(),
+                postPage.getNumber(),
+                postPage.getSize(),
+                postPage.getNumberOfElements(),
+                postPage.getTotalElements(),
+                postPage.getTotalPages()
+        );
+    }
 }

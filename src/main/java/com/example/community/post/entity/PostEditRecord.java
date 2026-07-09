@@ -70,7 +70,7 @@ public class PostEditRecord {
         return new PostEditRecord(
                 post,
                 post.getVersion(),
-                post.getTitle(),
+                post.getMaskedTitle(),
                 post.getContent(),
                 post.getImage(),
                 post.getEditedAt() != null ? post.getEditedAt() : post.getWriteAt()

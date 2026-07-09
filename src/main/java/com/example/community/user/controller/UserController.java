@@ -1,5 +1,6 @@
 package com.example.community.user.controller;
 
+import com.example.community.post.dto.response.PostPageResponse;
 import com.example.community.refreshToken.service.RefreshTokenService;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
@@ -79,9 +80,14 @@ public class UserController {
     }
 
     @DeleteMapping("/state")
-    public ResponseEntity<ApiResponse<Object>> signOut(@SignUser SignUserInfo signUserInfo, @CookieValue(value = "refresh") String refreshToken){
+    public ResponseEntity<ApiResponse<Object>> signOut(@CookieValue(value = "refresh") String refreshToken){
         refreshTokenService.deleteRefreshToken(refreshToken);
         return ResponseEntity.ok(ApiResponse.of("로그아웃 성공", null));
+    }
+
+    @GetMapping("/myLike")
+    public ResponseEntity<ApiResponse<PostPageResponse>> getMyLikePost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(new ApiResponse<>("좋아요 한 게시글 목록 불러오기 성공", userService.getLikePosts(signUserInfo.profileId(), page, size)));
     }
 
     @PatchMapping("/info")

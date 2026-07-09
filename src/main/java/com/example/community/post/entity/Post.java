@@ -64,7 +64,7 @@ public class Post {
         this.image = image;
         this.editedAt = Instant.now();
     }
-    public String getTitle(){
+    public String getMaskedTitle(){
         return postState.isBlind() ? "신고 처리된 글" : title;
     }
 
@@ -83,6 +83,10 @@ public class Post {
     }
     public int report(){
         return postState.report();
+    }
+
+    public boolean isBlind(){
+        return postState.isBlind();
     }
     public void delete(){
         deletedAt = Instant.now();

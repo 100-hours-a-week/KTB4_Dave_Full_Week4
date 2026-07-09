@@ -17,7 +17,7 @@ public record PostEditRecordDTO(
         return new PostEditRecordDTO(
                 post.getPostNum(),
                 post.getVersion(),
-                post.getTitle(),
+                post.getMaskedTitle(),
                 post.getContent(),
                 post.getImage(),
                 post.getEditedAt() != null ? post.getEditedAt() : post.getWriteAt()

@@ -27,6 +27,24 @@ public record CommentResponse(
                         comment.getDepth(),
                         comment.getUserInfo().getNickname(),
                         comment.getUserInfo().getProfileImage(),
+                        comment.getMaskedContent(),
+                        comment.getChildCount(),
+                        comment.getEditedAt() != null,
+                        comment.isDeleted(),
+                        comment.getWriteAt().atOffset(kstOffset)
+                );
+        }
+
+
+        public static CommentResponse adminFrom(Comment comment){
+                ZoneOffset kstOffset = ZoneOffset.of("+09:00");
+                return new CommentResponse(
+                        comment.getCommentNum(),
+                        comment.getPost().getPostNum(),
+                        comment.getComment() != null ? comment.getComment().getCommentNum() : null,
+                        comment.getDepth(),
+                        comment.getUserInfo().getNickname(),
+                        comment.getUserInfo().getProfileImage(),
                         comment.getContent(),
                         comment.getChildCount(),
                         comment.getEditedAt() != null,

@@ -26,6 +26,24 @@ public record PostResponse(
                 post.getPostNum(),
                 post.getUserInfo().getNickname(),
                 post.getUserInfo().getProfileImage(),
+                post.getMaskedTitle(),
+                post.getContent(),
+                post.getImage(),
+                post.getPostState().getViewCount(),
+                post.getPostState().getLikeCount(),
+                post.getPostState().getReportCount(),
+                post.getPostState().getCommentCount(),
+                post.getEditedAt() != null,
+                post.getWriteAt().atOffset(kstOffset)
+        );
+    }
+
+    public static PostResponse adminFrom(Post post){
+        ZoneOffset kstOffset = ZoneOffset.of("+09:00");
+        return new PostResponse(
+                post.getPostNum(),
+                post.getUserInfo().getNickname(),
+                post.getUserInfo().getProfileImage(),
                 post.getTitle(),
                 post.getContent(),
                 post.getImage(),

@@ -23,7 +23,7 @@ public record PostTitleResponse(
                 userLikePost.getPost().getPostNum(),
                 userLikePost.getUserInfo().getNickname(),
                 userLikePost.getUserInfo().getProfileImage(),
-                userLikePost.getPost().getTitle(),
+                userLikePost.getPost().getMaskedTitle(),
                 userLikePost.getPost().getPostState().getViewCount(),
                 userLikePost.getPost().getPostState().getLikeCount(),
                 userLikePost.getPost().getPostState().getReportCount(),
@@ -32,6 +32,21 @@ public record PostTitleResponse(
         );
     }
     public static PostTitleResponse from(Post post){
+        ZoneOffset kstOffset = ZoneOffset.of("+09:00");
+        return new PostTitleResponse(
+                post.getPostNum(),
+                post.getUserInfo().getNickname(),
+                post.getUserInfo().getProfileImage(),
+                post.getMaskedTitle(),
+                post.getPostState().getViewCount(),
+                post.getPostState().getLikeCount(),
+                post.getPostState().getReportCount(),
+                post.getPostState().getCommentCount(),
+                post.getWriteAt().atOffset(kstOffset)
+        );
+    }
+
+    public static PostTitleResponse adminFrom(Post post){
         ZoneOffset kstOffset = ZoneOffset.of("+09:00");
         return new PostTitleResponse(
                 post.getPostNum(),

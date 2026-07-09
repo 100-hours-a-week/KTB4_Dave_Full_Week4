@@ -4,6 +4,7 @@ import com.example.community.comment.dto.request.CommentEditRequest;
 import com.example.community.comment.dto.request.CommentToCommentRequest;
 import com.example.community.comment.dto.request.CommentToPostRequest;
 import com.example.community.comment.dto.response.CommentAddResponse;
+import com.example.community.comment.dto.response.CommentEditPageResponse;
 import com.example.community.comment.dto.response.CommentPageResponse;
 import com.example.community.comment.dto.response.CommentResponse;
 import com.example.community.comment.entity.Comment;
@@ -85,10 +86,31 @@ public class CommentService{
     }
 
     @Transactional(readOnly = true)
+    public CommentPageResponse adminGetPostCommentPage(long postNum, int page, int size){
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<Comment> comments = commentRepository.findByPost_postNum(postNum, pageRequest);
+        return CommentPageResponse.adminFrom(comments);
+    }
+
+    @Transactional(readOnly = true)
     public CommentPageResponse getChildCommentPage(long commentNum, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size);
         Page<Comment> comments = commentRepository.findByParentNum(commentNum, pageRequest);
         return CommentPageResponse.from(comments);
+    }
+
+    @Transactional(readOnly = true)
+    public CommentPageResponse adminGetChildCommentPage(long commentNum, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<Comment> comments = commentRepository.findByParentNum(commentNum, pageRequest);
+        return CommentPageResponse.adminFrom(comments);
+    }
+
+    @Transactional(readOnly = true)
+    public CommentEditPageResponse getCommentEditsByPage(long commentNum, int page, int size){
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<CommentEditRecord> comments = commentEditRepository.findByComment_CommentNumOrderByEditIdDesc(commentNum, pageRequest);
+        return CommentEditPageResponse.from(comments);
     }
 
     @Transactional

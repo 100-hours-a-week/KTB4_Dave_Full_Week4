@@ -23,4 +23,15 @@ public record CommentPageResponse (
                 commentPage.getTotalPages()
         );
     }
+
+    public static CommentPageResponse adminFrom(Page<Comment> commentPage){
+        return new CommentPageResponse(
+                commentPage.getContent().stream().map(CommentResponse::adminFrom).toList(),
+                commentPage.getNumber(),
+                commentPage.getSize(),
+                commentPage.getNumberOfElements(),
+                commentPage.getTotalElements(),
+                commentPage.getTotalPages()
+        );
+    }
 }

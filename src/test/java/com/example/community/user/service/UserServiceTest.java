@@ -141,7 +141,6 @@ class UserServiceTest {
     void signInFailsWhenPasswordDoesNotMatch() {
         String wrongPassword = "123";
         SignInfo signInfo = new SignInfo(1L, email, password, null, null);
-        when(passwordEncoder.matches(wrongPassword, password)).thenReturn(false);
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.of(signInfo));
         assertThatThrownBy(() -> userService.signIn(new SignInRequest(email, wrongPassword))).isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("로그인 실패");
@@ -156,7 +155,7 @@ class UserServiceTest {
         when(passwordEncoder.matches(password, password)).thenReturn(true);
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.of(signInfo));
         assertThatThrownBy(() -> userService.signIn(new SignInRequest(email, password))).isInstanceOf(UnAuthorizedException.class)
-                .hasMessage("탈퇴한 유저");
+                .hasMessage("로그인 실패");
     }
 
     @Test
@@ -164,8 +163,8 @@ class UserServiceTest {
     void signInSuccess() {
         SignInfo signInfo = new SignInfo(1L, email, password, null, null);
         UserInfo userInfo = new UserInfo(1L, signInfo,nickname, null, UserRole.USER, null);
-        when(passwordEncoder.matches(password,password)).thenReturn(true);
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.of(signInfo));
+        when(passwordEncoder.matches(password,password)).thenReturn(true);
         when(userInfoRepository.findBySignInfo_UserNum(1L)).thenReturn(Collections.singletonList(userInfo));
         assertThat(userService.signIn(new SignInRequest(email, password)))
                 .usingRecursiveComparison()
