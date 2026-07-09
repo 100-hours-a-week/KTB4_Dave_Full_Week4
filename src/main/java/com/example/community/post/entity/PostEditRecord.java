@@ -3,8 +3,6 @@ package com.example.community.post.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
 
@@ -28,7 +26,6 @@ public class PostEditRecord {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "postNum", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private Post post;
 
     @Column(name = "version")
@@ -65,5 +62,19 @@ public class PostEditRecord {
         this.content = content;
         this.image = image;
         this.writeAt = writeAt;
+    }
+    public static PostEditRecord from(Post post){
+        if(post == null){
+            throw new IllegalArgumentException("post가 null");
+        }
+        return new PostEditRecord(
+                post,
+                post.getVersion(),
+                post.getMaskedTitle(),
+                post.getContent(),
+                post.getImage(),
+                post.getEditedAt() != null ? post.getEditedAt() : post.getWriteAt()
+
+        );
     }
 }

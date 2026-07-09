@@ -42,6 +42,8 @@ public class SecurityConfig {
                     auth.requestMatchers(regexMatcher(HttpMethod.GET, "^/posts/[0-9]+$")).permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/comments/list/**").permitAll();
 
+                    auth.requestMatchers("/admin/**").hasRole("ADMIN");
+
                     auth.requestMatchers(HttpMethod.PATCH, "/users/info", "/users/password").authenticated();
                     auth.requestMatchers(HttpMethod.DELETE, "/users").authenticated();
                     auth.requestMatchers(HttpMethod.DELETE, "/users/state").authenticated();

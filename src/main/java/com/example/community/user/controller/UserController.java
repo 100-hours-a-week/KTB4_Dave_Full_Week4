@@ -1,19 +1,23 @@
 package com.example.community.user.controller;
 
+import com.example.community.post.dto.response.PostPageResponse;
+import com.example.community.refreshToken.service.RefreshTokenService;
+import com.example.community.resolver.SignUser;
+import com.example.community.resolver.SignUserInfo;
 import com.example.community.response.ApiResponse;
 import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.dto.request.PasswordChangeRequest;
 import com.example.community.user.dto.request.SignInRequest;
 import com.example.community.user.dto.request.SignUpRequest;
 import com.example.community.user.dto.request.UserInfoRequest;
-import com.example.community.user.dto.response.*;
-import com.example.community.resolver.SignUser;
-import com.example.community.resolver.SignUserInfo;
-import com.example.community.refreshToken.service.RefreshTokenService;
+import com.example.community.user.dto.response.SignInResponse;
+import com.example.community.user.dto.response.SignUpResponse;
+import com.example.community.user.dto.response.UserDeleteResponse;
+import com.example.community.user.dto.response.UserInfoResponse;
 import com.example.community.user.service.UserService;
 import com.example.community.util.JWTUtil;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -25,19 +29,12 @@ import java.net.URI;
 import java.time.Duration;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
     private final JWTUtil jwtUtil;
-
-    public UserController(@Qualifier("userJpaService") UserService userService,
-                          @Qualifier("refreshTokenJsonService") RefreshTokenService refreshTokenService,
-                          JWTUtil jwtUtil){
-        this.userService = userService;
-        this.refreshTokenService = refreshTokenService;
-        this.jwtUtil = jwtUtil;
-    }
 
     @PostMapping()
     public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@ModelAttribute @Valid SignUpRequest signUpRequest) throws IOException {
@@ -83,9 +80,14 @@ public class UserController {
     }
 
     @DeleteMapping("/state")
-    public ResponseEntity<ApiResponse<Object>> signOut(@SignUser SignUserInfo signUserInfo, @CookieValue(value = "refresh") String refreshToken){
+    public ResponseEntity<ApiResponse<Object>> signOut(@CookieValue(value = "refresh") String refreshToken){
         refreshTokenService.deleteRefreshToken(refreshToken);
         return ResponseEntity.ok(ApiResponse.of("로그아웃 성공", null));
+    }
+
+    @GetMapping("/myLike")
+    public ResponseEntity<ApiResponse<PostPageResponse>> getMyLikePost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(new ApiResponse<>("좋아요 한 게시글 목록 불러오기 성공", userService.getLikePosts(signUserInfo.profileId(), page, size)));
     }
 
     @PatchMapping("/info")

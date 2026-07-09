@@ -1,8 +1,5 @@
 package com.example.community.comment.dto.response;
-
-import com.example.community.comment.dto.CommentDTO;
-import com.example.community.user.dto.UserInfoDTO;
-import com.example.community.user.dto.response.UserInfoResponse;
+import com.example.community.comment.entity.Comment;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -15,35 +12,41 @@ public record CommentResponse(
         String nickname,
         String profileImage,
         String content,
+        long childCount,
         boolean edited,
         boolean deleted,
         OffsetDateTime writeAt
         ) {
-        public static CommentResponse of(CommentDTO comment, UserInfoResponse userInfoResponse){
+
+        public static CommentResponse from(Comment comment){
                 ZoneOffset kstOffset = ZoneOffset.of("+09:00");
                 return new CommentResponse(
                         comment.getCommentNum(),
-                        comment.getPostNum(),
-                        comment.getParentNum(),
+                        comment.getPost().getPostNum(),
+                        comment.getComment() != null ? comment.getComment().getCommentNum() : null,
                         comment.getDepth(),
-                        userInfoResponse.nickname(),
-                        userInfoResponse.profileImage(),
-                        comment.getContent(),
+                        comment.getUserInfo().getNickname(),
+                        comment.getUserInfo().getProfileImage(),
+                        comment.getMaskedContent(),
+                        comment.getChildCount(),
                         comment.getEditedAt() != null,
                         comment.isDeleted(),
                         comment.getWriteAt().atOffset(kstOffset)
                 );
         }
-        public static CommentResponse of(CommentDTO comment, UserInfoDTO userInfoDTO){
+
+
+        public static CommentResponse adminFrom(Comment comment){
                 ZoneOffset kstOffset = ZoneOffset.of("+09:00");
                 return new CommentResponse(
                         comment.getCommentNum(),
-                        comment.getPostNum(),
-                        comment.getParentNum(),
+                        comment.getPost().getPostNum(),
+                        comment.getComment() != null ? comment.getComment().getCommentNum() : null,
                         comment.getDepth(),
-                        userInfoDTO.getNickname(),
-                        userInfoDTO.getProfileImage(),
+                        comment.getUserInfo().getNickname(),
+                        comment.getUserInfo().getProfileImage(),
                         comment.getContent(),
+                        comment.getChildCount(),
                         comment.getEditedAt() != null,
                         comment.isDeleted(),
                         comment.getWriteAt().atOffset(kstOffset)

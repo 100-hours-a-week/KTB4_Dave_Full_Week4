@@ -42,7 +42,7 @@ public class CommentDTO {
                 comment.getComment() != null ? comment.getComment().getCommentNum() : null,
                 comment.getDepth(),
                 comment.getUserInfo().getProfileId(),
-                comment.getContent(), comment.getEditedAt(),
+                comment.getMaskedContent(), comment.getEditedAt(),
                 comment.getDeletedAt(), comment.getWriteAt());
     }
 

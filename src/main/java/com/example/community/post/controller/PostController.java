@@ -1,13 +1,15 @@
 package com.example.community.post.controller;
 
-import com.example.community.response.ApiResponse;
-import com.example.community.temporaryPost.dto.response.request.PostRequest;
-import com.example.community.post.dto.response.*;
+import com.example.community.post.dto.response.PostLikeResponse;
+import com.example.community.post.dto.response.PostPageResponse;
+import com.example.community.post.dto.response.PostReportResponse;
+import com.example.community.post.dto.response.PostResponse;
+import com.example.community.post.service.PostService;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
-import com.example.community.post.service.PostService;
+import com.example.community.response.ApiResponse;
+import com.example.community.temporaryPost.dto.response.request.PostRequest;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,13 +21,13 @@ import java.net.URI;
 public class PostController {
     private final PostService postService;
 
-    public PostController(@Qualifier("postJpaService") PostService postService){
+    public PostController(PostService postService){
         this.postService = postService;
     }
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<PostSliceResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        PostSliceResponse posts =postService.getPostsByPage(page, size);
+    public ResponseEntity<ApiResponse<PostPageResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        PostPageResponse posts =postService.getPostsByPage(page, size);
         return ResponseEntity.ok(new ApiResponse<>("게시글 조회 성공", posts));
     }
 
@@ -53,11 +55,6 @@ public class PostController {
         return ResponseEntity.ok(new ApiResponse<>("내가 쓴 게시글 목록 불러오기 성공", postService.getPostsByProfileId(signUserInfo.profileId(), page, size)));
     }
 
-    @GetMapping("/myLike")
-    public ResponseEntity<ApiResponse<PostPageResponse>> getMyLikePost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        return ResponseEntity.ok(new ApiResponse<>("좋아요 한 게시글 목록 불러오기 성공", postService.getLikePosts(signUserInfo.profileId(), page, size)));
-    }
-
     @PostMapping("/{postNum}/like")
     public ResponseEntity<ApiResponse<PostLikeResponse>> likePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
 
@@ -72,9 +69,7 @@ public class PostController {
 
     @PatchMapping("/{postNum}/report")
     public ResponseEntity<ApiResponse<PostReportResponse>> reportPost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
-        // 신고를 누가 하는지는 저장안하지만 로그인한 유저만 신고할 수 있도록 토큰 검사
-
-        return  ResponseEntity.ok(new ApiResponse<>("신고 완료", postService.reportPost(postNum)));
+        return  ResponseEntity.ok(new ApiResponse<>("신고 완료", postService.reportPost(signUserInfo,postNum)));
     }
 
     @DeleteMapping("/{postNum}")

@@ -1,6 +1,9 @@
 package com.example.community.temporaryPost.dto;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.Instant;
 import java.util.UUID;

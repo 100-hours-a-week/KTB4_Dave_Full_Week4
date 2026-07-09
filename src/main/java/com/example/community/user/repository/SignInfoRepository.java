@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface SignInfoJpaRepository extends JpaRepository<SignInfo, Long> {
+public interface SignInfoRepository extends JpaRepository<SignInfo, Long> {
     Optional<SignInfo> findByEmail(String email);
     Optional<SignInfo> findByUserNum(Long userNum);
     boolean existsByEmail(String email);

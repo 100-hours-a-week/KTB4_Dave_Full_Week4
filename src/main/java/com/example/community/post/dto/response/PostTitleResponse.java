@@ -1,8 +1,7 @@
 package com.example.community.post.dto.response;
 
-import com.example.community.post.dto.PostDTO;
-import com.example.community.user.dto.UserInfoDTO;
-import com.example.community.user.dto.response.UserInfoResponse;
+import com.example.community.post.entity.Post;
+import com.example.community.user.entity.UserLikePost;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -18,31 +17,46 @@ public record PostTitleResponse(
         int commentCount,
         OffsetDateTime writeAt
 ) {
-    public static PostTitleResponse from(PostDTO post, UserInfoResponse userInfoResponse){
+    public static PostTitleResponse from(UserLikePost userLikePost){
+        ZoneOffset kstOffset = ZoneOffset.of("+09:00");
+        return new PostTitleResponse(
+                userLikePost.getPost().getPostNum(),
+                userLikePost.getUserInfo().getNickname(),
+                userLikePost.getUserInfo().getProfileImage(),
+                userLikePost.getPost().getMaskedTitle(),
+                userLikePost.getPost().getPostState().getViewCount(),
+                userLikePost.getPost().getPostState().getLikeCount(),
+                userLikePost.getPost().getPostState().getReportCount(),
+                userLikePost.getPost().getPostState().getCommentCount(),
+                userLikePost.getPost().getWriteAt().atOffset(kstOffset)
+        );
+    }
+    public static PostTitleResponse from(Post post){
         ZoneOffset kstOffset = ZoneOffset.of("+09:00");
         return new PostTitleResponse(
                 post.getPostNum(),
-                userInfoResponse.nickname(),
-                userInfoResponse.profileImage(),
-                post.getTitle(),
-                post.getViewCount(),
-                post.getLikeCount(),
-                post.getReportCount(),
-                post.getCommentCount(),
+                post.getUserInfo().getNickname(),
+                post.getUserInfo().getProfileImage(),
+                post.getMaskedTitle(),
+                post.getPostState().getViewCount(),
+                post.getPostState().getLikeCount(),
+                post.getPostState().getReportCount(),
+                post.getPostState().getCommentCount(),
                 post.getWriteAt().atOffset(kstOffset)
         );
     }
-    public static PostTitleResponse from(PostDTO post, UserInfoDTO userInfoDTO){
+
+    public static PostTitleResponse adminFrom(Post post){
         ZoneOffset kstOffset = ZoneOffset.of("+09:00");
         return new PostTitleResponse(
                 post.getPostNum(),
-                userInfoDTO.getNickname(),
-                userInfoDTO.getProfileImage(),
+                post.getUserInfo().getNickname(),
+                post.getUserInfo().getProfileImage(),
                 post.getTitle(),
-                post.getViewCount(),
-                post.getLikeCount(),
-                post.getReportCount(),
-                post.getCommentCount(),
+                post.getPostState().getViewCount(),
+                post.getPostState().getLikeCount(),
+                post.getPostState().getReportCount(),
+                post.getPostState().getCommentCount(),
                 post.getWriteAt().atOffset(kstOffset)
         );
     }

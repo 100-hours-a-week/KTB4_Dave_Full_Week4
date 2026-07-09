@@ -4,8 +4,6 @@ import com.example.community.post.entity.Post;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
@@ -26,12 +24,10 @@ public class UserLikePost {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profileId", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private UserInfo userInfo;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "postNum", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private Post post;
 
     public UserLikePost(UserInfo userInfo, Post post) {

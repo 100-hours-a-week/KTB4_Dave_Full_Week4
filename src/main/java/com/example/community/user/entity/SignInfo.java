@@ -1,16 +1,17 @@
 package com.example.community.user.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.util.Assert;
 
 import java.time.Instant;
-import java.util.Objects;
 
 @Entity
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 @Table(name="SignInfo")
 public class SignInfo {
     @Id
@@ -36,6 +37,10 @@ public class SignInfo {
         this.email = email;
         this.password = password;
         deletedAt = null;
+    }
+
+    public void setUserNum(long userNum){
+        this.userNum = userNum;
     }
 
     public boolean passwordConfirm(String password){
@@ -68,7 +73,7 @@ public class SignInfo {
         deletedAt = Instant.now();
     }
 
-    private boolean isDeleted(){
+    public boolean isDeleted(){
         return deletedAt != null;
     }
 

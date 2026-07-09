@@ -1,6 +1,6 @@
 package com.example.community.post.dto.response;
-import com.example.community.post.dto.PostDTO;
-import com.example.community.user.dto.UserInfoDTO;
+
+import com.example.community.post.entity.Post;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -20,19 +20,37 @@ public record PostResponse(
         OffsetDateTime writeAt
 ) {
 
-    public static PostResponse from(PostDTO post, UserInfoDTO userInfoDTO){
+    public static PostResponse from(Post post){
         ZoneOffset kstOffset = ZoneOffset.of("+09:00");
         return new PostResponse(
                 post.getPostNum(),
-                userInfoDTO.getNickname(),
-                userInfoDTO.getProfileImage(),
+                post.getUserInfo().getNickname(),
+                post.getUserInfo().getProfileImage(),
+                post.getMaskedTitle(),
+                post.getContent(),
+                post.getImage(),
+                post.getPostState().getViewCount(),
+                post.getPostState().getLikeCount(),
+                post.getPostState().getReportCount(),
+                post.getPostState().getCommentCount(),
+                post.getEditedAt() != null,
+                post.getWriteAt().atOffset(kstOffset)
+        );
+    }
+
+    public static PostResponse adminFrom(Post post){
+        ZoneOffset kstOffset = ZoneOffset.of("+09:00");
+        return new PostResponse(
+                post.getPostNum(),
+                post.getUserInfo().getNickname(),
+                post.getUserInfo().getProfileImage(),
                 post.getTitle(),
                 post.getContent(),
                 post.getImage(),
-                post.getViewCount(),
-                post.getLikeCount(),
-                post.getReportCount(),
-                post.getCommentCount(),
+                post.getPostState().getViewCount(),
+                post.getPostState().getLikeCount(),
+                post.getPostState().getReportCount(),
+                post.getPostState().getCommentCount(),
                 post.getEditedAt() != null,
                 post.getWriteAt().atOffset(kstOffset)
         );

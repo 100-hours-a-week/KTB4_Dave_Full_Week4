@@ -69,10 +69,10 @@ class UserControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockitoBean(name = "userJpaService")
+    @MockitoBean(name = "userService")
     private UserService userService;
 
-    @MockitoBean(name = "refreshTokenJsonService")
+    @MockitoBean(name = "refreshTokenService")
     private RefreshTokenService refreshTokenService;
 
     @MockitoBean

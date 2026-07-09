@@ -1,16 +1,16 @@
 package com.example.community.comment.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
 
 @Entity
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 @Table(
         name = "CommentEditRecord",
         uniqueConstraints = {
@@ -28,7 +28,6 @@ public class CommentEditRecord {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "commentNum")
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private Comment comment;
 
     @Column(name = "version", nullable = false)
@@ -40,13 +39,17 @@ public class CommentEditRecord {
     @Column(name = "writeAt", nullable = false)
     private Instant writeAt = Instant.now();
 
-    public CommentEditRecord(Comment comment){
+    public static CommentEditRecord from(Comment comment){
         if(comment == null){
             throw new IllegalArgumentException("comment가 null");
         }
-        this.comment = comment;
-        this.version = comment.getVersion();
-        this.content = comment.getContent();
-        this.writeAt = comment.getEditedAt() != null ? comment.getEditedAt() : comment.getWriteAt();
+        return new CommentEditRecord(
+                comment.getCommentNum(),
+                comment.getComment(),
+                comment.getVersion(),
+                comment.getMaskedContent(),
+                comment.getEditedAt() != null ? comment.getEditedAt() : comment.getWriteAt()
+        );
+
     }
 }

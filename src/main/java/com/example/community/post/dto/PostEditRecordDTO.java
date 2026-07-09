@@ -1,5 +1,6 @@
 package com.example.community.post.dto;
 
+import com.example.community.post.entity.Post;
 import com.example.community.post.entity.PostEditRecord;
 
 import java.time.Instant;
@@ -12,11 +13,11 @@ public record PostEditRecordDTO(
         String image,
         Instant writeTime
 ) {
-    public static PostEditRecordDTO from(PostDTO post){
+    public static PostEditRecordDTO from(Post post){
         return new PostEditRecordDTO(
                 post.getPostNum(),
                 post.getVersion(),
-                post.getTitle(),
+                post.getMaskedTitle(),
                 post.getContent(),
                 post.getImage(),
                 post.getEditedAt() != null ? post.getEditedAt() : post.getWriteAt()
