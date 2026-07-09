@@ -16,7 +16,7 @@ import com.example.community.user.dto.response.UserInfoResponse;
 import com.example.community.user.service.UserService;
 import com.example.community.util.JWTUtil;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -28,19 +28,12 @@ import java.net.URI;
 import java.time.Duration;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
     private final JWTUtil jwtUtil;
-
-    public UserController(@Qualifier("userJpaService") UserService userService,
-                          @Qualifier("refreshTokenJsonService") RefreshTokenService refreshTokenService,
-                          JWTUtil jwtUtil){
-        this.userService = userService;
-        this.refreshTokenService = refreshTokenService;
-        this.jwtUtil = jwtUtil;
-    }
 
     @PostMapping()
     public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@ModelAttribute @Valid SignUpRequest signUpRequest) throws IOException {

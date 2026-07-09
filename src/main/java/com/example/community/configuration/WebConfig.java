@@ -34,13 +34,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String uploadRoot = Paths.get(System.getProperty("user.dir"), "app", "uploads")
+        String uploadRoot = Paths.get(System.getProperty("user.dir"), "app")
                 .toUri()
                 .toString();
 
         registry.addResourceHandler("/images/profiles/**")
-                .addResourceLocations(uploadRoot +"profiles/");
+                .addResourceLocations(uploadRoot);
         registry.addResourceHandler("/images/posts/**")
-                .addResourceLocations(uploadRoot + "posts/");
+                .addResourceLocations(uploadRoot);
     }
 }

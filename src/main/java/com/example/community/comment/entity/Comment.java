@@ -6,11 +6,8 @@ import com.example.community.user.entity.UserInfo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
-
 @Entity
 @Getter
 @NoArgsConstructor
@@ -23,12 +20,10 @@ public class Comment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "postNum", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parentNum")
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private Comment comment;
 
     @Column(name = "depth")
@@ -36,7 +31,6 @@ public class Comment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profileId", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private UserInfo userInfo;
 
     @Column(name = "content", nullable = false)
@@ -55,6 +49,9 @@ public class Comment {
     @Version
     private int version;
 
+    @Column(name = "childCount")
+    private long childCount = 0;
+
     public Comment(Post post, Comment comment, UserInfo userInfo, String content){
         if(post == null || userInfo == null || comment == null || content.isBlank()){
             throw new IllegalArgumentException("필수 인자가 비어있습니다.");
@@ -62,6 +59,8 @@ public class Comment {
         if (comment.getDepth() >= 3) {
             throw new BadRequestException("답글을 달 수 없는 댓글입니다.");
         }
+        comment.addChild();
+        post.getPostState().addComment();
         commentNum = null;
         this.post = post;
         this.comment = comment;
@@ -74,6 +73,7 @@ public class Comment {
         if(post == null || userInfo == null || content.isBlank()){
             throw new IllegalArgumentException("필수 인자가 비어있습니다.");
         }
+        post.getPostState().addComment();
         commentNum = null;
         this.post = post;
         this.comment = null;
@@ -82,12 +82,31 @@ public class Comment {
         this.content = content;
     }
 
+    public String getContent(){
+        return isDeleted() ? "삭제된 댓글입니다." : content;
+    }
+
     public void update(String content){
         this.content = content;
         editedAt = Instant.now();
     }
 
+    private void addChild(){
+        this.childCount++;
+    }
+
+    private void deleteChild(){
+        this.childCount--;
+    }
+
     public void delete(){
+        if(this.comment != null){
+            this.comment.deleteChild();
+        }
         this.deletedAt = Instant.now();
+    }
+
+    public boolean isDeleted(){
+        return this.deletedAt == null;
     }
 }

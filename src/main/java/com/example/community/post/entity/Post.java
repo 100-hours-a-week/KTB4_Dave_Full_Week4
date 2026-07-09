@@ -4,8 +4,6 @@ import com.example.community.user.entity.UserInfo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
 
@@ -21,7 +19,6 @@ public class Post {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profileId", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private UserInfo userInfo;
 
     @Column(name = "title", nullable = false)
@@ -33,17 +30,9 @@ public class Post {
     @Column(name = "image")
     private String image;
 
-    @Column(name = "viewCount")
-    private Integer viewCount = 0;
 
-    @Column(name = "likeCount")
-    private Integer likeCount = 0;
-
-    @Column(name = "reportCount")
-    private Integer reportCount = 0;
-
-    @Column(name = "commentCount")
-    private Integer commentCount = 0;
+    @OneToOne(mappedBy = "post", cascade = CascadeType.ALL)
+    private PostState postState;
 
     @Column(name = "deletedAt")
     private Instant deletedAt;
@@ -55,7 +44,8 @@ public class Post {
     private final Instant writeAt = Instant.now();
 
     @Column(name = "version")
-    private Integer version = 1;
+    @Version
+    private int version;
 
     public Post(UserInfo userInfo, String title, String content, String image){
         this.userInfo = userInfo;
@@ -64,6 +54,7 @@ public class Post {
         this.image = image;
         deletedAt = null;
         editedAt = null;
+        this.postState = new PostState(this);
     }
 
 
@@ -72,25 +63,29 @@ public class Post {
         this.content = content;
         this.image = image;
         this.editedAt = Instant.now();
-        this.version = version+1;
+    }
+    public String getTitle(){
+        return postState.isBlind() ? "신고 처리된 글" : title;
     }
 
+    public int getCommentCount(){
+        return postState.getCommentCount();
+    }
+    public void view(){ postState.view();}
+    public int like(){
+        return postState.like();
+    }
+    public int unlike(){
+        return postState.unlike();
+    }
+    public void addComment(){
+        postState.addComment();
+    }
+    public int report(){
+        return postState.report();
+    }
     public void delete(){
         deletedAt = Instant.now();
     }
-    public void view(){ viewCount = viewCount +1;}
-    public void like(){
-        likeCount = likeCount +1;
-    }
-    public void unlike(){
-        likeCount = likeCount -1;
-    }
 
-    public void report(){
-        reportCount = reportCount + 1;
-    }
-
-    public void addComment(){
-        commentCount = commentCount + 1;
-    }
 }

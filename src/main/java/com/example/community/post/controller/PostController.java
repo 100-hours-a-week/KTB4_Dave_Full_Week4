@@ -10,7 +10,6 @@ import com.example.community.resolver.SignUserInfo;
 import com.example.community.response.ApiResponse;
 import com.example.community.temporaryPost.dto.response.request.PostRequest;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +21,7 @@ import java.net.URI;
 public class PostController {
     private final PostService postService;
 
-    public PostController(@Qualifier("postJpaService") PostService postService){
+    public PostController(PostService postService){
         this.postService = postService;
     }
 
@@ -75,9 +74,7 @@ public class PostController {
 
     @PatchMapping("/{postNum}/report")
     public ResponseEntity<ApiResponse<PostReportResponse>> reportPost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
-        // 신고를 누가 하는지는 저장안하지만 로그인한 유저만 신고할 수 있도록 토큰 검사
-
-        return  ResponseEntity.ok(new ApiResponse<>("신고 완료", postService.reportPost(postNum)));
+        return  ResponseEntity.ok(new ApiResponse<>("신고 완료", postService.reportPost(signUserInfo,postNum)));
     }
 
     @DeleteMapping("/{postNum}")

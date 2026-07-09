@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
 
@@ -22,7 +20,6 @@ public class UserInfo {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userNum", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private SignInfo signInfo;
 
     @Column(name = "nickname", nullable = false, unique = true)
@@ -49,6 +46,14 @@ public class UserInfo {
         this.profileId = profileId;
     }
 
+    public String getNickname(){
+        return isDeleted() ? "알 수 없음" : nickname;
+    }
+
+    public String getProfileImage(){
+        return isDeleted() ? null : profileImage;
+    }
+
     public void update(String nickname, String profileImage){
         this.nickname = nickname;
         this.profileImage = profileImage;
@@ -59,7 +64,7 @@ public class UserInfo {
     }
 
 
-    private boolean isDeleted(){
+    public boolean isDeleted(){
         return deletedAt != null;
     }
 

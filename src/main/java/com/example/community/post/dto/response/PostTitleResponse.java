@@ -24,10 +24,10 @@ public record PostTitleResponse(
                 userLikePost.getUserInfo().getNickname(),
                 userLikePost.getUserInfo().getProfileImage(),
                 userLikePost.getPost().getTitle(),
-                userLikePost.getPost().getViewCount(),
-                userLikePost.getPost().getLikeCount(),
-                userLikePost.getPost().getReportCount(),
-                userLikePost.getPost().getCommentCount(),
+                userLikePost.getPost().getPostState().getViewCount(),
+                userLikePost.getPost().getPostState().getLikeCount(),
+                userLikePost.getPost().getPostState().getReportCount(),
+                userLikePost.getPost().getPostState().getCommentCount(),
                 userLikePost.getPost().getWriteAt().atOffset(kstOffset)
         );
     }
@@ -38,10 +38,10 @@ public record PostTitleResponse(
                 post.getUserInfo().getNickname(),
                 post.getUserInfo().getProfileImage(),
                 post.getTitle(),
-                post.getViewCount(),
-                post.getLikeCount(),
-                post.getReportCount(),
-                post.getCommentCount(),
+                post.getPostState().getViewCount(),
+                post.getPostState().getLikeCount(),
+                post.getPostState().getReportCount(),
+                post.getPostState().getCommentCount(),
                 post.getWriteAt().atOffset(kstOffset)
         );
     }

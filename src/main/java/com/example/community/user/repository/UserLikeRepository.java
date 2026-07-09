@@ -3,6 +3,7 @@ package com.example.community.user.repository;
 import com.example.community.user.entity.UserLikePost;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -10,10 +11,11 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface UserLikeJpaRepository extends JpaRepository<UserLikePost, Long> {
+public interface UserLikeRepository extends JpaRepository<UserLikePost, Long> {
+    @EntityGraph(attributePaths = {"userInfo", "post", "post.postState"})
     @Query(
-            "select ul from UserInfo join fetch ul.userInfo " +
-            "Post join fetch ul.post where ul.userInfo.profileId = :profileId"
+            "select ul from UserLikePost ul " +
+            "where ul.userInfo.profileId = :profileId"
     )
     Page<UserLikePost> findByUserInfo_ProfileId(Long profileId, Pageable pageable);
     boolean existsByUserInfo_ProfileIdAndPost_PostNum(Long profileId, Long postNum);

@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface CommentEditJpaRepository extends JpaRepository<CommentEditRecord, Long> {
+public interface CommentEditRepository extends JpaRepository<CommentEditRecord, Long> {
     List<CommentEditRecord> findByComment_CommentNumOrderByEditIdDesc(Long commentNum);
 }

@@ -29,10 +29,10 @@ public record PostResponse(
                 post.getTitle(),
                 post.getContent(),
                 post.getImage(),
-                post.getViewCount(),
-                post.getLikeCount(),
-                post.getReportCount(),
-                post.getCommentCount(),
+                post.getPostState().getViewCount(),
+                post.getPostState().getLikeCount(),
+                post.getPostState().getReportCount(),
+                post.getPostState().getCommentCount(),
                 post.getEditedAt() != null,
                 post.getWriteAt().atOffset(kstOffset)
         );

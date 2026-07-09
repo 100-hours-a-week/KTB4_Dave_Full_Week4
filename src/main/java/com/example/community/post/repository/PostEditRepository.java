@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PostEditJpaRepository extends JpaRepository<PostEditRecord, Long> {
+public interface PostEditRepository extends JpaRepository<PostEditRecord, Long> {
     List<PostEditRecord> findByPost_PostNumOrderByEditIdDesc(Long postNum);
 }
