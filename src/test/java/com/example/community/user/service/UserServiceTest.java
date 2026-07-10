@@ -155,7 +155,7 @@ class UserServiceTest {
         when(passwordEncoder.matches(password, password)).thenReturn(true);
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.of(signInfo));
         assertThatThrownBy(() -> userService.signIn(new SignInRequest(email, password))).isInstanceOf(UnAuthorizedException.class)
-                .hasMessage("로그인 실패");
+                .hasMessage("탈퇴한 유저");
     }
 
     @Test
