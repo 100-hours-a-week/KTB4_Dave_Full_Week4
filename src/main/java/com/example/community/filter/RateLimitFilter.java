@@ -43,6 +43,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 response.getWriter().append("Too many requests");
             }
         }
+        filterChain.doFilter(request, response);
     }
 
     private Bucket createBucket() {

@@ -82,7 +82,7 @@ public class UserService{
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 이메일"));
 
         //현재는 평문이 저장되겠으나 암호화된 값을 비교해야 함.
-        if(!passwordEncoder.matches(signInfo.getPassword(),signInRequest.password())){
+        if(!passwordEncoder.matches(signInRequest.password(), signInfo.getPassword())){
             throw new UnAuthorizedException("로그인 실패");
         }
         if(signInfo.isDeleted()){
@@ -123,7 +123,7 @@ public class UserService{
         SignInfo signInfo = signInfoRepository.findByUserNum(signUserInfo.userNum())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
-        if(!signInfo.passwordConfirm(passwordChangeRequest.password())){
+        if(!passwordEncoder.matches(passwordChangeRequest.password(), signInfo.getPassword())){
             throw new BadRequestException("비밀번호가 틀렸습니다.");
         }
         if(!passwordChangeRequest.nextPassword().equals(passwordChangeRequest.passwordConfirm())){
