@@ -45,7 +45,7 @@ public class Post {
 
     @Column(name = "version")
     @Version
-    private int version;
+    private int version = 1;
 
     public Post(UserInfo userInfo, String title, String content, String image){
         this.userInfo = userInfo;

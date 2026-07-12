@@ -8,7 +8,7 @@ import com.example.community.post.service.PostService;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.response.ApiResponse;
-import com.example.community.temporaryPost.dto.response.request.PostRequest;
+import com.example.community.post.dto.request.PostRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,8 +26,8 @@ public class PostController {
     }
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<PostPageResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        PostPageResponse posts =postService.getPostsByPage(page, size);
+    public ResponseEntity<ApiResponse<PostPageResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "latest") String sort){
+        PostPageResponse posts =postService.getPostsByPage(page, size, sort);
         return ResponseEntity.ok(new ApiResponse<>("게시글 조회 성공", posts));
     }
 
@@ -51,8 +51,8 @@ public class PostController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<ApiResponse<PostPageResponse>> getMyPost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        return ResponseEntity.ok(new ApiResponse<>("내가 쓴 게시글 목록 불러오기 성공", postService.getPostsByProfileId(signUserInfo.profileId(), page, size)));
+    public ResponseEntity<ApiResponse<PostPageResponse>> getMyPost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,  @RequestParam(defaultValue = "latest") String sort){
+        return ResponseEntity.ok(new ApiResponse<>("내가 쓴 게시글 목록 불러오기 성공", postService.getPostsByProfileId(signUserInfo.profileId(), page, size, sort)));
     }
 
     @PostMapping("/{postNum}/like")

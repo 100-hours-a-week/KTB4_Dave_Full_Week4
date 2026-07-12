@@ -1,6 +1,7 @@
 package com.example.community.post.dto.response;
 
 import com.example.community.post.entity.Post;
+import com.example.community.user.entity.UserLikePost;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -21,6 +22,17 @@ public record PostPageResponse(
                 postPage.getNumberOfElements(),
                 postPage.getTotalElements(),
                 postPage.getTotalPages()
+        );
+    }
+
+    public static PostPageResponse fromUserLike(Page<UserLikePost> userLikePosts){
+        return new PostPageResponse(
+                userLikePosts.getContent().stream().map(PostTitleResponse::from).toList(),
+                userLikePosts.getNumber(),
+                userLikePosts.getSize(),
+                userLikePosts.getNumberOfElements(),
+                userLikePosts.getTotalElements(),
+                userLikePosts.getTotalPages()
         );
     }
 

@@ -44,7 +44,7 @@ public class CommentEditRecord {
             throw new IllegalArgumentException("comment가 null");
         }
         return new CommentEditRecord(
-                comment.getCommentNum(),
+                null,
                 comment.getComment(),
                 comment.getVersion(),
                 comment.getMaskedContent(),

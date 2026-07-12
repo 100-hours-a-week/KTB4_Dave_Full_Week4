@@ -29,7 +29,7 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("댓글 등록 성공", commentService.addCommentToPost(signUserInfo, postNum, commentToPostRequest)));
     }
 
-    @PostMapping("/com/example/community/comment/{postNum}")
+    @PostMapping("/comment/{postNum}")
     public ResponseEntity<ApiResponse<CommentAddResponse>> commentToComment(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum, @RequestBody @Valid CommentToCommentRequest commentToCommentRequest){
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("댓글 등록 성공", commentService.addCommentToComment(signUserInfo, postNum,commentToCommentRequest)));
     }
@@ -42,7 +42,7 @@ public class CommentController {
 
     @GetMapping("/list/child/{commentNum}")
     public ResponseEntity<ApiResponse<CommentPageResponse>> getChildCommentList(@PathVariable long commentNum, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        return ResponseEntity.ok(new ApiResponse<>("댓글 조회 성공", commentService.getChildCommentPage(commentNum, page, size)));
+        return ResponseEntity.ok(new ApiResponse<>("자식 댓글 조회 성공", commentService.getChildCommentPage(commentNum, page, size)));
     }
 
 

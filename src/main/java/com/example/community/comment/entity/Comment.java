@@ -107,6 +107,6 @@ public class Comment {
     }
 
     public boolean isDeleted(){
-        return this.deletedAt == null;
+        return this.deletedAt != null;
     }
 }

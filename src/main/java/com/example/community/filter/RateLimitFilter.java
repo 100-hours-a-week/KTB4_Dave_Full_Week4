@@ -36,11 +36,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
             if (bucket.tryConsume(1)) {
                 // the limit is not exceeded
                 filterChain.doFilter(request, response);
+                return;
             } else {
                 // limit is exceeded=
-                response.setContentType("text/plain");
-                response.setStatus(429);
-                response.getWriter().append("Too many requests");
+                writeTooManyRequestsResponse(response);
+                return;
             }
         }
         filterChain.doFilter(request, response);
@@ -68,5 +68,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return xfHeader.split(",")[0];
         }
         return request.getRemoteAddr();
+    }
+
+    private void writeTooManyRequestsResponse(HttpServletResponse response) throws IOException {
+        response.setStatus(429);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("""
+        {
+          "message": "요청 횟수가 너무 많습니다.",
+          "data": null
+        }
+        """);
     }
 }

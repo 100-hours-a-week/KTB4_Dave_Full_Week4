@@ -17,7 +17,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     Page<Comment> findByPost_postNum(long postNum, Pageable pageable);
 
     @EntityGraph(attributePaths = {"userInfo"})
-    @Query("select c from Comment c where c.comment = :parentNum")
+    @Query("select c from Comment c where c.comment.commentNum = :parentNum")
     Page<Comment> findByParentNum(long parentNum, Pageable pageable);
 
     @EntityGraph(attributePaths = {"userInfo"})

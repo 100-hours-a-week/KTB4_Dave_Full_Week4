@@ -9,7 +9,7 @@ public record CommentPageResponse (
         List<CommentResponse> commentResponses,
         int page,
         int pageSize,
-        int postCount,
+        int commentCount,
         long totalCount,
         int totalPage
 ) {

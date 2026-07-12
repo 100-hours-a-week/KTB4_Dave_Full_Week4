@@ -86,8 +86,8 @@ public class UserController {
     }
 
     @GetMapping("/myLike")
-    public ResponseEntity<ApiResponse<PostPageResponse>> getMyLikePost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        return ResponseEntity.ok(new ApiResponse<>("좋아요 한 게시글 목록 불러오기 성공", userService.getLikePosts(signUserInfo.profileId(), page, size)));
+    public ResponseEntity<ApiResponse<PostPageResponse>> getMyLikePost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "latest") String sort){
+        return ResponseEntity.ok(new ApiResponse<>("좋아요 한 게시글 목록 불러오기 성공", userService.getLikePosts(signUserInfo.profileId(), page, size, sort)));
     }
 
     @PatchMapping("/info")

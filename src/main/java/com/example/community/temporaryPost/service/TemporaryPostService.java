@@ -6,7 +6,7 @@ import com.example.community.resolver.SignUserInfo;
 import com.example.community.temporaryPost.dto.response.TemporaryKeyResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryPostResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryPostTitleResponse;
-import com.example.community.temporaryPost.dto.response.request.PostRequest;
+import com.example.community.post.dto.request.PostRequest;
 import com.example.community.temporaryPost.entity.TemporaryPost;
 import com.example.community.temporaryPost.repository.TemporaryPostJpaRepository;
 import com.example.community.user.entity.UserInfo;
@@ -62,8 +62,9 @@ public class TemporaryPostService {
                 .stream().map(TemporaryPostTitleResponse::from).toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TemporaryPostResponse updateTemporaryPost(SignUserInfo signUserInfo, long temporaryId, PostRequest postRequest) throws IOException {
+        System.out.println("service");
         checkAuthority(signUserInfo, temporaryId);
         TemporaryPost temporaryPost = temporaryPostJpaRepository.findByTemporaryId(temporaryId)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 임시저장 글"));
@@ -71,6 +72,7 @@ public class TemporaryPostService {
         if(postRequest.image() != null){
             image = imageConverter.updatePostImage(postRequest.image());
         }
+        System.out.println(postRequest.title() + " " +postRequest.content());
         temporaryPost.update(postRequest.title(), postRequest.content(), image);
 
         return TemporaryPostResponse.from(temporaryPost);

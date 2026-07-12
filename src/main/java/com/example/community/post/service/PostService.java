@@ -8,7 +8,7 @@ import com.example.community.post.entity.PostEditRecord;
 import com.example.community.post.repository.PostEditRepository;
 import com.example.community.post.repository.PostRepository;
 import com.example.community.resolver.SignUserInfo;
-import com.example.community.temporaryPost.dto.response.request.PostRequest;
+import com.example.community.post.dto.request.PostRequest;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserLikePost;
 import com.example.community.user.entity.UserRole;
@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.util.List;
 
 @Service
 public class PostService {
@@ -54,9 +53,18 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostPageResponse getPostsByPage(int page, int size) {
+    public PostPageResponse getPostsByPage(int page, int size, String sort) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Post> posts = postRepository.findPostByPage(pageable);
+        Page<Post> posts;
+        if(sort.equals("likes")) {
+            posts = postRepository.findPostByPageOrderByLikeCount(pageable);
+        }
+        else if(sort.equals("views")){
+            posts = postRepository.findPostByPageOrderByViewCount(pageable);
+        }
+        else{
+            posts = postRepository.findPostByPage(pageable);
+        }
 
         return PostPageResponse.from(posts);
     }
@@ -106,14 +114,20 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostPageResponse getPostsByProfileId(long profileId, int page, int size) {
+    public PostPageResponse getPostsByProfileId(long profileId, int page, int size, String sort) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Post> posts = postRepository.findByUserInfo_ProfileIdOrderByPostNumDesc(profileId, pageable);
-        List<PostTitleResponse> postTitleResponses = posts.getContent().stream()
-                .map(PostTitleResponse::from).toList();
+        Page<Post> posts;
+        if(sort.equals("likes")) {
+            posts = postRepository.findByUserInfo_ProfileIdOrderByLikeCountDesc(profileId, pageable);
+        }
+        else if(sort.equals("views")){
+            posts = postRepository.findByUserInfo_ProfileIdOrderByViewCountDesc(profileId, pageable);
+        }
+        else{
+            posts = postRepository.findByUserInfo_ProfileIdOrderByPostNumDesc(profileId, pageable);
+        }
 
-        return new PostPageResponse(postTitleResponses, posts.getNumber(), posts.getSize()
-        , posts.getNumberOfElements(), posts.getTotalElements(), posts.getTotalPages());
+        return PostPageResponse.from(posts);
     }
 
     @Transactional

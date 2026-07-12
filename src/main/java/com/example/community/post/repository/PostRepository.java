@@ -19,6 +19,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findPostByPage(Pageable pageable);
 
     @EntityGraph(attributePaths = {"userInfo", "postState"})
+    @Query("select p from Post p where p.deletedAt is null order by p.postState.likeCount desc")
+    Page<Post> findPostByPageOrderByLikeCount(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"userInfo", "postState"})
+    @Query("select p from Post p where p.deletedAt is null order by p.postState.viewCount desc")
+    Page<Post> findPostByPageOrderByViewCount(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"userInfo", "postState"})
     @Query("select p from Post p where p.postNum = :postNum and p.deletedAt is null")
     Optional<Post> findByPostNum(Long postNum);
 
@@ -27,7 +35,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findByPostNumIn(List<Long> postNums);
 
     @EntityGraph(attributePaths = {"userInfo", "postState"})
-    @Query("select p from Post p where p.userInfo.profileId = :profielId and p.deletedAt is null")
-    Page<Post> findByUserInfo_ProfileIdOrderByPostNumDesc(Long profileId, Pageable pageable);
+    @Query("select p from Post p where p.userInfo.profileId = :profileId and p.deletedAt is null order by p.postNum desc")
+    Page<Post> findByUserInfo_ProfileIdOrderByPostNumDesc(long profileId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"userInfo", "postState"})
+    @Query("select p from Post p where p.userInfo.profileId = :profileId and p.deletedAt is null order by p.postState.likeCount desc")
+    Page<Post> findByUserInfo_ProfileIdOrderByLikeCountDesc(long profileId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"userInfo", "postState"})
+    @Query("select p from Post p where p.userInfo.profileId = :profileId and p.deletedAt is null order by p.postState.viewCount desc")
+    Page<Post> findByUserInfo_ProfileIdOrderByViewCountDesc(long profileId, Pageable pageable);
 }

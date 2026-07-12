@@ -6,7 +6,7 @@ import com.example.community.response.ApiResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryKeyResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryPostResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryPostTitleResponse;
-import com.example.community.temporaryPost.dto.response.request.PostRequest;
+import com.example.community.post.dto.request.PostRequest;
 import com.example.community.temporaryPost.service.TemporaryPostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,8 @@ public class TemporaryPostController {
     }
 
     @PutMapping("/{temporaryId}")
-    public ResponseEntity<ApiResponse<TemporaryPostResponse>> updateTemporaryPost(@SignUser SignUserInfo signUserInfo, @PathVariable Long temporaryId, @RequestBody @Valid PostRequest postRequest) throws IOException {
+    public ResponseEntity<ApiResponse<TemporaryPostResponse>> updateTemporaryPost(@SignUser SignUserInfo signUserInfo, @PathVariable Long temporaryId, @ModelAttribute @Valid PostRequest postRequest) throws IOException {
+        System.out.println("controller");
         return ResponseEntity.ok(new ApiResponse<>("임시저장 완료",temporaryPostService.updateTemporaryPost(signUserInfo, temporaryId, postRequest)));
     }
 

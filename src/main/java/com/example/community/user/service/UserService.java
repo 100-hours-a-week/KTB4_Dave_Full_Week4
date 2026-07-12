@@ -5,7 +5,6 @@ import com.example.community.handler.exception.DuplicateException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.handler.exception.UnAuthorizedException;
 import com.example.community.post.dto.response.PostPageResponse;
-import com.example.community.post.dto.response.PostTitleResponse;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.dto.request.PasswordChangeRequest;
@@ -30,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.util.List;
 
 
 @Service
@@ -130,24 +128,24 @@ public class UserService{
             throw new BadRequestException("비밀번호 확인 불일치");
         }
 
-        signInfo.changePassword(passwordChangeRequest.nextPassword());
+        signInfo.changePassword(passwordEncoder.encode(passwordChangeRequest.nextPassword()));
     }
 
     @Transactional(readOnly = true)
-    public PostPageResponse getLikePosts(long profileId, int page, int size) {
+    public PostPageResponse getLikePosts(long profileId, int page, int size, String sort) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<UserLikePost> userLikePosts = userLikeRepository.findByUserInfo_ProfileId(profileId, pageable);
-        List<PostTitleResponse> postTitleResponses = userLikePosts.stream()
-                .map(PostTitleResponse::from).toList();
+        Page<UserLikePost> userLikePosts;
+        if(sort.equals("likes")) {
+            userLikePosts = userLikeRepository.findByUserInfo_ProfileIdOrderByLikeCount(profileId, pageable);
+        }
+        else if(sort.equals("views")){
+            userLikePosts = userLikeRepository.findByUserInfo_ProfileIdOrderByViewCount(profileId, pageable);
+        }
+        else{
+            userLikePosts = userLikeRepository.findByUserInfo_ProfileId(profileId, pageable);
+        }
 
-        return new PostPageResponse(
-                postTitleResponses,
-                page,
-                size,
-                userLikePosts.getNumberOfElements(),
-                userLikePosts.getTotalElements(),
-                userLikePosts.getTotalPages()
-        );
+        return PostPageResponse.fromUserLike(userLikePosts);
     }
 
     @Transactional
