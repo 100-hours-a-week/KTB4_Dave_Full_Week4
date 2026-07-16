@@ -1,8 +1,8 @@
-package com.example.community.refreshToken.service;
+package com.example.community.auth.service;
 
 import com.example.community.handler.exception.NotFoundException;
-import com.example.community.refreshToken.entity.RefreshToken;
-import com.example.community.refreshToken.repository.RefreshTokenJpaRepository;
+import com.example.community.auth.entity.RefreshToken;
+import com.example.community.auth.repository.RefreshTokenRepository;
 import com.example.community.user.entity.SignInfo;
 import com.example.community.user.repository.SignInfoRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,20 +12,21 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
-    private final RefreshTokenJpaRepository refreshTokenJpaRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final SignInfoRepository signInfoRepository;
 
-    @Transactional(readOnly = false)
+    @Transactional
     public void addRefreshToken(long userNum, String token) {
         SignInfo signInfo = signInfoRepository.findByUserNum(userNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
         RefreshToken refreshToken = new RefreshToken(null, signInfo, token);
-        refreshTokenJpaRepository.save(refreshToken);
+        refreshTokenRepository.save(refreshToken);
     }
 
-    @Transactional(readOnly = false)
+
+    @Transactional
     public void deleteRefreshToken(String token) {
-        refreshTokenJpaRepository.deleteByToken(token);
+        refreshTokenRepository.deleteByToken(token);
     }
 
 //    @Override

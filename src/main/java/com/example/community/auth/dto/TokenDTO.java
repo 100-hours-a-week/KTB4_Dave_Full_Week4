@@ -1,7 +1,7 @@
-package com.example.community.refreshToken.dto;
+package com.example.community.auth.dto;
 
 
-import com.example.community.refreshToken.entity.RefreshToken;
+import com.example.community.auth.entity.RefreshToken;
 
 public record TokenDTO(
         long userNum,

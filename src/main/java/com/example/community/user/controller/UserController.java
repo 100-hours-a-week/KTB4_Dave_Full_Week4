@@ -1,7 +1,7 @@
 package com.example.community.user.controller;
 
 import com.example.community.post.dto.response.PostPageResponse;
-import com.example.community.refreshToken.service.RefreshTokenService;
+import com.example.community.auth.service.RefreshTokenService;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.response.ApiResponse;

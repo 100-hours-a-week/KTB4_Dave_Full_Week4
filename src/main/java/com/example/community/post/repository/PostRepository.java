@@ -31,10 +31,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Optional<Post> findByPostNum(Long postNum);
 
     @EntityGraph(attributePaths = {"userInfo", "postState"})
-    @Query("select p from Post p where p.postNum in :postNums and p.deletedAt is null")
-    List<Post> findByPostNumIn(List<Long> postNums);
-
-    @EntityGraph(attributePaths = {"userInfo", "postState"})
     @Query("select p from Post p where p.userInfo.profileId = :profileId and p.deletedAt is null order by p.postNum desc")
     Page<Post> findByUserInfo_ProfileIdOrderByPostNumDesc(long profileId, Pageable pageable);
 

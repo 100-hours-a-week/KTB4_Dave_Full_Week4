@@ -65,16 +65,4 @@ class UserInfoRepositoryTest {
         exist = userInfoRepository.existsByNickname(USER_INFO.getNickname());
         assertThat(exist).isTrue();
     }
-
-    @Test
-    void findByProfileIdIn() {
-            userInfoRepository.save(USER_INFO);
-        SignInfo signInfo = new SignInfo(null, "test@test.com", "1234", null, Instant.now());
-        signInfoRepository.save(signInfo);
-        UserInfo userInfo = new UserInfo(null, signInfo, "test", null, UserRole.USER, null);
-        userInfoRepository.save(userInfo);
-        List<Long> profileIds = List.of(USER_INFO.getProfileId(), userInfo.getProfileId());
-
-        assertThat(userInfoRepository.findByProfileIdIn(profileIds)).containsExactlyInAnyOrder(USER_INFO, userInfo);
-    }
 }

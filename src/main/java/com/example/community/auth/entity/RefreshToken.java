@@ -1,4 +1,4 @@
-package com.example.community.refreshToken.entity;
+package com.example.community.auth.entity;
 
 import com.example.community.user.entity.SignInfo;
 import jakarta.persistence.*;

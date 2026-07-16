@@ -2,7 +2,7 @@ package com.example.community.user.controller;
 
 import com.example.community.TestResolverConfig;
 import com.example.community.configuration.WebConfig;
-import com.example.community.refreshToken.service.RefreshTokenService;
+import com.example.community.auth.service.RefreshTokenService;
 import com.example.community.resolver.SignUserArgumentResolver;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.user.dto.UserInfoDTO;
