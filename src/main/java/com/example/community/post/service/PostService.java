@@ -167,17 +167,18 @@ public class PostService {
         Post post = postRepository.findByPostNum(postNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
         int likeCount;
-        try {
+        if(userLikeRepository.existsByUserInfo_ProfileIdAndPost_PostNum(userInfo.getProfileId(), postNum)){
             UserLikePost userLikePost = userLikeRepository.findByUserInfo_ProfileIdAndPost_PostNum(signUserInfo.profileId(), postNum)
                     .orElseThrow();
             likeCount = userLikePost.getPost().unlike();
             userLikeRepository.delete(userLikePost);
         }
-        catch(Exception e){
+        else{
             UserLikePost userLikePost = new UserLikePost(userInfo, post);
             likeCount = userLikePost.getPost().like();
             userLikeRepository.save(userLikePost);
         }
+        
         return new PostLikeResponse(likeCount);
     }
 
@@ -194,7 +195,8 @@ public class PostService {
 
     @Transactional
     public PostReportResponse reportPost(SignUserInfo signUserInfo, long postNum) {
-        Post post = checkUserAuthority(signUserInfo, postNum);
+        Post post = postRepository.findByPostNum(postNum)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
         return new PostReportResponse(post.report());
     }
 

@@ -103,6 +103,7 @@ public class Comment {
         if(this.comment != null){
             this.comment.deleteChild();
         }
+        this.post.deleteComment();
         this.deletedAt = Instant.now();
     }
 

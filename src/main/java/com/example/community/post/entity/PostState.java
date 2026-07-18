@@ -50,4 +50,8 @@ public class PostState {
     public boolean isBlind(){
         return reportCount > 5;
     }
+
+    public void deleteComment() {
+        commentCount = commentCount - 1;
+    }
 }

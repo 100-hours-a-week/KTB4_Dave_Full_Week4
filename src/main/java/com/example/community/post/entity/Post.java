@@ -81,6 +81,7 @@ public class Post {
     public void addComment(){
         postState.addComment();
     }
+    public void deleteComment() {postState.deleteComment();}
     public int report(){
         return postState.report();
     }

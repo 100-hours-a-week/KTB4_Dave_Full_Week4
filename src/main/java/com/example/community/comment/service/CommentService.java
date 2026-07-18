@@ -45,7 +45,7 @@ public class CommentService{
     private Comment checkUserAuthority(SignUserInfo signUserInfo, long commentNum) {
         Comment comment = commentRepository.findByCommentNum(commentNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글"));
-        if(!comment.getUserInfo().getProfileId().equals(signUserInfo.profileId()) && signUserInfo.userRole().equals(UserRole.ADMIN)){
+        if(!comment.getUserInfo().getProfileId().equals(signUserInfo.profileId()) && !signUserInfo.userRole().equals(UserRole.ADMIN)){
             throw new ForbiddenException("접근 권한 부족");
         }
         return comment;
