@@ -17,7 +17,7 @@ public class ImageConverter {
         String extension = extractExtension(file.getOriginalFilename());
         String storedFileName = UUID.randomUUID() + "." + extension;
 
-        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app");
+        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app"+POST_URL_PREFIX);
         Path targetPath = uploadPath.resolve(storedFileName);
 
         file.transferTo(targetPath);
@@ -29,7 +29,7 @@ public class ImageConverter {
         String extension = extractExtension(file.getOriginalFilename());
         String storedFileName = UUID.randomUUID() + "." + extension;
 
-        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app");
+        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app"+PROFILE_URL_PREFIX);
         Path targetPath = uploadPath.resolve(storedFileName);
 
         file.transferTo(targetPath);

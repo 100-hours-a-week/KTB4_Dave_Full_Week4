@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
-public class authController {
+public class AuthController {
     @PostMapping
     public ResponseEntity<ApiResponse<RefreshResponse>> refresh(@CookieValue(value = "refresh") String refreshToken){
         return ResponseEntity.ok(ApiResponse.of("리프레시 성공", null));

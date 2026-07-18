@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(PathRequest.toH2Console()).permitAll();
+                    auth.requestMatchers("/images/**").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/users","/users/email", "/users/nickname", "/users/state").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/posts").permitAll();
                     auth.requestMatchers(regexMatcher(HttpMethod.GET, "^/posts/[0-9]+$")).permitAll();
