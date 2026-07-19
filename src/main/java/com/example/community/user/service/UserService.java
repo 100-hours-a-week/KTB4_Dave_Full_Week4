@@ -86,8 +86,9 @@ public class UserService{
         if(signInfo.isDeleted()){
             throw new UnAuthorizedException("탈퇴한 유저");
         }
-
-        return UserInfoDTO.from(userInfoRepository.findBySignInfo_UserNum(signInfo.getUserNum()).getFirst());
+        UserInfoDTO userInfoDTO = UserInfoDTO.from(userInfoRepository.findBySignInfo_UserNum(signInfo.getUserNum()).getFirst());
+        userInfoDTO.setEmail(signInfo.getEmail());
+        return userInfoDTO;
     }
 
     @Transactional(readOnly = true)
@@ -105,7 +106,7 @@ public class UserService{
         UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
-        if(isExistNickname(userInfoRequest.nickname())){
+        if(isExistNickname(userInfoRequest.nickname()) && !userInfoRequest.nickname().equals(userInfo.getNickname())){
             throw new DuplicateException("중복 닉네임 존재");
         }
         String profileImage = null;

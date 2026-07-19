@@ -80,7 +80,7 @@ public class UserController {
     }
 
     @DeleteMapping("/state")
-    public ResponseEntity<ApiResponse<Object>> signOut(@CookieValue(value = "refresh") String refreshToken){
+    public ResponseEntity<ApiResponse<Object>> signOut(@CookieValue(value = "refresh", required = false) String refreshToken){
         refreshTokenService.deleteRefreshToken(refreshToken);
         return ResponseEntity.ok(ApiResponse.of("로그아웃 성공", null));
     }

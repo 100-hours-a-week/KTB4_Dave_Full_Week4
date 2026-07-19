@@ -17,16 +17,6 @@ public class WebConfig implements WebMvcConfigurer {
     private final SignUserArgumentResolver signUserArgumentResolver;
 
     @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("http://127.0.0.1:5500")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-
-    }
-
-    @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
 
         resolvers.add(signUserArgumentResolver);

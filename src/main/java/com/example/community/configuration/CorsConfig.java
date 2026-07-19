@@ -13,6 +13,7 @@ public class CorsConfig {
     public UrlBasedCorsConfigurationSource corsConfigurationSource(){
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.addAllowedOrigin("http://127.0.0.1:5500");
+        corsConfiguration.addAllowedOrigin("http://localhost:5173");
         corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         corsConfiguration.setAllowCredentials(true);

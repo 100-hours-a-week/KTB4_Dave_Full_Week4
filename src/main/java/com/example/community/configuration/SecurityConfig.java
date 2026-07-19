@@ -2,6 +2,7 @@ package com.example.community.configuration;
 
 import com.example.community.filter.JwtFilter;
 import com.example.community.filter.RateLimitFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -71,6 +72,20 @@ public class SecurityConfig {
                 })
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(
+                                (request, response, authException) ->
+                                        response.sendError(
+                                                HttpServletResponse.SC_UNAUTHORIZED
+                                        )
+                        )
+                        .accessDeniedHandler(
+                                (request, response, accessDeniedException) ->
+                                        response.sendError(
+                                                HttpServletResponse.SC_FORBIDDEN
+                                        )
+                        )
+                )
 
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
