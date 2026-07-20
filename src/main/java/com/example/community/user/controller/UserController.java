@@ -1,5 +1,7 @@
 package com.example.community.user.controller;
 
+import com.example.community.auth.dto.response.AuthResponse;
+import com.example.community.auth.service.AuthService;
 import com.example.community.post.dto.response.PostPageResponse;
 import com.example.community.auth.service.RefreshTokenService;
 import com.example.community.resolver.SignUser;
@@ -33,6 +35,7 @@ import java.time.Duration;
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final AuthService authService;
     private final RefreshTokenService refreshTokenService;
     private final JWTUtil jwtUtil;
 
@@ -60,13 +63,9 @@ public class UserController {
     @PostMapping("/state")
     public ResponseEntity<ApiResponse<SignInResponse>> signIn(@RequestBody @Valid SignInRequest signInRequest){
         UserInfoDTO userInfoDTO = userService.signIn(signInRequest);
-        String accessToken = jwtUtil.generateAccessToken(userInfoDTO.getUserNum(), userInfoDTO.getProfileId(), userInfoDTO.getUserRole());
-        String refreshToken = jwtUtil.generateRefreshToken(userInfoDTO.getUserNum());
-        SignInResponse signInResponse = SignInResponse.of(userInfoDTO, accessToken);
+        AuthResponse authResponse = authService.tokenIssue(userInfoDTO);
 
-        refreshTokenService.addRefreshToken(userInfoDTO.getUserNum(), refreshToken);
-
-        ResponseCookie cookie = ResponseCookie.from("refresh", refreshToken)
+        ResponseCookie cookie = ResponseCookie.from("refresh", authResponse.refreshToken())
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
@@ -76,7 +75,7 @@ public class UserController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(ApiResponse.of("로그인 성공",signInResponse));
+                .body(ApiResponse.of("로그인 성공",authResponse.signInResponse()));
     }
 
     @DeleteMapping("/state")

@@ -1,8 +1,10 @@
 package com.example.community.user.controller;
 
 import com.example.community.TestResolverConfig;
-import com.example.community.configuration.WebConfig;
+import com.example.community.auth.dto.response.AuthResponse;
+import com.example.community.auth.service.AuthService;
 import com.example.community.auth.service.RefreshTokenService;
+import com.example.community.configuration.WebConfig;
 import com.example.community.resolver.SignUserArgumentResolver;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.user.dto.UserInfoDTO;
@@ -10,6 +12,7 @@ import com.example.community.user.dto.request.PasswordChangeRequest;
 import com.example.community.user.dto.request.SignInRequest;
 import com.example.community.user.dto.request.SignUpRequest;
 import com.example.community.user.dto.request.UserInfoRequest;
+import com.example.community.user.dto.response.SignInResponse;
 import com.example.community.user.dto.response.SignUpResponse;
 import com.example.community.user.dto.response.UserDeleteResponse;
 import com.example.community.user.dto.response.UserInfoResponse;
@@ -31,17 +34,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(
         controllers = UserController.class,
@@ -74,6 +69,9 @@ class UserControllerTest {
 
     @MockitoBean(name = "refreshTokenService")
     private RefreshTokenService refreshTokenService;
+
+    @MockitoBean(name = "authService")
+    private AuthService authService;
 
     @MockitoBean
     private JWTUtil jwtUtil;
@@ -193,15 +191,10 @@ class UserControllerTest {
                 UserRole.USER,
                 null
         );
+        AuthResponse authResponse = new AuthResponse(refreshToken, SignInResponse.of(userInfoDTO, accessToken));
 
         when(userService.signIn(request)).thenReturn(userInfoDTO);
-        when(jwtUtil.generateAccessToken(
-                userInfoDTO.getUserNum(),
-                userInfoDTO.getProfileId(),
-                userInfoDTO.getUserRole()
-        )).thenReturn(accessToken);
-        when(jwtUtil.generateRefreshToken(userInfoDTO.getUserNum()))
-                .thenReturn(refreshToken);
+        when(authService.tokenIssue(userInfoDTO)).thenReturn(authResponse);
 
         mockMvc.perform(post("/users/state")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -213,13 +206,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.data.accessToken").value(accessToken));
 
         verify(userService).signIn(request);
-        verify(jwtUtil).generateAccessToken(
-                userInfoDTO.getUserNum(),
-                userInfoDTO.getProfileId(),
-                userInfoDTO.getUserRole()
-        );
-        verify(jwtUtil).generateRefreshToken(userInfoDTO.getUserNum());
-        verify(refreshTokenService).addRefreshToken(userInfoDTO.getUserNum(), refreshToken);
+        verify(authService).tokenIssue(userInfoDTO);
     }
 
     @Test
