@@ -1,6 +1,8 @@
 package com.example.community.auth.controller;
 
+import com.example.community.auth.dto.AccessTokenDTO;
 import com.example.community.auth.dto.response.AuthResponse;
+import com.example.community.auth.dto.response.RefreshResponse;
 import com.example.community.auth.service.AuthService;
 import com.example.community.response.ApiResponse;
 import com.example.community.user.dto.response.SignInResponse;
@@ -21,8 +23,8 @@ import java.time.Duration;
 public class AuthController {
     private final AuthService authService;
     @PostMapping("/token")
-    public ResponseEntity<ApiResponse<SignInResponse>> refresh(@CookieValue(value = "refresh") String refreshToken){
-        AuthResponse authResponse = authService.refresh(refreshToken);
+    public ResponseEntity<ApiResponse<AccessTokenDTO>> refresh(@CookieValue(value = "refresh") String refreshToken){
+        RefreshResponse authResponse = authService.refresh(refreshToken);
 
         ResponseCookie cookie = ResponseCookie.from("refresh", authResponse.refreshToken())
                 .httpOnly(true)
@@ -33,6 +35,6 @@ public class AuthController {
                 .build();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(ApiResponse.of("리프레시 성공",authResponse.signInResponse()));
+                .body(ApiResponse.of("리프레시 성공",new AccessTokenDTO(authResponse.accessToken())));
     }
 }

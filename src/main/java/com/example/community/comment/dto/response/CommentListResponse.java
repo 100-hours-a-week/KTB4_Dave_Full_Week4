@@ -1,6 +1,5 @@
 package com.example.community.comment.dto.response;
 
-import com.example.community.comment.entity.Comment;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

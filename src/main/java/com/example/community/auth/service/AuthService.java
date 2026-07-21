@@ -1,8 +1,10 @@
 package com.example.community.auth.service;
 
 import com.example.community.auth.dto.response.AuthResponse;
+import com.example.community.auth.dto.response.RefreshResponse;
 import com.example.community.auth.dto.response.RefreshTokenDTO;
 import com.example.community.handler.exception.BadRequestException;
+import com.example.community.handler.exception.UnAuthorizedException;
 import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.dto.response.SignInResponse;
 import com.example.community.user.entity.SignInfo;
@@ -21,7 +23,10 @@ public class AuthService {
     private final JWTUtil jwtUtil;
 
     @Transactional
-    public AuthResponse refresh(String refreshToken){
+    public RefreshResponse refresh(String refreshToken){
+        if(jwtUtil.isTokenExpired(refreshToken)){
+            throw new UnAuthorizedException("로그인이 필요합니다.");
+        }
         RefreshTokenDTO refresh = refreshTokenService.getRefreshToken(refreshToken);
         SignInfo signInfo = refresh.signInfo();
 
@@ -36,7 +41,7 @@ public class AuthService {
         String newRefresh = jwtUtil.generateRefreshToken(signInfo.getUserNum());
         refreshTokenService.deleteRefreshToken(refreshToken);
         refreshTokenService.addRefreshToken(signInfo.getUserNum(), newRefresh);
-        return new AuthResponse(newRefresh, SignInResponse.of(UserInfoDTO.from(userInfo), access));
+        return new RefreshResponse(access, newRefresh);
     }
 
     @Transactional

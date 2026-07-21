@@ -2,13 +2,13 @@ package com.example.community.post.service;
 
 import com.example.community.handler.exception.ForbiddenException;
 import com.example.community.handler.exception.NotFoundException;
+import com.example.community.post.dto.request.PostRequest;
 import com.example.community.post.dto.response.*;
 import com.example.community.post.entity.Post;
 import com.example.community.post.entity.PostEditRecord;
 import com.example.community.post.repository.PostEditRepository;
 import com.example.community.post.repository.PostRepository;
 import com.example.community.resolver.SignUserInfo;
-import com.example.community.post.dto.request.PostRequest;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserLikePost;
 import com.example.community.user.entity.UserRole;

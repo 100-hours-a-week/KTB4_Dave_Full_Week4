@@ -2,8 +2,8 @@ package com.example.community.user.controller;
 
 import com.example.community.auth.dto.response.AuthResponse;
 import com.example.community.auth.service.AuthService;
-import com.example.community.post.dto.response.PostPageResponse;
 import com.example.community.auth.service.RefreshTokenService;
+import com.example.community.post.dto.response.PostPageResponse;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.response.ApiResponse;
@@ -37,7 +37,6 @@ public class UserController {
     private final UserService userService;
     private final AuthService authService;
     private final RefreshTokenService refreshTokenService;
-    private final JWTUtil jwtUtil;
 
     @PostMapping()
     public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@ModelAttribute @Valid SignUpRequest signUpRequest) throws IOException {

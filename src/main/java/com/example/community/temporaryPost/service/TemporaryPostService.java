@@ -2,11 +2,11 @@ package com.example.community.temporaryPost.service;
 
 import com.example.community.handler.exception.ForbiddenException;
 import com.example.community.handler.exception.NotFoundException;
+import com.example.community.post.dto.request.PostRequest;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.temporaryPost.dto.response.TemporaryKeyResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryPostResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryPostTitleResponse;
-import com.example.community.post.dto.request.PostRequest;
 import com.example.community.temporaryPost.entity.TemporaryPost;
 import com.example.community.temporaryPost.repository.TemporaryPostJpaRepository;
 import com.example.community.user.entity.UserInfo;

@@ -1,5 +1,6 @@
 package com.example.community.post.controller;
 
+import com.example.community.post.dto.request.PostRequest;
 import com.example.community.post.dto.response.PostLikeResponse;
 import com.example.community.post.dto.response.PostPageResponse;
 import com.example.community.post.dto.response.PostReportResponse;
@@ -8,7 +9,6 @@ import com.example.community.post.service.PostService;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.response.ApiResponse;
-import com.example.community.post.dto.request.PostRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
