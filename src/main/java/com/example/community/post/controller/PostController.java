@@ -32,8 +32,8 @@ public class PostController {
     }
 
     @GetMapping("/{postNum}")
-    public ResponseEntity<ApiResponse<PostResponse>> getPost(@PathVariable long postNum){
-        PostResponse post = postService.getPost(postNum);
+    public ResponseEntity<ApiResponse<PostResponse>> getPost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
+        PostResponse post = postService.getPost(signUserInfo, postNum);
         return ResponseEntity.ok(new ApiResponse<>("게시글 상세 조회 성공", post));
     }
 
@@ -67,7 +67,7 @@ public class PostController {
         return  ResponseEntity.ok(new ApiResponse<>("성공", postService.isLikePost(signUserInfo, postNum)));
     }
 
-    @PatchMapping("/{postNum}/report")
+    @PostMapping("/{postNum}/report")
     public ResponseEntity<ApiResponse<PostReportResponse>> reportPost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
         return  ResponseEntity.ok(new ApiResponse<>("신고 완료", postService.reportPost(signUserInfo,postNum)));
     }

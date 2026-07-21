@@ -1,13 +1,19 @@
 package com.example.community.post.service;
 
+import com.example.community.handler.exception.BadRequestException;
+import com.example.community.handler.exception.DuplicateException;
 import com.example.community.handler.exception.ForbiddenException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.post.dto.request.PostRequest;
 import com.example.community.post.dto.response.*;
 import com.example.community.post.entity.Post;
 import com.example.community.post.entity.PostEditRecord;
+import com.example.community.post.entity.PostReport;
+import com.example.community.post.entity.PostView;
 import com.example.community.post.repository.PostEditRepository;
+import com.example.community.post.repository.PostReportRepository;
 import com.example.community.post.repository.PostRepository;
+import com.example.community.post.repository.PostViewRepository;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserLikePost;
@@ -15,6 +21,7 @@ import com.example.community.user.entity.UserRole;
 import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.user.repository.UserLikeRepository;
 import com.example.community.util.ImageConverter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,26 +29,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class PostService {
     private final PostRepository postRepository;
     private final PostEditRepository postEditRepository;
+    private final PostViewRepository postViewRepository;
+    private final PostReportRepository postReportRepository;
     private final UserInfoRepository userInfoRepository;
     private final UserLikeRepository userLikeRepository;
     private final ImageConverter imageConverter;
-
-    public PostService(PostRepository postRepository,
-                       PostEditRepository postEditRepository,
-                       UserInfoRepository userInfoRepository,
-                       UserLikeRepository userLikeRepository,
-                       ImageConverter imageConverter){
-        this.postRepository = postRepository;
-        this.postEditRepository = postEditRepository;
-        this.userInfoRepository = userInfoRepository;
-        this.userLikeRepository = userLikeRepository;
-        this.imageConverter = imageConverter;
-    }
 
     @Transactional(readOnly = true)
     private Post checkUserAuthority(SignUserInfo signUserInfo, long postNum) {
@@ -93,14 +92,44 @@ public class PostService {
     }
 
     @Transactional
-    public PostResponse getPost(long postNum) {
+    public PostResponse getPost(
+            SignUserInfo signUserInfo,
+            long postNum
+    ) {
         Post post = postRepository.findByPostNum(postNum)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
-        if(post.isBlind()){
+                .orElseThrow(() ->
+                        new NotFoundException("존재하지 않는 게시글")
+                );
+
+        if (post.isBlind()) {
             throw new ForbiddenException("신고 처리된 게시글");
         }
-        post.view();
-        postRepository.save(post);
+
+        if (signUserInfo == null
+                || signUserInfo.profileId() == null) {
+            return PostResponse.from(post);
+        }
+
+        UserInfo userInfo = userInfoRepository
+                .findByProfileId(signUserInfo.profileId())
+                .orElseThrow(() ->
+                        new NotFoundException("존재하지 않는 유저")
+                );
+
+        Optional<PostView> savedPostView =
+                postViewRepository
+                        .findByPost_PostNumAndUserInfo_ProfileId(
+                                postNum,
+                                userInfo.getProfileId()
+                        );
+
+        if (savedPostView.isPresent()) {
+            savedPostView.get().view();
+        } else {
+            postViewRepository.save(
+                    new PostView(post, userInfo)
+            );
+        }
 
         return PostResponse.from(post);
     }
@@ -110,7 +139,7 @@ public class PostService {
         Post post = postRepository.findByPostNum(postNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
 
-        return PostResponse.from(post);
+        return PostResponse.adminFrom(post);
     }
 
     @Transactional(readOnly = true)
@@ -197,7 +226,18 @@ public class PostService {
     public PostReportResponse reportPost(SignUserInfo signUserInfo, long postNum) {
         Post post = postRepository.findByPostNum(postNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
-        return new PostReportResponse(post.report());
+        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
+        if(post.getUserInfo().getProfileId().equals(signUserInfo.profileId())){
+            throw new BadRequestException("본인이 작성한 글은 신고할 수 없습니다.");
+        }
+        if(postReportRepository.existsByPost_PostNumAndUserInfo_ProfileId(postNum, userInfo.getProfileId())){
+            throw new DuplicateException("이미 신고한 게시글입니다.");
+        }
+        PostReport postReport = new PostReport(post, userInfo);
+        postReportRepository.save(postReport);
+
+        return new PostReportResponse(post.getPostState().getReportCount());
     }
 
     @Transactional
