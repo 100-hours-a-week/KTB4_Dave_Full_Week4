@@ -42,15 +42,6 @@ public class PostService {
     private final UserLikeRepository userLikeRepository;
     private final ImageConverter imageConverter;
 
-    private Post checkUserAuthority(SignUserInfo signUserInfo, long postNum) {
-        Post post = findPost(postNum);
-        if(!post.getUserInfo().getProfileId().equals(signUserInfo.profileId())
-                && signUserInfo.userRole() != UserRole.ADMIN){
-            throw new ForbiddenException("접근 권한 부족");
-        }
-        return post;
-    }
-
     private Post findPost(long postNum){
         return postRepository.findByPostNum(postNum)
                 .orElseThrow(() ->
@@ -67,6 +58,15 @@ public class PostService {
                 );
     }
 
+    private Post checkUserAuthority(SignUserInfo signUserInfo, long postNum) {
+        Post post = findPost(postNum);
+        if(!post.getUserInfo().getProfileId().equals(signUserInfo.profileId())
+                && signUserInfo.userRole() != UserRole.ADMIN){
+            throw new ForbiddenException("접근 권한 부족");
+        }
+        return post;
+    }
+
     private Sort getSort(String sort){
         return switch(sort){
             case "likes" -> Sort.by(Sort.Direction.DESC, "post.postState.likeCount");
@@ -78,7 +78,7 @@ public class PostService {
     @Transactional(readOnly = true)
     public PostPageResponse getPostsByPage(int page, int size, String sort) {
         Pageable pageable = PageRequest.of(page, size, getSort(sort));
-        Page<Post> posts = postRepository.findPostByPage(pageable);;
+        Page<Post> posts = postRepository.findPostByPage(pageable);
         return PostPageResponse.from(posts);
     }
 
@@ -122,7 +122,6 @@ public class PostService {
 
     private void updatePostView(long profileId, Post post){
         UserInfo userInfo = findUserInfo(profileId);
-
         postViewRepository
                 .findByPost_PostNumAndUserInfo_ProfileId(
                         post.getPostNum(),

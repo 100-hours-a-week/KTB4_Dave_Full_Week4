@@ -14,6 +14,7 @@ import java.util.Optional;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = {"userInfo", "postState"})
+    @Query("select p from Post p where p.deletedAt is null")
     Page<Post> findPostByPage(Pageable pageable);
 
     @EntityGraph(attributePaths = {"userInfo", "postState"})
