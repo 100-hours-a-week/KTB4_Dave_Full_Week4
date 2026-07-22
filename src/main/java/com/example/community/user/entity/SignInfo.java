@@ -43,10 +43,6 @@ public class SignInfo {
         this.userNum = userNum;
     }
 
-    public boolean passwordConfirm(String password){
-        return this.password.equals(password);
-    }
-
     private void validatePassword(String password){
         if(password.isBlank()){
             // 암호화된 비밀번호를 저장하게 되므로 여기서는 8자 이상 20자 이하 조건 검사 불가능

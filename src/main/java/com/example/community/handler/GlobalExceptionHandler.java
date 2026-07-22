@@ -51,7 +51,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception exception) {
-        exception.printStackTrace(); // 개발 중에는 실제 원인 확인용
+        exception.printStackTrace();
 
         return ResponseEntity
                 .status(500)

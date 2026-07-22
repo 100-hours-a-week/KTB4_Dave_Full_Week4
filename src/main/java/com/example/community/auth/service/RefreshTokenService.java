@@ -26,8 +26,6 @@ public class RefreshTokenService {
 
     @Transactional(readOnly = true)
     public RefreshTokenDTO getRefreshToken(String token){
-        // 서비스 계층에서 엔티티를 반환하는 건 안 좋은 구조 DTO로 변경??
-        // 근데 사용처는 AuthService인데 AuthService에서 단순하게 모두 refreshRepository로 해결하게?
         return RefreshTokenDTO.from(refreshTokenRepository.findByToken(token)
                 .orElseThrow(()->new NotFoundException("유효하지 않은 리프레시 토큰")));
     }
@@ -36,12 +34,4 @@ public class RefreshTokenService {
     public void deleteRefreshToken(String token) {
         refreshTokenRepository.deleteByToken(token);
     }
-
-//    @Override
-//    public void deleteRefreshToken(long userNum) {
-//        RefreshToken refreshToken = refreshTokenRepository.findBySignInfo_UserNum(userNum)
-//                .orElseThrow(() -> new NotFoundException("존재하지 않는 토큰"));
-//
-//        refreshTokenRepository.delete(refreshToken);
-//    }
 }

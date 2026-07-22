@@ -32,13 +32,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if(shouldRateLimit(requestURI)){
             String ip = getIP(request);
             Bucket bucket = bucketCache.computeIfAbsent(ip, key -> createBucket());
-            // tryConsume returns false immediately if no tokens available with the bucket
             if (bucket.tryConsume(1)) {
-                // the limit is not exceeded
                 filterChain.doFilter(request, response);
                 return;
             } else {
-                // limit is exceeded=
                 writeTooManyRequestsResponse(response);
                 return;
             }

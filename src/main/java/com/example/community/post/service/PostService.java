@@ -215,7 +215,6 @@ public class PostService {
     public boolean isLikePost(SignUserInfo signUserInfo, long postNum) {
         UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
-        // 여기에 게시글도 검증해야 하지 않나 싶음
         Post post = postRepository.findByPostNum(postNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
 

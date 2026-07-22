@@ -74,12 +74,11 @@ public class UserService{
         return new SignUpResponse(signInfo.getUserNum());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public UserInfoDTO signIn(SignInRequest signInRequest) {
         SignInfo signInfo = signInfoRepository.findByEmail(signInRequest.email())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 이메일"));
 
-        //현재는 평문이 저장되겠으나 암호화된 값을 비교해야 함.
         if(!passwordEncoder.matches(signInRequest.password(), signInfo.getPassword())){
             throw new UnAuthorizedException("로그인 실패");
         }
@@ -88,6 +87,7 @@ public class UserService{
         }
         UserInfoDTO userInfoDTO = UserInfoDTO.from(userInfoRepository.findBySignInfo_UserNum(signInfo.getUserNum()).getFirst());
         userInfoDTO.setEmail(signInfo.getEmail());
+        signInfo.loginSuccess();
         return userInfoDTO;
     }
 
