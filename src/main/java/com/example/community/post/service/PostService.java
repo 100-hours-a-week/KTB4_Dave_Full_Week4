@@ -179,19 +179,25 @@ public class PostService {
     public PostLikeResponse likePost(SignUserInfo signUserInfo, long postNum) {
         UserInfo userInfo = findUserInfo(signUserInfo.profileId());
         Post post = findPost(postNum);
-        int likeCount;
-        try {
-            UserLikePost userLikePost = userLikeRepository.findByUserInfo_ProfileIdAndPost_PostNum(signUserInfo.profileId(), postNum)
-                    .orElseThrow(() -> new NotFoundException("좋아요 안 한 게시글"));
-            likeCount = userLikePost.getPost().unlike();
-            userLikeRepository.delete(userLikePost);
-        } catch(NotFoundException e){
-            UserLikePost userLikePost = new UserLikePost(userInfo, post);
-            likeCount = post.getPostState().getLikeCount();
-            userLikeRepository.save(userLikePost);
+        if(userLikeRepository.existsByUserInfo_ProfileIdAndPost_PostNum(signUserInfo.profileId(), postNum)){
+            postUnlike(signUserInfo.profileId(), postNum);
+        }
+        else{
+            postLike(userInfo, post);
         }
         
-        return new PostLikeResponse(likeCount);
+        return new PostLikeResponse(post.getPostState().getLikeCount());
+    }
+
+    private void postUnlike(long profileId, long postNum){
+        UserLikePost userLikePost = userLikeRepository.findByUserInfo_ProfileIdAndPost_PostNum(profileId, postNum)
+                .orElseThrow(() -> new NotFoundException("좋아요 안 한 게시글"));
+        userLikeRepository.delete(userLikePost);
+    }
+
+    private void postLike(UserInfo userInfo, Post post){
+        UserLikePost userLikePost = new UserLikePost(userInfo, post);
+        userLikeRepository.save(userLikePost);
     }
 
     @Transactional(readOnly = true)
