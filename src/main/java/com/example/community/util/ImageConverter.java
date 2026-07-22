@@ -14,27 +14,24 @@ public class ImageConverter {
     private static final String PROFILE_URL_PREFIX = "/images/profiles/";
 
     public String updatePostImage(MultipartFile file) throws IOException {
-        String extension = extractExtension(file.getOriginalFilename());
-        String storedFileName = UUID.randomUUID() + "." + extension;
-
-        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app"+POST_URL_PREFIX);
-        Path targetPath = uploadPath.resolve(storedFileName);
-
-        file.transferTo(targetPath);
-
-        return POST_URL_PREFIX + storedFileName;
+        return updateImage(file, POST_URL_PREFIX);
     }
 
     public String updateProfileImage(MultipartFile file) throws IOException {
+        return updateImage(file, PROFILE_URL_PREFIX);
+    }
+
+    private String updateImage(MultipartFile file, String prefix) throws IOException{
+        if (file == null || file.isEmpty()) return null;
         String extension = extractExtension(file.getOriginalFilename());
         String storedFileName = UUID.randomUUID() + "." + extension;
 
-        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app"+PROFILE_URL_PREFIX);
+        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app"+prefix);
         Path targetPath = uploadPath.resolve(storedFileName);
 
         file.transferTo(targetPath);
 
-        return PROFILE_URL_PREFIX + storedFileName;
+        return prefix + storedFileName;
     }
 
     private String extractExtension(String originalFilename) {

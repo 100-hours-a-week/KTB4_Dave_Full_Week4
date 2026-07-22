@@ -29,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -109,29 +108,29 @@ public class PostService {
                 || signUserInfo.profileId() == null) {
             return PostResponse.from(post);
         }
+        updatePostView(signUserInfo.profileId(), post);
 
+        return PostResponse.from(post);
+    }
+
+    private void updatePostView(long profileId, Post post){
         UserInfo userInfo = userInfoRepository
-                .findByProfileId(signUserInfo.profileId())
+                .findByProfileId(profileId)
                 .orElseThrow(() ->
                         new NotFoundException("존재하지 않는 유저")
                 );
 
-        Optional<PostView> savedPostView =
-                postViewRepository
-                        .findByPost_PostNumAndUserInfo_ProfileId(
-                                postNum,
-                                userInfo.getProfileId()
-                        );
-
-        if (savedPostView.isPresent()) {
-            savedPostView.get().view();
-        } else {
-            postViewRepository.save(
-                    new PostView(post, userInfo)
-            );
-        }
-
-        return PostResponse.from(post);
+        postViewRepository
+                .findByPost_PostNumAndUserInfo_ProfileId(
+                        post.getPostNum(),
+                        profileId
+                )
+                .ifPresentOrElse(
+                        PostView::view,
+                        () -> postViewRepository.save(
+                                new PostView(post, userInfo)
+                        )
+                );
     }
 
     @Transactional(readOnly = true)
@@ -163,10 +162,7 @@ public class PostService {
     public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) throws IOException {
         UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
-        String image = null;
-        if(postRequest.image() != null){
-            image = imageConverter.updatePostImage(postRequest.image());
-        }
+        String image = imageConverter.updatePostImage(postRequest.image());
         Post post = new Post(userInfo, postRequest.title(),
                 postRequest.content(), image);
         postRepository.save(post);
@@ -177,16 +173,17 @@ public class PostService {
     @Transactional
     public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostRequest postRequest) throws IOException {
         Post post = checkUserAuthority(signUserInfo, postNum);
-        PostEditRecord postEditRecord = PostEditRecord.from(post);
-        postEditRepository.save(postEditRecord);
-        String image = null;
-        if(postRequest.image() != null){
-            image = imageConverter.updatePostImage(postRequest.image());
-        }
+        recordPostBeforeUpdate(post);
+        String image = imageConverter.updatePostImage(postRequest.image());
         post.update(postRequest.title(), postRequest.content(), image);
         postRepository.save(post);
 
         return PostResponse.from(post);
+    }
+
+    private void recordPostBeforeUpdate(Post post){
+        PostEditRecord postEditRecord = PostEditRecord.from(post);
+        postEditRepository.save(postEditRecord);
     }
 
     @Transactional

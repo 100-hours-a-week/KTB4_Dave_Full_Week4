@@ -62,10 +62,7 @@ public class UserService{
             throw new BadRequestException("비밀번호 확인 불일치");
         }
 
-        String image = null;
-        if(signUpRequest.imageFile() != null) {
-            image = imageConverter.updateProfileImage(signUpRequest.imageFile());
-        }
+        String image = imageConverter.updateProfileImage(signUpRequest.imageFile());
         SignInfo signInfo = new SignInfo(signUpRequest.email(), passwordEncoder.encode(signUpRequest.password()));
         signInfoRepository.save(signInfo);
         UserInfo userInfo = new UserInfo(signInfo, signUpRequest.nickname(), image);

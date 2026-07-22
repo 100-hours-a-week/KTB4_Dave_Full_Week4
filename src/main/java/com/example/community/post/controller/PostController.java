@@ -32,7 +32,7 @@ public class PostController {
     }
 
     @GetMapping("/{postNum}")
-    public ResponseEntity<ApiResponse<PostResponse>> getPost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
+    public ResponseEntity<ApiResponse<PostResponse>> getPost(@SignUser(nullable = true) SignUserInfo signUserInfo, @PathVariable long postNum){
         PostResponse post = postService.getPost(signUserInfo, postNum);
         return ResponseEntity.ok(new ApiResponse<>("게시글 상세 조회 성공", post));
     }
