@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,29 +42,43 @@ public class PostService {
     private final UserLikeRepository userLikeRepository;
     private final ImageConverter imageConverter;
 
-    @Transactional(readOnly = true)
     private Post checkUserAuthority(SignUserInfo signUserInfo, long postNum) {
-        Post post = postRepository.findByPostNum(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
-        if(!post.getUserInfo().getProfileId().equals(signUserInfo.profileId()) && signUserInfo.userRole() != UserRole.ADMIN){
+        Post post = findPost(postNum);
+        if(!post.getUserInfo().getProfileId().equals(signUserInfo.profileId())
+                && signUserInfo.userRole() != UserRole.ADMIN){
             throw new ForbiddenException("접근 권한 부족");
         }
         return post;
     }
 
+    private Post findPost(long postNum){
+        return postRepository.findByPostNum(postNum)
+                .orElseThrow(() ->
+                        new NotFoundException("존재하지 않는 게시글")
+                );
+    }
+
+    private UserInfo findUserInfo(long profileId) {
+        return userInfoRepository.findByProfileId(profileId)
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "존재하지 않는 유저"
+                        )
+                );
+    }
+
+    private Sort getSort(String sort){
+        return switch(sort){
+            case "likes" -> Sort.by(Sort.Direction.DESC, "post.postState.likeCount");
+            case "views" -> Sort.by(Sort.Direction.DESC, "post.postState.viewCount");
+            default -> Sort.by(Sort.Direction.DESC, "post.postNum");
+        };
+    }
+
     @Transactional(readOnly = true)
     public PostPageResponse getPostsByPage(int page, int size, String sort) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Post> posts;
-        if(sort.equals("likes")) {
-            posts = postRepository.findPostByPageOrderByLikeCount(pageable);
-        }
-        else if(sort.equals("views")){
-            posts = postRepository.findPostByPageOrderByViewCount(pageable);
-        }
-        else{
-            posts = postRepository.findPostByPage(pageable);
-        }
-
+        Pageable pageable = PageRequest.of(page, size, getSort(sort));
+        Page<Post> posts = postRepository.findPostByPage(pageable);;
         return PostPageResponse.from(posts);
     }
 
@@ -91,21 +106,13 @@ public class PostService {
     }
 
     @Transactional
-    public PostResponse getPost(
-            SignUserInfo signUserInfo,
-            long postNum
-    ) {
-        Post post = postRepository.findByPostNum(postNum)
-                .orElseThrow(() ->
-                        new NotFoundException("존재하지 않는 게시글")
-                );
-
+    public PostResponse getPost(SignUserInfo signUserInfo, long postNum) {
+        Post post = findPost(postNum);
         if (post.isBlind()) {
             throw new ForbiddenException("신고 처리된 게시글");
         }
 
-        if (signUserInfo == null
-                || signUserInfo.profileId() == null) {
+        if (signUserInfo == null || signUserInfo.profileId() == null) {
             return PostResponse.from(post);
         }
         updatePostView(signUserInfo.profileId(), post);
@@ -114,11 +121,7 @@ public class PostService {
     }
 
     private void updatePostView(long profileId, Post post){
-        UserInfo userInfo = userInfoRepository
-                .findByProfileId(profileId)
-                .orElseThrow(() ->
-                        new NotFoundException("존재하지 않는 유저")
-                );
+        UserInfo userInfo = findUserInfo(profileId);
 
         postViewRepository
                 .findByPost_PostNumAndUserInfo_ProfileId(
@@ -135,33 +138,25 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public PostResponse adminGetPost(long postNum){
-        Post post = postRepository.findByPostNum(postNum)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
-
-        return PostResponse.adminFrom(post);
+        return PostResponse.adminFrom(findPost(postNum));
     }
 
     @Transactional(readOnly = true)
     public PostPageResponse getPostsByProfileId(long profileId, int page, int size, String sort) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Post> posts;
-        if(sort.equals("likes")) {
-            posts = postRepository.findByUserInfo_ProfileIdOrderByLikeCountDesc(profileId, pageable);
-        }
-        else if(sort.equals("views")){
-            posts = postRepository.findByUserInfo_ProfileIdOrderByViewCountDesc(profileId, pageable);
-        }
-        else{
-            posts = postRepository.findByUserInfo_ProfileIdOrderByPostNumDesc(profileId, pageable);
-        }
+        Pageable pageable = PageRequest.of(page, size, getSort(sort));
+        Page<Post> posts = postRepository.findPostByUserInfo_ProfileId(profileId, pageable);
 
         return PostPageResponse.from(posts);
     }
 
+    private void recordPostBeforeUpdate(Post post){
+        PostEditRecord postEditRecord = PostEditRecord.from(post);
+        postEditRepository.save(postEditRecord);
+    }
+
     @Transactional
     public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) throws IOException {
-        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
-                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
+        UserInfo userInfo = findUserInfo(signUserInfo.profileId());
         String image = imageConverter.updatePostImage(postRequest.image());
         Post post = new Post(userInfo, postRequest.title(),
                 postRequest.content(), image);
@@ -181,27 +176,19 @@ public class PostService {
         return PostResponse.from(post);
     }
 
-    private void recordPostBeforeUpdate(Post post){
-        PostEditRecord postEditRecord = PostEditRecord.from(post);
-        postEditRepository.save(postEditRecord);
-    }
-
     @Transactional
     public PostLikeResponse likePost(SignUserInfo signUserInfo, long postNum) {
-        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
-                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
-        Post post = postRepository.findByPostNum(postNum)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
+        UserInfo userInfo = findUserInfo(signUserInfo.profileId());
+        Post post = findPost(postNum);
         int likeCount;
-        if(userLikeRepository.existsByUserInfo_ProfileIdAndPost_PostNum(userInfo.getProfileId(), postNum)){
+        try {
             UserLikePost userLikePost = userLikeRepository.findByUserInfo_ProfileIdAndPost_PostNum(signUserInfo.profileId(), postNum)
-                    .orElseThrow();
+                    .orElseThrow(() -> new NotFoundException("좋아요 안 한 게시글"));
             likeCount = userLikePost.getPost().unlike();
             userLikeRepository.delete(userLikePost);
-        }
-        else{
+        } catch(NotFoundException e){
             UserLikePost userLikePost = new UserLikePost(userInfo, post);
-            likeCount = userLikePost.getPost().like();
+            likeCount = post.getPostState().getLikeCount();
             userLikeRepository.save(userLikePost);
         }
         
@@ -210,20 +197,16 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public boolean isLikePost(SignUserInfo signUserInfo, long postNum) {
-        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
-                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
-        Post post = postRepository.findByPostNum(postNum)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
+        UserInfo userInfo = findUserInfo(signUserInfo.profileId());
+        Post post = findPost(postNum);
 
         return userLikeRepository.existsByUserInfo_ProfileIdAndPost_PostNum(userInfo.getProfileId(), post.getPostNum());
     }
 
     @Transactional
     public PostReportResponse reportPost(SignUserInfo signUserInfo, long postNum) {
-        Post post = postRepository.findByPostNum(postNum)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
-        UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
+        Post post = findPost(postNum);
+        UserInfo userInfo = findUserInfo(signUserInfo.profileId());
         if(post.getUserInfo().getProfileId().equals(signUserInfo.profileId())){
             throw new BadRequestException("본인이 작성한 글은 신고할 수 없습니다.");
         }

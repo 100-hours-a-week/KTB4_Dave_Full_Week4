@@ -36,5 +36,6 @@ public class UserLikePost {
         }
         this.userInfo = userInfo;
         this.post = post;
+        this.post.like();
     }
 }

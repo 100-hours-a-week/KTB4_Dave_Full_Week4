@@ -24,6 +24,7 @@ import com.example.community.util.ImageConverter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -131,18 +132,13 @@ public class UserService{
 
     @Transactional(readOnly = true)
     public PostPageResponse getLikePosts(long profileId, int page, int size, String sort) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<UserLikePost> userLikePosts;
-        if(sort.equals("likes")) {
-            userLikePosts = userLikeRepository.findByUserInfo_ProfileIdOrderByLikeCount(profileId, pageable);
-        }
-        else if(sort.equals("views")){
-            userLikePosts = userLikeRepository.findByUserInfo_ProfileIdOrderByViewCount(profileId, pageable);
-        }
-        else{
-            userLikePosts = userLikeRepository.findByUserInfo_ProfileId(profileId, pageable);
-        }
-
+        Sort sortType = switch(sort){
+            case "likes" -> Sort.by(Sort.Direction.DESC, "post.postState.likeCount");
+            case "views" -> Sort.by(Sort.Direction.DESC, "post.postState.viewCount");
+            default -> Sort.by(Sort.Direction.DESC, "post.postNum");
+        };
+        Pageable pageable = PageRequest.of(page, size, sortType);
+        Page<UserLikePost> userLikePosts = userLikeRepository.findByUserInfo_ProfileId(profileId, pageable);
         return PostPageResponse.fromUserLike(userLikePosts);
     }
 
