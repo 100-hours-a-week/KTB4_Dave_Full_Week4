@@ -24,6 +24,9 @@ public class AuthService {
 
     @Transactional
     public RefreshResponse refresh(String refreshToken){
+        if(!jwtUtil.isRefreshToken(refreshToken)){
+            throw new BadRequestException("refresh토큰이 아닙니다.");
+        }
         if(jwtUtil.isTokenExpired(refreshToken)){
             throw new UnAuthorizedException("로그인이 필요합니다.");
         }

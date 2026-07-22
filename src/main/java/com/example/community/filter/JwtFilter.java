@@ -32,7 +32,7 @@ public class JwtFilter extends OncePerRequestFilter {
         // Authorization 헤더가 존재하면 확인하고 아니면 그냥 보내기
         try {
             String access = extractJwtFromRequest(request);
-            if (access != null) {
+            if (access != null && jwtUtil.isAccessToken(access)) {
                 Long userNum = jwtUtil.getUserNumFromToken(access);
                 Long profileId = jwtUtil.getProfileIdFromToken(access);
                 String role = jwtUtil.getRoleFromToken(access);
