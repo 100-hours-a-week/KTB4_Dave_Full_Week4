@@ -136,12 +136,12 @@ public class UserService{
             case "likes" -> Sort.by(Sort.Direction.DESC, "post.postState.likeCount")
                     .and(Sort.by(
                             Sort.Direction.DESC,
-                            "postNum"
+                            "post.postNum"
                     ));
             case "views" -> Sort.by(Sort.Direction.DESC, "post.postState.viewCount")
                     .and(Sort.by(
                             Sort.Direction.DESC,
-                            "postNum"
+                            "post.postNum"
                     ));
             default -> Sort.by(Sort.Direction.DESC, "post.postNum");
         };

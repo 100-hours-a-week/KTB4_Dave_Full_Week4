@@ -17,8 +17,8 @@ public class AdminPostController {
     private final PostService postService;
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<PostPageResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        PostPageResponse posts = postService.adminGetPostsByPage(page, size);
+    public ResponseEntity<ApiResponse<PostPageResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "latest") String sort){
+        PostPageResponse posts = postService.adminGetPostsByPage(page, size, sort);
         return ResponseEntity.ok(new ApiResponse<>("관리자 모드 : 게시글 조회 성공", posts));
     }
 

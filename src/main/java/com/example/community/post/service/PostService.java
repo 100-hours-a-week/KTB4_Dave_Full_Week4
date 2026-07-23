@@ -187,14 +187,16 @@ public class PostService {
     public PostLikeResponse likePost(SignUserInfo signUserInfo, long postNum) {
         UserInfo userInfo = findUserInfo(signUserInfo.profileId());
         Post post = findPost(postNum);
+        boolean isLike = false;
         if(userLikeRepository.existsByUserInfo_ProfileIdAndPost_PostNum(signUserInfo.profileId(), postNum)){
             postUnlike(signUserInfo.profileId(), postNum);
         }
         else{
             postLike(userInfo, post);
+            isLike = true;
         }
         
-        return new PostLikeResponse(post.getPostState().getLikeCount());
+        return new PostLikeResponse(post.getPostState().getLikeCount(), isLike);
     }
 
     private void postUnlike(long profileId, long postNum){

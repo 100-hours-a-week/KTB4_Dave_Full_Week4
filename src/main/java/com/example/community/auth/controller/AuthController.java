@@ -4,12 +4,14 @@ import com.example.community.auth.dto.AccessTokenDTO;
 import com.example.community.auth.dto.response.AuthResponse;
 import com.example.community.auth.dto.response.RefreshResponse;
 import com.example.community.auth.service.AuthService;
+import com.example.community.handler.exception.UnAuthorizedException;
 import com.example.community.response.ApiResponse;
 import com.example.community.user.dto.response.SignInResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +25,12 @@ import java.time.Duration;
 public class AuthController {
     private final AuthService authService;
     @PostMapping("/token")
-    public ResponseEntity<ApiResponse<AccessTokenDTO>> refresh(@CookieValue(value = "refresh") String refreshToken){
+    public ResponseEntity<ApiResponse<AccessTokenDTO>> refresh(@CookieValue(value = "refresh", required = false) String refreshToken){
+        if (!StringUtils.hasText(refreshToken)) {
+            throw new UnAuthorizedException(
+                    "Refresh token이 존재하지 않습니다."
+            );
+        }
         RefreshResponse authResponse = authService.refresh(refreshToken);
 
         ResponseCookie cookie = ResponseCookie.from("refresh", authResponse.refreshToken())
