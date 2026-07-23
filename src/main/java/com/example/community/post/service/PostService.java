@@ -69,9 +69,17 @@ public class PostService {
 
     private Sort getSort(String sort){
         return switch(sort){
-            case "likes" -> Sort.by(Sort.Direction.DESC, "post.postState.likeCount");
-            case "views" -> Sort.by(Sort.Direction.DESC, "post.postState.viewCount");
-            default -> Sort.by(Sort.Direction.DESC, "post.postNum");
+            case "likes" -> Sort.by(Sort.Direction.DESC, "postState.likeCount")
+                    .and(Sort.by(
+                            Sort.Direction.DESC,
+                            "postNum"
+                    ));
+            case "views" -> Sort.by(Sort.Direction.DESC, "postState.viewCount")
+                    .and(Sort.by(
+                            Sort.Direction.DESC,
+                            "postNum"
+                    ));
+            default -> Sort.by(Sort.Direction.DESC, "postNum");
         };
     }
 
@@ -83,8 +91,8 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostPageResponse adminGetPostsByPage(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    public PostPageResponse adminGetPostsByPage(int page, int size, String sort) {
+        Pageable pageable = PageRequest.of(page, size, getSort(sort));
         Page<Post> posts = postRepository.findPostByPage(pageable);
 
         return PostPageResponse.adminFrom(posts);

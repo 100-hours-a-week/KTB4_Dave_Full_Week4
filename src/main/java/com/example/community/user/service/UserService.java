@@ -133,8 +133,16 @@ public class UserService{
     @Transactional(readOnly = true)
     public PostPageResponse getLikePosts(long profileId, int page, int size, String sort) {
         Sort sortType = switch(sort){
-            case "likes" -> Sort.by(Sort.Direction.DESC, "post.postState.likeCount");
-            case "views" -> Sort.by(Sort.Direction.DESC, "post.postState.viewCount");
+            case "likes" -> Sort.by(Sort.Direction.DESC, "post.postState.likeCount")
+                    .and(Sort.by(
+                            Sort.Direction.DESC,
+                            "postNum"
+                    ));
+            case "views" -> Sort.by(Sort.Direction.DESC, "post.postState.viewCount")
+                    .and(Sort.by(
+                            Sort.Direction.DESC,
+                            "postNum"
+                    ));
             default -> Sort.by(Sort.Direction.DESC, "post.postNum");
         };
         Pageable pageable = PageRequest.of(page, size, sortType);
