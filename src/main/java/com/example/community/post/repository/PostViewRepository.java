@@ -17,7 +17,7 @@ public interface PostViewRepository extends JpaRepository<PostView, Long> {
     @EntityGraph(attributePaths = {"post"})
     Optional<PostView> findByPost_PostNumAndUserInfo_ProfileId(long postNum, long profileId);
 
-    @EntityGraph(attributePaths = {"post, userInfo"})
+    @EntityGraph(attributePaths = {"post", "post.userInfo"})
     @Query("""
         select pv.post
         from PostView pv
@@ -25,5 +25,5 @@ public interface PostViewRepository extends JpaRepository<PostView, Long> {
         group by pv.post
         order by count(pv) desc
     """)
-    Page<Post> findPopularPost(Instant start, Pageable pageable);
+    Page<Post> findPopularPosts(Instant startTime, Pageable pageable);
 }
