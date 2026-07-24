@@ -30,6 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -232,6 +234,13 @@ public class PostService {
         postReportRepository.save(postReport);
 
         return new PostReportResponse(post.getPostState().getReportCount());
+    }
+
+    @Transactional(readOnly = true)
+    public PostPageResponse getPopularPosts(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> posts = postViewRepository.findPopularPosts(Instant.now().minus(1, ChronoUnit.HOURS), pageable);
+        return PostPageResponse.from(posts);
     }
 
     @Transactional

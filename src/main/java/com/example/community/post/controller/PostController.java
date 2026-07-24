@@ -72,6 +72,11 @@ public class PostController {
         return  ResponseEntity.ok(new ApiResponse<>("신고 완료", postService.reportPost(signUserInfo,postNum)));
     }
 
+    @GetMapping("/popular")
+    public ResponseEntity<ApiResponse<PostPageResponse>> popularPosts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(new ApiResponse<>("인기 글 불러오기 성공", postService.getPopularPosts(page, size)));
+    }
+
     @DeleteMapping("/{postNum}")
     public ResponseEntity<ApiResponse<Object>> deletePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum){
         postService.deletePost(signUserInfo, postNum);
