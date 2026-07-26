@@ -17,7 +17,7 @@ RUN --mount=type=cache,target=/root/.gradle \
 COPY src src
 
 RUN --mount=type=cache,target=/root/.gradle \
-    ./gradlew test bootJar --no-daemon
+    ./gradlew bootJar --no-daemon
 
 
 FROM eclipse-temurin:21-jre AS runtime

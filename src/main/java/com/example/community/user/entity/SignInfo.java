@@ -16,7 +16,7 @@ import java.time.Instant;
 public class SignInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="profileId")
+    @Column(name="userNum")
     private Long userNum;
 
     @Column(name="email", nullable = false, unique = true)
