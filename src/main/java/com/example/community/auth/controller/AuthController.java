@@ -21,7 +21,7 @@ import java.time.Duration;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/auth")
 public class AuthController {
     private final AuthService authService;
     @PostMapping("/token")

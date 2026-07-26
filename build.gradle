@@ -61,3 +61,6 @@ tasks.named('jacocoTestReport') {
         csv.required = false
     }
 }
+tasks.named("bootJar") {
+    archiveFileName = "app.jar"
+}

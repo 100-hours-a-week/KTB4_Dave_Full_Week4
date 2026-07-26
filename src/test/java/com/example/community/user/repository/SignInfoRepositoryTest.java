@@ -1,7 +1,6 @@
 package com.example.community.user.repository;
 
 import com.example.community.user.entity.SignInfo;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;

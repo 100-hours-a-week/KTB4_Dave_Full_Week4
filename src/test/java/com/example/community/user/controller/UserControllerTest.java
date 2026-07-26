@@ -4,6 +4,7 @@ import com.example.community.TestResolverConfig;
 import com.example.community.auth.dto.response.AuthResponse;
 import com.example.community.auth.service.AuthService;
 import com.example.community.auth.service.RefreshTokenService;
+import com.example.community.configuration.JwtAuthenticationEntryPoint;
 import com.example.community.configuration.WebConfig;
 import com.example.community.resolver.SignUserArgumentResolver;
 import com.example.community.resolver.SignUserInfo;
@@ -75,6 +76,9 @@ class UserControllerTest {
 
     @MockitoBean
     private JWTUtil jwtUtil;
+
+    @MockitoBean
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Test
     @DisplayName("회원가입 성공")

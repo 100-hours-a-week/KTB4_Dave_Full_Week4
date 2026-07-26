@@ -15,7 +15,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
 
 @TestConfiguration
-public class TestResolverConfig {
+public class    TestResolverConfig {
 
     public static final SignUserInfo SIGN_USER_INFO =
             new SignUserInfo(1L, 1L, UserRole.USER);

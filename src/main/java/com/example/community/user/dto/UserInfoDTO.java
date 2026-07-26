@@ -5,12 +5,14 @@ import com.example.community.user.dto.request.UserInfoRequest;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserRole;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
 
 @AllArgsConstructor
+@EqualsAndHashCode
 @Getter
 @Setter
 public class UserInfoDTO {
@@ -21,6 +23,7 @@ public class UserInfoDTO {
     String profileImage;
     UserRole userRole;
     Instant deletedAt;
+
     public void update(UserInfoRequest userInfoRequest){
         this.nickname = userInfoRequest.nickname();
     }

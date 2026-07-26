@@ -3,7 +3,6 @@ package com.example.community.user.repository;
 import com.example.community.user.entity.SignInfo;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserRole;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

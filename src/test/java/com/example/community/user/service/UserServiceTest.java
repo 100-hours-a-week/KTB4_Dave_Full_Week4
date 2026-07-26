@@ -5,7 +5,6 @@ import com.example.community.handler.exception.DuplicateException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.handler.exception.UnAuthorizedException;
 import com.example.community.resolver.SignUserInfo;
-import com.example.community.user.dto.UserDTO;
 import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.dto.request.PasswordChangeRequest;
 import com.example.community.user.dto.request.SignInRequest;
@@ -18,6 +17,7 @@ import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserRole;
 import com.example.community.user.repository.SignInfoRepository;
 import com.example.community.user.repository.UserInfoRepository;
+import com.example.community.util.ImageConverter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,13 +47,14 @@ class UserServiceTest {
     private UserInfoRepository userInfoRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private ImageConverter imageConverter;
     @InjectMocks
     private UserService userService;
 
     private String email;
     private String password;
     private String nickname;
-    private UserDTO user;
 
     @BeforeEach
     void init(){
@@ -124,6 +125,7 @@ class UserServiceTest {
 
                     return userInfo;
                 });
+        when(imageConverter.updateProfileImage(null)).thenReturn(null);
         assertThat(userService.signUp(signUpRequest).userId()).isEqualTo(1);
     }
 
@@ -166,9 +168,11 @@ class UserServiceTest {
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.of(signInfo));
         when(passwordEncoder.matches(password,password)).thenReturn(true);
         when(userInfoRepository.findBySignInfo_UserNum(1L)).thenReturn(Collections.singletonList(userInfo));
+        UserInfoDTO userInfoDTO = UserInfoDTO.from(userInfo);
+        userInfoDTO.setEmail(email);
         assertThat(userService.signIn(new SignInRequest(email, password)))
                 .usingRecursiveComparison()
-                .isEqualTo(UserInfoDTO.from(userInfo));;
+                .isEqualTo(userInfoDTO);;
     }
 
     @Test
@@ -250,7 +254,7 @@ class UserServiceTest {
 
         assertThatThrownBy(() -> userService.changePassword(signUserInfo, passwordChangeRequest))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessage("비밀번호 확인 불일치");
+                .hasMessage("비밀번호가 틀렸습니다.");
     }
 
     @Test
@@ -264,7 +268,10 @@ class UserServiceTest {
 
         when(signInfoRepository.findByUserNum(signUserInfo.userNum()))
                 .thenReturn(Optional.of(signInfo));
+        when(passwordEncoder.matches(signInfo.getPassword(), "1234")).thenReturn(true);
+        when(passwordEncoder.encode(passwordChangeRequest.nextPassword())).thenReturn("12345");
 
+        System.out.println(signInfo.getPassword());
         userService.changePassword(signUserInfo, passwordChangeRequest);
         assertThat(signInfo.getPassword()).isEqualTo("12345");
     }
