@@ -45,7 +45,7 @@ public class CommentEditRecord {
         }
         return new CommentEditRecord(
                 null,
-                comment.getComment(),
+                comment,
                 comment.getVersion(),
                 comment.getMaskedContent(),
                 comment.getEditedAt() != null ? comment.getEditedAt() : comment.getWriteAt()

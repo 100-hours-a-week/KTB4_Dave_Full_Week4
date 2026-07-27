@@ -74,7 +74,6 @@ public class PostEditRecord {
                 post.getContent(),
                 post.getImage(),
                 post.getEditedAt() != null ? post.getEditedAt() : post.getWriteAt()
-
         );
     }
 }

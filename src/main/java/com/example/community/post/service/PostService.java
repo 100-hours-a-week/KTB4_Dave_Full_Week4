@@ -204,6 +204,7 @@ public class PostService {
     private void postUnlike(long profileId, long postNum){
         UserLikePost userLikePost = userLikeRepository.findByUserInfo_ProfileIdAndPost_PostNum(profileId, postNum)
                 .orElseThrow(() -> new NotFoundException("좋아요 안 한 게시글"));
+        userLikePost.getPost().unlike();
         userLikeRepository.delete(userLikePost);
     }
 

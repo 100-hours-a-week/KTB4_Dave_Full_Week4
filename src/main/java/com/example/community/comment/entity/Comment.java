@@ -47,7 +47,7 @@ public class Comment {
 
     @Column(name = "version")
     @Version
-    private int version;
+    private int version = 0;
 
     @Column(name = "childCount")
     private long childCount = 0;
