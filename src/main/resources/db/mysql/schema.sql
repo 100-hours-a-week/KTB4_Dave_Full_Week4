@@ -320,7 +320,7 @@ CREATE TABLE `post_edit_record` (
                                         UNIQUE (`post_num`, `version`),
 
                                     CONSTRAINT `ck_post_edit_record_version`
-                                        CHECK (`version` >= 1),
+                                        CHECK (`version` >= 0),
 
                                     CONSTRAINT `fk_post_edit_record_post`
                                         FOREIGN KEY (`post_num`)
@@ -414,7 +414,7 @@ CREATE TABLE `comment_edit_record` (
                                            UNIQUE (`comment_num`, `version`),
 
                                        CONSTRAINT `ck_comment_edit_record_version`
-                                           CHECK (`version` >= 1),
+                                           CHECK (`version` >= 0),
 
                                        CONSTRAINT `fk_comment_edit_record_comment`
                                            FOREIGN KEY (`comment_num`)
