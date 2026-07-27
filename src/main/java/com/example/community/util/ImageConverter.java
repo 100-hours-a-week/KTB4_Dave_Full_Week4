@@ -4,12 +4,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
 @Component
 public class ImageConverter {
+
     private static final String POST_URL_PREFIX = "/images/posts/";
     private static final String PROFILE_URL_PREFIX = "/images/profiles/";
 
@@ -21,17 +23,31 @@ public class ImageConverter {
         return updateImage(file, PROFILE_URL_PREFIX);
     }
 
-    private String updateImage(MultipartFile file, String prefix) throws IOException{
-        if (file == null || file.isEmpty()) return null;
+    private String updateImage(MultipartFile file, String prefix) throws IOException {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+
+        Path uploadPath = createUploadDirectory(prefix);
+
         String extension = extractExtension(file.getOriginalFilename());
         String storedFileName = UUID.randomUUID() + "." + extension;
-
-        Path uploadPath = Paths.get(System.getProperty("user.dir"), "app"+prefix);
         Path targetPath = uploadPath.resolve(storedFileName);
 
         file.transferTo(targetPath);
 
         return prefix + storedFileName;
+    }
+
+    private Path createUploadDirectory(String prefix) throws IOException {
+        Path uploadPath = Paths.get(
+                System.getProperty("user.dir"),
+                "app" + prefix
+        );
+
+        Files.createDirectories(uploadPath);
+
+        return uploadPath;
     }
 
     private String extractExtension(String originalFilename) {
