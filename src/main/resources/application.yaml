@@ -2,7 +2,7 @@ spring:
   application:
     name: Community
   config:
-    import: optional:file:${ENV_FILE:.env.local}[.properties]
+    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME}
     username: ${DB_USERNAME:root}
