@@ -1,10 +1,7 @@
 package com.example.community.post.controller;
 
 import com.example.community.post.dto.request.PostRequest;
-import com.example.community.post.dto.response.PostLikeResponse;
-import com.example.community.post.dto.response.PostPageResponse;
-import com.example.community.post.dto.response.PostReportResponse;
-import com.example.community.post.dto.response.PostResponse;
+import com.example.community.post.dto.response.*;
 import com.example.community.post.service.PostService;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
@@ -73,7 +70,7 @@ public class PostController {
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<ApiResponse<PostPageResponse>> popularPosts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+    public ResponseEntity<ApiResponse<PostSliceResponse>> popularPosts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
         return ResponseEntity.ok(new ApiResponse<>("인기 글 불러오기 성공", postService.getPopularPosts(page, size)));
     }
 

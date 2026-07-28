@@ -43,3 +43,6 @@ logging:
           core:
             JdbcTemplate: DEBUG
             StatementCreatorUtils: TRACE
+    org.hibernate:
+      SQL: DEBUG
+      orm.jdbc.bind: TRACE

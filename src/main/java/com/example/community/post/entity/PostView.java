@@ -49,7 +49,6 @@ public class PostView {
             return;
         }
         viewUpdate();
-        post.view();
     }
 
     private void viewUpdate(){

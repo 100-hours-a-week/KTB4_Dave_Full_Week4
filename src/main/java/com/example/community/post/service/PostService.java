@@ -22,16 +22,14 @@ import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.user.repository.UserLikeRepository;
 import com.example.community.util.ImageConverter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -138,7 +136,10 @@ public class PostService {
                         profileId
                 )
                 .ifPresentOrElse(
-                        PostView::view,
+                        (pv) -> {
+                            pv.view();
+                            post.view();
+                        },
                         () -> postViewRepository.save(
                                 new PostView(post, userInfo)
                         )
@@ -238,10 +239,13 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostPageResponse getPopularPosts(int page, int size){
+    public PostSliceResponse getPopularPosts(int page, int size){
         Pageable pageable = PageRequest.of(page, size);
-        Page<Post> posts = postViewRepository.findPopularPosts(Instant.now().minus(1, ChronoUnit.HOURS), pageable);
-        return PostPageResponse.from(posts);
+        Slice<Long> postNums = postViewRepository.findPopularPosts(Instant.now().minus(1, ChronoUnit.HOURS), pageable);
+        List<Post> posts = postRepository.findPostByPostNumIn(postNums.getContent());
+        Slice<Post> postSlice = new PageImpl<>(posts, pageable, posts.size());
+
+        return PostSliceResponse.from(postSlice);
     }
 
     @Transactional

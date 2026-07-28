@@ -5,4 +5,5 @@ build
 app
 data
 .env
+.env.*
 *.iml

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -20,6 +21,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = {"userInfo", "postState"})
     @Query("select p from Post p where p.postNum = :postNum and p.deletedAt is null")
     Optional<Post> findByPostNum(Long postNum);
+
+    @EntityGraph(attributePaths = {"userInfo", "postState"})
+    @Query("select p from Post p where p.deletedAt is null and p.postNum in :postNums")
+    List<Post> findPostByPostNumIn(List<Long> postNums);
 
     @EntityGraph(attributePaths = {"userInfo", "postState"})
     Page<Post> findPostByUserInfo_ProfileId(long profileId, Pageable pageable);
