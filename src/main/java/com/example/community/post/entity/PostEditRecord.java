@@ -47,8 +47,8 @@ public class PostEditRecord {
         if(post == null){
             throw new IllegalArgumentException("post가 null");
         }
-        if(version == null || version < 1){
-            throw new IllegalArgumentException("version은 양수여야 함");
+        if(version == null || version < 0){
+            throw new IllegalArgumentException("version은 음수일 수 없음");
         }
         if(title == null || title.isBlank() || content == null || content.isBlank()){
             throw new IllegalArgumentException("제목과 내용은 비어있으면 안됨");

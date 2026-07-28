@@ -44,7 +44,6 @@ public class SecurityConfig {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers(PathRequest.toH2Console()).permitAll();
                     auth.requestMatchers("/auth/**").permitAll();
                     auth.requestMatchers("/images/**").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/users","/users/email", "/users/nickname", "/users/state").permitAll();

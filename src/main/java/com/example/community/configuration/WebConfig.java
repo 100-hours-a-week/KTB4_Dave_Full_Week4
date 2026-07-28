@@ -20,15 +20,4 @@ public class WebConfig implements WebMvcConfigurer {
         resolvers.add(signUserArgumentResolver);
     }
 
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String imageLocation = Paths.get(
-                System.getProperty("user.dir"),
-                "app",
-                "images"
-        ).toUri().toString();
-
-        registry.addResourceHandler("/images/**")
-                .addResourceLocations(imageLocation);
-    }
 }

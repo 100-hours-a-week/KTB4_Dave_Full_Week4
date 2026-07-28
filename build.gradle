@@ -31,8 +31,6 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc' // 선택: 코드로 쿼리 테스트 시 권장
-    implementation 'org.springframework.boot:spring-boot-h2console'
-    runtimeOnly 'com.h2database:h2' // H2는 런타임 의존성으로 추가
     runtimeOnly 'com.mysql:mysql-connector-j'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     // JPA 테스트 어노테이션(@DataJpaTest)을 위한 스타터
@@ -46,6 +44,11 @@ dependencies {
 
     // Bucket
     implementation 'com.bucket4j:bucket4j-core:8.9.0'
+// Source: https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-s3
+    implementation platform('software.amazon.awssdk:bom:2.47.6')
+
+    implementation "software.amazon.awssdk:s3"
+    implementation "software.amazon.awssdk:signin"
 }
 
 tasks.named('test') {
