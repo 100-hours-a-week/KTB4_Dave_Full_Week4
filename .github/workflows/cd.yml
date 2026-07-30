@@ -29,7 +29,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: build-results
-          path: .
+          path: build/libs
           run-id: ${{github.event.workflow_run.id}}
           github-token: ${{secrets.GITHUB_TOKEN}}
       - name: 다운로드 결과 확인
