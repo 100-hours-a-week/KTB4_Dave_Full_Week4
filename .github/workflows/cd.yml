@@ -32,6 +32,11 @@ jobs:
           path: build/libs
           run-id: ${{github.event.workflow_run.id}}
           github-token: ${{secrets.GITHUB_TOKEN}}
+      - name: 다운로드 결과 확인
+        run: |
+          echo "현재 위치: $(pwd)"
+          echo "build/libs 내부:"
+          find build/libs -maxdepth 5 -type f -printf '%p\n'
       - name: Docker Hub 로그인
         uses: docker/login-action@v3
         with:
