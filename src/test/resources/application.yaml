@@ -3,9 +3,7 @@ spring:
     hibernate:
       ddl-auto: create-drop
   jwt:
-    secret: ${JWT_SECRET}
-  config:
-    import: optional:file:.env[.properties]
+    secret: fortestjwtsecretalksdfjasjdfoiqjwoiejlaksjdflkjaslkfasdf
 
 aws:
   s3:
