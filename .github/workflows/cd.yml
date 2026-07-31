@@ -74,6 +74,12 @@ jobs:
           echo "docker_exists=$DOCKER_EXISTS" >> $GITHUB_OUTPUT
       - name: EC2에 도커 설치
         if: steps.check-docker.outputs.docker_exists == 'false'
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
         run: bash scripts/ec2docker.sh
       - name: Deploy to EC2 via Docker Compose
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
         run: bash scripts/deploy.sh
