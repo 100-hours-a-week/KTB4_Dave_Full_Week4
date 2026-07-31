@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ SERVER_USER }}@${{ SERVER_HOST }} << 'EOF'
+ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${ SERVER_USER }@${ SERVER_HOST } << 'EOF'
   cd ./community
   docker compose pull
   docker compose up -d
