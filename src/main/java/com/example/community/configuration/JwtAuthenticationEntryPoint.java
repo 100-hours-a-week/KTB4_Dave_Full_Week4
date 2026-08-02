@@ -30,9 +30,10 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
-        ErrorResponse errorResponse = ErrorResponse.of(
-                "ACCESS_TOKEN_EXPIRED"
-        );
+        String code = authException instanceof JwtAuthenticationException jwtException
+                ? jwtException.getCode()
+                : "UNAUTHORIZED";
+        ErrorResponse errorResponse = ErrorResponse.of(code);
 
         objectMapper.writeValue(response.getWriter(), errorResponse);
     }

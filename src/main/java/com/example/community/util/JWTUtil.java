@@ -1,8 +1,10 @@
 package com.example.community.util;
 
+import com.example.community.auth.dto.AccessTokenClaims;
 import com.example.community.user.entity.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -80,6 +82,32 @@ public class JWTUtil {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public AccessTokenClaims parseAccessToken(String token) {
+        Claims claims = validateToken(token);
+
+        if (!TOKEN_TYPE_ACCESS.equals(claims.get(CLAIM_TYPE, String.class))) {
+            throw new MalformedJwtException("Token is not an access token.");
+        }
+
+        String subject = claims.getSubject();
+        Long profileId = claims.get(CLAIM_PROFILE_ID, Long.class);
+        String role = claims.get(CLAIM_ROLE, String.class);
+
+        if (subject == null || subject.isBlank() || profileId == null || role == null || role.isBlank()) {
+            throw new MalformedJwtException("Access token is missing required claims.");
+        }
+
+        try {
+            return new AccessTokenClaims(
+                    Long.valueOf(subject),
+                    profileId,
+                    UserRole.valueOf(role)
+            );
+        } catch (IllegalArgumentException e) {
+            throw new MalformedJwtException("Access token contains invalid claims.", e);
+        }
     }
 
     public Long getUserNumFromToken(String token) {
