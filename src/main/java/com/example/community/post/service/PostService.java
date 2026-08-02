@@ -27,9 +27,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +41,7 @@ public class PostService {
     private final UserInfoRepository userInfoRepository;
     private final UserLikeRepository userLikeRepository;
     private final ImageConverter imageConverter;
+    private final PostViewService postViewService;
 
     private Post findPost(long postNum){
         return postRepository.findByPostNum(postNum)
@@ -137,12 +138,15 @@ public class PostService {
                 )
                 .ifPresentOrElse(
                         (pv) -> {
-                            pv.view();
-                            post.view();
+                            if (pv.view()) {
+                                post.view();
+                                postViewService.recordView(post.getPostNum());
+                            }
                         },
-                        () -> postViewRepository.save(
-                                new PostView(post, userInfo)
-                        )
+                        () -> {
+                            postViewRepository.save(new PostView(post, userInfo));
+                            postViewService.recordView(post.getPostNum());
+                        }
                 );
     }
 
@@ -239,11 +243,17 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostSliceResponse getPopularPosts(int page, int size){
-        Pageable pageable = PageRequest.of(page, size);
-        Slice<Long> postNums = postViewRepository.findPopularPosts(Instant.now().minus(1, ChronoUnit.HOURS), pageable);
-        List<Post> posts = postRepository.findPostByPostNumIn(postNums.getContent());
-        Slice<Post> postSlice = new PageImpl<>(posts, pageable, posts.size());
+    public PostSliceResponse getTop10PopularPosts(){
+        List<Long> postNums = postViewService.getTop10PopularPostNums();
+        Map<Long, Post> postsByPostNum = new HashMap<>();
+        postRepository.findPostByPostNumIn(postNums)
+                .forEach(post -> postsByPostNum.put(post.getPostNum(), post));
+        List<Post> orderedPosts = postNums.stream()
+                .map(postsByPostNum::get)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        Pageable pageable = PageRequest.of(0, 10);
+        Slice<Post> postSlice = new SliceImpl<>(orderedPosts, pageable, false);
 
         return PostSliceResponse.from(postSlice);
     }

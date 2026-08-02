@@ -31,6 +31,12 @@ tokenExpire:
   refresh: 1800000
   access: 600000
 
+popular-post:
+  scheduler:
+    enabled: ${POPULAR_POST_SCHEDULER_ENABLED:true}
+    cron: "10 */5 * * * *"
+    zone: UTC
+
 logging:
   level:
     org.springframework.web.servlet.DispatcherServlet: TRACE

@@ -27,5 +27,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findPostByPostNumIn(List<Long> postNums);
 
     @EntityGraph(attributePaths = {"userInfo", "postState"})
+    @Query("select p from Post p where p.userInfo.profileId = :profileId and p.deletedAt is null")
     Page<Post> findPostByUserInfo_ProfileId(long profileId, Pageable pageable);
 }

@@ -1,0 +1,95 @@
+package com.example.community.post.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.Instant;
+
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(
+        name = "PostPopularityStat",
+        indexes = @Index(
+                name = "idx_post_popularity_score",
+                columnList = "popularityScore DESC, postNum DESC"
+        )
+)
+public class PostPopularityStat {
+    @Id
+    @Column(name = "postNum")
+    private Long postNum;
+
+    @Column(name = "viewCount5m", nullable = false)
+    private long viewCount5m;
+
+    @Column(name = "viewCount30m", nullable = false)
+    private long viewCount30m;
+
+    @Column(name = "viewCount60m", nullable = false)
+    private long viewCount60m;
+
+    @Column(name = "popularityScore", nullable = false)
+    private long popularityScore;
+
+    @Column(name = "windowEndAt", nullable = false)
+    private Instant windowEndAt;
+
+    public PostPopularityStat(Long postNum) {
+        this.postNum = postNum;
+    }
+
+    public void updateRollingCounts(
+            long newBucketCount,
+            long expired30MinuteCount,
+            long expired60MinuteCount,
+            Instant windowEndAt
+    ) {
+        this.viewCount5m = newBucketCount;
+        this.viewCount30m = subtractExpired(
+                viewCount30m + newBucketCount,
+                expired30MinuteCount
+        );
+        this.viewCount60m = subtractExpired(
+                viewCount60m + newBucketCount,
+                expired60MinuteCount
+        );
+        this.windowEndAt = windowEndAt;
+        updatePopularityScore();
+    }
+
+    public void initializeCounts(
+            long viewCount5m,
+            long viewCount30m,
+            long viewCount60m,
+            Instant windowEndAt
+    ) {
+        this.viewCount5m = viewCount5m;
+        this.viewCount30m = viewCount30m;
+        this.viewCount60m = viewCount60m;
+        this.windowEndAt = windowEndAt;
+        updatePopularityScore();
+    }
+
+    public boolean hasNoViews() {
+        return viewCount60m == 0;
+    }
+
+    private long subtractExpired(long currentCount, long expiredCount) {
+        long result = currentCount - expiredCount;
+        if (result < 0) {
+            throw new IllegalStateException("인기글 조회수 집계 결과는 음수가 될 수 없습니다.");
+        }
+        return result;
+    }
+
+    private void updatePopularityScore() {
+        popularityScore = viewCount5m * 2 + viewCount30m + viewCount60m;
+    }
+}

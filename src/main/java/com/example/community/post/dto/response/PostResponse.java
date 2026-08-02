@@ -1,7 +1,6 @@
 package com.example.community.post.dto.response;
 
 import com.example.community.post.entity.Post;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;

@@ -13,3 +13,7 @@ tokenExpire:
   refresh: 1800000
   access: 600000
 
+popular-post:
+  scheduler:
+    enabled: false
+

@@ -42,13 +42,14 @@ public class PostView {
         this.post.view();
     }
 
-    public void view(){
+    public boolean view(){
         Instant twentyFourHoursAgo = Instant.now().minus(Duration.ofHours(24));
 
         if (viewAt.isAfter(twentyFourHoursAgo)) {
-            return;
+            return false;
         }
         viewUpdate();
+        return true;
     }
 
     private void viewUpdate(){

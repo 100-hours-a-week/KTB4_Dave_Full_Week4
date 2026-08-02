@@ -70,8 +70,8 @@ public class PostController {
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<ApiResponse<PostSliceResponse>> popularPosts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        return ResponseEntity.ok(new ApiResponse<>("인기 글 불러오기 성공", postService.getPopularPosts(page, size)));
+    public ResponseEntity<ApiResponse<PostSliceResponse>> popularPosts(){
+        return ResponseEntity.ok(new ApiResponse<>("인기 글 불러오기 성공", postService.getTop10PopularPosts()));
     }
 
     @DeleteMapping("/{postNum}")
