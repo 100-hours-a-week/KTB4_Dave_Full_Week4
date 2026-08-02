@@ -1,7 +1,6 @@
 package com.example.community.filter;
 
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.BucketConfiguration;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,9 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
-    private static final BucketConfiguration configuration = BucketConfiguration.builder()
-            .addLimit(limit -> limit.capacity(10).refillGreedy(10, Duration.ofMinutes(1)))
-            .build();
     // IP별로 Bucket 관리 (메모리 기반)
     private final Map<String, Bucket> bucketCache = new ConcurrentHashMap<>();
     //RateLimit 적용 대상 API 목록
@@ -34,11 +30,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
             Bucket bucket = bucketCache.computeIfAbsent(ip, key -> createBucket());
             if (bucket.tryConsume(1)) {
                 filterChain.doFilter(request, response);
-                return;
             } else {
                 writeTooManyRequestsResponse(response);
-                return;
             }
+            return;
         }
         filterChain.doFilter(request, response);
     }
@@ -60,10 +55,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private String getIP(HttpServletRequest request){
-        String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader != null) {
-            return xfHeader.split(",")[0];
-        }
         return request.getRemoteAddr();
     }
 

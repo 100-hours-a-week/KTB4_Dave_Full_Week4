@@ -19,6 +19,9 @@ spring:
   jwt:
     secret: ${JWT_SECRET}
 
+server:
+  forward-headers-strategy: framework
+
 aws:
   s3:
     bucket: community-925581110470-ap-northeast-2-an
