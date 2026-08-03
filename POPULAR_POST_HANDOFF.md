@@ -38,7 +38,7 @@ popularityScore = viewCount5m * 2 + viewCount30m + viewCount60m
 
 1. `popularityScore DESC`
 2. `viewCount5m DESC`
-3. `viewCount60m DESC`
+3. `viewCount30m DESC`
 4. `postNum DESC`
 
 ## 시간과 버킷 경계
@@ -70,7 +70,7 @@ expired60BucketStart = windowEndAt - 65분
 
 ### `post_view_bucket`
 
-5분 단위 원본 조회수다. `(post_num, bucket_start_at)`에 유니크 제약이 있으며 조회 시 native upsert로 `view_count`를 증가시킨다.
+5분 단위 원본 조회수다. `(post_num, bucket_start_at)`에 유니크 제약이 있으며 조회 시 native upsert로 `view_count`를 증가시킨다. upsert는 삭제되지 않고 신고 횟수가 5회 이하인 게시글에만 수행한다.
 
 관련 파일:
 
@@ -92,7 +92,7 @@ popularity_score
 window_end_at
 ```
 
-`view_count60m == 0`이 되면 후보에서 삭제한다. 누적 구간 관계상 60분 값이 0이면 5분과 30분 값도 0이어야 한다.
+`view_count60m == 0`이 되면 후보에서 삭제한다. 누적 구간 관계상 60분 값이 0이면 5분과 30분 값도 0이어야 한다. `post_num`은 공유 기본 키이며 `Post`와 지연 로딩 `@OneToOne` 관계로 매핑한다.
 
 관련 파일:
 
@@ -208,6 +208,7 @@ spring.sql.init.mode: never
 핵심 테스트:
 
 - `src/test/java/com/example/community/post/service/PostViewServiceTest.java`
+- `src/test/java/com/example/community/post/repository/PostPopularityStatRepositoryTest.java`
 
 검증 항목:
 
@@ -217,7 +218,10 @@ spring.sql.init.mode: never
 - 30분 만료 버킷 차감
 - 60분 만료 버킷 차감
 - 인기 점수 계산
-- 상위 10개 제한
+- 직전 5분 조회가 새 버킷에서 사라질 때 5분 값을 0으로 초기화
+- 최근 조회 우선 동점 정렬
+- 삭제·블라인드 게시글 제외
+- `Pageable`을 통한 조회 결과 개수 제한
 
 마지막 검증 결과:
 

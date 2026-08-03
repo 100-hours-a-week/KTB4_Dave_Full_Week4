@@ -217,7 +217,10 @@ CREATE TABLE `post_popularity_stat` (
                                         PRIMARY KEY (`post_num`),
 
                                         KEY `idx_post_popularity_score`
-                                            (`popularity_score` DESC, `post_num` DESC),
+                                            (`popularity_score` DESC,
+                                             `view_count5m` DESC,
+                                             `view_count30m` DESC,
+                                             `post_num` DESC),
 
                                         CONSTRAINT `fk_post_popularity_stat_post`
                                             FOREIGN KEY (`post_num`)

@@ -1,6 +1,7 @@
 package com.example.community.post.service;
 
 import com.example.community.post.entity.PopularityAggregationCheckpoint;
+import com.example.community.post.entity.Post;
 import com.example.community.post.entity.PostPopularityStat;
 import com.example.community.post.entity.PostViewBucket;
 import com.example.community.post.repository.PopularityAggregationCheckpointRepository;
@@ -98,7 +99,7 @@ public class PostViewService {
         for (PostViewBucket bucket : buckets) {
             PopularityCounts counts = countsByPost.computeIfAbsent(
                     bucket.getPost().getPostNum(),
-                    ignored -> new PopularityCounts()
+                    ignored -> new PopularityCounts(bucket.getPost())
             );
             counts.viewCount60m += bucket.getViewCount();
             if (!bucket.getBucketStartAt().isBefore(thirtyMinuteStartAt)) {
@@ -112,7 +113,7 @@ public class PostViewService {
         List<PostPopularityStat> popularityStats = countsByPost.entrySet().stream()
                 .map(entry -> {
                     PopularityCounts counts = entry.getValue();
-                    PostPopularityStat stat = new PostPopularityStat(entry.getKey());
+                    PostPopularityStat stat = new PostPopularityStat(counts.post);
                     stat.initializeCounts(
                             counts.viewCount5m,
                             counts.viewCount30m,
@@ -138,13 +139,18 @@ public class PostViewService {
         );
 
         Map<Instant, Map<Long, Long>> countsByTimeAndPost = new HashMap<>();
+        Map<Long, Post> postsByPostNum = new HashMap<>();
         postViewBucketRepository.findByBucketStartAtIn(relevantBucketStarts)
-                .forEach(bucket -> countsByTimeAndPost
-                        .computeIfAbsent(
-                                bucket.getBucketStartAt(),
-                                ignored -> new HashMap<>()
-                        )
-                        .put(bucket.getPost().getPostNum(), bucket.getViewCount()));
+                .forEach(bucket -> {
+                    Long postNum = bucket.getPost().getPostNum();
+                    postsByPostNum.put(postNum, bucket.getPost());
+                    countsByTimeAndPost
+                            .computeIfAbsent(
+                                    bucket.getBucketStartAt(),
+                                    ignored -> new HashMap<>()
+                            )
+                            .put(postNum, bucket.getViewCount());
+                });
 
         Map<Long, Long> newBucketCounts = countsByTimeAndPost.getOrDefault(
                 newBucketStartAt,
@@ -160,7 +166,8 @@ public class PostViewService {
         );
 
         Set<Long> affectedPostNums = new HashSet<>(
-                postPopularityStatRepository.findPostNumsWithRecentViews()
+                postPopularityStatRepository
+                        .findPostNumsWithNonZeroFiveMinuteCount()
         );
         affectedPostNums.addAll(newBucketCounts.keySet());
         affectedPostNums.addAll(expired30MinuteCounts.keySet());
@@ -181,7 +188,7 @@ public class PostViewService {
                 if (newBucketCount == 0) {
                     continue;
                 }
-                stat = new PostPopularityStat(postNum);
+                stat = new PostPopularityStat(postsByPostNum.get(postNum));
             }
 
             stat.updateRollingCounts(
@@ -203,8 +210,13 @@ public class PostViewService {
     }
 
     private static class PopularityCounts {
+        private final Post post;
         private long viewCount5m;
         private long viewCount30m;
         private long viewCount60m;
+
+        private PopularityCounts(Post post) {
+            this.post = post;
+        }
     }
 }

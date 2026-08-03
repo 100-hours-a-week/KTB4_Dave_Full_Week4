@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -114,7 +115,7 @@ class PostViewServiceTest {
                 PopularityAggregationCheckpoint.JOB_NAME
         )).thenReturn(Optional.of(checkpoint));
 
-        PostPopularityStat stat = new PostPopularityStat(1L);
+        PostPopularityStat stat = persistedPopularityStat(1L);
         stat.initializeCounts(
                 7L,
                 20L,
@@ -128,7 +129,8 @@ class PostViewServiceTest {
         );
         when(postViewBucketRepository.findByBucketStartAtIn(any()))
                 .thenReturn(relevantBuckets);
-        when(postPopularityStatRepository.findPostNumsWithRecentViews())
+        when(postPopularityStatRepository
+                .findPostNumsWithNonZeroFiveMinuteCount())
                 .thenReturn(List.of(1L));
         when(postPopularityStatRepository.findAllById(any()))
                 .thenReturn(List.of(stat));
@@ -142,6 +144,43 @@ class PostViewServiceTest {
         assertThat(stat.getWindowEndAt()).isEqualTo(COMPLETED_WINDOW_END);
         assertThat(checkpoint.getLastProcessedEndAt())
                 .isEqualTo(COMPLETED_WINDOW_END);
+    }
+
+    @Test
+    @DisplayName("새 5분 버킷이 비어 있으면 직전 5분 조회수를 0으로 초기화한다")
+    void incrementalRefreshClearsPreviousFiveMinuteCount() {
+        when(clock.instant()).thenReturn(NOW);
+        PopularityAggregationCheckpoint checkpoint =
+                new PopularityAggregationCheckpoint(
+                        PopularityAggregationCheckpoint.JOB_NAME
+                );
+        checkpoint.advanceTo(Instant.parse("2026-08-02T13:55:00Z"));
+        when(checkpointRepository.findByJobNameForUpdate(
+                PopularityAggregationCheckpoint.JOB_NAME
+        )).thenReturn(Optional.of(checkpoint));
+
+        PostPopularityStat stat = persistedPopularityStat(1L);
+        stat.initializeCounts(
+                7L,
+                20L,
+                40L,
+                Instant.parse("2026-08-02T13:55:00Z")
+        );
+        when(postViewBucketRepository.findByBucketStartAtIn(any()))
+                .thenReturn(List.of());
+        when(postPopularityStatRepository
+                .findPostNumsWithNonZeroFiveMinuteCount())
+                .thenReturn(List.of(1L));
+        when(postPopularityStatRepository.findAllById(any()))
+                .thenReturn(List.of(stat));
+
+        postViewService.refreshPopularityStats();
+
+        assertThat(stat.getViewCount5m()).isZero();
+        assertThat(stat.getViewCount30m()).isEqualTo(20L);
+        assertThat(stat.getViewCount60m()).isEqualTo(40L);
+        assertThat(stat.getPopularityScore()).isEqualTo(60L);
+        assertThat(stat.getWindowEndAt()).isEqualTo(COMPLETED_WINDOW_END);
     }
 
     @Test
@@ -162,8 +201,22 @@ class PostViewServiceTest {
     }
 
     private PostViewBucket bucket(long postNum, String bucketStartAt, long count) {
+        return new PostViewBucket(
+                post(postNum),
+                Instant.parse(bucketStartAt),
+                count
+        );
+    }
+
+    private Post post(long postNum) {
         Post post = mock(Post.class);
         when(post.getPostNum()).thenReturn(postNum);
-        return new PostViewBucket(post, Instant.parse(bucketStartAt), count);
+        return post;
+    }
+
+    private PostPopularityStat persistedPopularityStat(long postNum) {
+        PostPopularityStat stat = new PostPopularityStat(mock(Post.class));
+        ReflectionTestUtils.setField(stat, "postNum", postNum);
+        return stat;
     }
 }

@@ -15,18 +15,18 @@ public interface PostPopularityStatRepository extends JpaRepository<PostPopulari
             from PostPopularityStat stat
             where stat.viewCount5m > 0
             """)
-    List<Long> findPostNumsWithRecentViews();
+    List<Long> findPostNumsWithNonZeroFiveMinuteCount();
 
     @Query("""
             select stat.postNum
             from PostPopularityStat stat
-            join Post post on post.postNum = stat.postNum
+            join stat.post post
             join post.postState postState
             where post.deletedAt is null
               and postState.reportCount <= 5
             order by stat.popularityScore desc,
                      stat.viewCount5m desc,
-                     stat.viewCount60m desc,
+                     stat.viewCount30m desc,
                      stat.postNum desc
             """)
     List<Long> findPopularPostNums(Pageable pageable);

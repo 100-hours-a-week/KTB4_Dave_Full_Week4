@@ -21,13 +21,18 @@ public interface PostViewBucketRepository extends JpaRepository<PostViewBucket, 
                 bucket_start_at,
                 view_count
             )
-            VALUES (
+            SELECT
                 :postNum,
                 :bucketStartAt,
                 :amount
-            ) AS new
+            FROM post
+            JOIN post_stat
+              ON post_stat.post_num = post.post_num
+            WHERE post.post_num = :postNum
+              AND post.deleted_at IS NULL
+              AND post_stat.report_count <= 5
             ON DUPLICATE KEY UPDATE
-                view_count = post_view_bucket.view_count + new.view_count
+                view_count = post_view_bucket.view_count + :amount
             """,
             nativeQuery = true
     )

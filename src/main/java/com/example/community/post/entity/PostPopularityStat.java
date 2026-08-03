@@ -2,8 +2,13 @@ package com.example.community.post.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,13 +23,25 @@ import java.time.Instant;
         name = "PostPopularityStat",
         indexes = @Index(
                 name = "idx_post_popularity_score",
-                columnList = "popularityScore DESC, postNum DESC"
+                columnList = "popularityScore DESC, viewCount5m DESC, " +
+                        "viewCount30m DESC, postNum DESC"
         )
 )
 public class PostPopularityStat {
     @Id
     @Column(name = "postNum")
     private Long postNum;
+
+    @MapsId
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "postNum",
+            nullable = false,
+            foreignKey = @ForeignKey(
+                    name = "fk_post_popularity_stat_post"
+            )
+    )
+    private Post post;
 
     @Column(name = "viewCount5m", nullable = false)
     private long viewCount5m;
@@ -41,8 +58,8 @@ public class PostPopularityStat {
     @Column(name = "windowEndAt", nullable = false)
     private Instant windowEndAt;
 
-    public PostPopularityStat(Long postNum) {
-        this.postNum = postNum;
+    public PostPopularityStat(Post post) {
+        this.post = post;
     }
 
     public void updateRollingCounts(
