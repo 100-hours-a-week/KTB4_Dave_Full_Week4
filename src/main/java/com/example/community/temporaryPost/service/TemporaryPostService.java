@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -63,7 +62,7 @@ public class TemporaryPostService {
     }
 
     @Transactional
-    public TemporaryPostResponse updateTemporaryPost(SignUserInfo signUserInfo, long temporaryId, PostRequest postRequest) throws IOException {
+    public TemporaryPostResponse updateTemporaryPost(SignUserInfo signUserInfo, long temporaryId, PostRequest postRequest) {
         System.out.println("service");
         checkAuthority(signUserInfo, temporaryId);
         TemporaryPost temporaryPost = temporaryPostJpaRepository.findByTemporaryId(temporaryId)

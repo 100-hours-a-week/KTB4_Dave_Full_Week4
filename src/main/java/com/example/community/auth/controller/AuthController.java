@@ -1,12 +1,10 @@
 package com.example.community.auth.controller;
 
 import com.example.community.auth.dto.AccessTokenDTO;
-import com.example.community.auth.dto.response.AuthResponse;
 import com.example.community.auth.dto.response.RefreshResponse;
 import com.example.community.auth.service.AuthService;
 import com.example.community.handler.exception.UnAuthorizedException;
 import com.example.community.response.ApiResponse;
-import com.example.community.user.dto.response.SignInResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;

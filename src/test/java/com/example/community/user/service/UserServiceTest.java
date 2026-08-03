@@ -25,14 +25,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,19 +54,21 @@ class UserServiceTest {
     private UserService userService;
 
     private String email;
-    private String password;
+    private String encodedPassword;
     private String nickname;
+    private String password;
 
     @BeforeEach
     void init(){
         email = "wns1628@gmail.com";
         password = "1234";
+        encodedPassword = "encoded_password";
         nickname = "dave";
     }
 
     @Test
     @DisplayName("회원 가입 시 중복 이메일 입력 시 예외 발생")
-    void signUpFailsWithDuplicateEmail() throws IOException {
+    void signUpFailsWithDuplicateEmail() {
         String passwordConfirm = "1234";
         SignUpRequest signUpRequest = new SignUpRequest(email, password, passwordConfirm, nickname, null);
         when(signInfoRepository.existsByEmail(email)).thenReturn(true);
@@ -101,10 +104,10 @@ class UserServiceTest {
 
     @Test
     @DisplayName("회원 가입 성공")
-    void signUpSuccess() throws IOException {
+    void signUpSuccess(){
         String passwordConfirm = "1234";
         SignUpRequest signUpRequest = new SignUpRequest(email, password, passwordConfirm, nickname, null);
-        when(passwordEncoder.encode(password)).thenReturn(password);
+        when(passwordEncoder.encode(password)).thenReturn(encodedPassword);
         when(signInfoRepository.existsByEmail(email)).thenReturn(false);
         when(userInfoRepository.existsByNickname(nickname)).thenReturn(false);
 
@@ -142,7 +145,7 @@ class UserServiceTest {
     @DisplayName("비밀번호 불일치 시 로그인 실패")
     void signInFailsWhenPasswordDoesNotMatch() {
         String wrongPassword = "123";
-        SignInfo signInfo = new SignInfo(1L, email, password, null, null);
+        SignInfo signInfo = new SignInfo(1L, email, encodedPassword, null, null);
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.of(signInfo));
         assertThatThrownBy(() -> userService.signIn(new SignInRequest(email, wrongPassword))).isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("로그인 실패");
@@ -163,10 +166,10 @@ class UserServiceTest {
     @Test
     @DisplayName("로그인 성공")
     void signInSuccess() {
-        SignInfo signInfo = new SignInfo(1L, email, password, null, null);
+        SignInfo signInfo = new SignInfo(1L, email, encodedPassword, null, null);
         UserInfo userInfo = new UserInfo(1L, signInfo,nickname, null, UserRole.USER, null);
         when(signInfoRepository.findByEmail(email)).thenReturn(Optional.of(signInfo));
-        when(passwordEncoder.matches(password,password)).thenReturn(true);
+        when(passwordEncoder.matches(password, encodedPassword)).thenReturn(true);
         when(userInfoRepository.findBySignInfo_UserNum(1L)).thenReturn(Collections.singletonList(userInfo));
         UserInfoDTO userInfoDTO = UserInfoDTO.from(userInfo);
         userInfoDTO.setEmail(email);
@@ -199,12 +202,43 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("유저 정보 수정 성공")
-    void updateUserInfoSuccess() throws IOException {
+    @DisplayName("유저 정보 수정 시 닉네임 변경하지 않고 프로필 이미지만 변경 시 중복 처리 통과")
+    void updateUserInfoSucceedsWhenOnlyProfileImageIsChanged() {
+        SignUserInfo signUserInfo = new SignUserInfo(1L, 1L, UserRole.USER);
+        UserInfo userInfo = new UserInfo(new SignInfo("wns1628@gmail.com","1234"), "dave", "/temp");
+        when(userInfoRepository.findByProfileId(1L)).thenReturn(Optional.of(userInfo));
+        when(userInfoRepository.existsByNickname(userInfo.getNickname())).thenReturn(true);
+        UserInfoRequest userInfoRequest = new UserInfoRequest("dave", null);
+        UserInfoDTO updatedUserInfoDTO = new UserInfoDTO(1L, 1L, "wns1628@gmail.com", "dave", null, UserRole.USER, null);
+        assertThat(userService.updateUserInfo(signUserInfo, userInfoRequest)).usingRecursiveComparison()
+                .isEqualTo(UserInfoResponse.from(updatedUserInfoDTO));
+    }
+
+    @Test
+    @DisplayName("이미지 없는 유저 정보 수정 성공")
+    void updateUserInfoSuccess() {
         SignUserInfo signUserInfo = new SignUserInfo(1L, 1L, UserRole.USER);
         when(userInfoRepository.findByProfileId(1L)).thenReturn(Optional.of(new UserInfo(new SignInfo("wns1628@gmail.com","1234"), "dave", null)));
         when(userInfoRepository.existsByNickname(any(String.class))).thenReturn(false);
         UserInfoRequest userInfoRequest = new UserInfoRequest("dave2", null);
+        UserInfoDTO updatedUserInfoDTO = new UserInfoDTO(1L, 1L, "wns1628@gmail.com", "dave2", null, UserRole.USER, null);
+
+        assertThat(userService.updateUserInfo(signUserInfo, userInfoRequest)).usingRecursiveComparison()
+                .isEqualTo(UserInfoResponse.from(updatedUserInfoDTO));
+    }
+
+    @Test
+    @DisplayName("이미지 있는 유저 정보 수정 성공")
+    void updateUserInfoWithImageSuccess() {
+        SignUserInfo signUserInfo = new SignUserInfo(1L, 1L, UserRole.USER);
+        when(userInfoRepository.findByProfileId(1L)).thenReturn(Optional.of(new UserInfo(new SignInfo("wns1628@gmail.com","1234"), "dave", null)));
+        when(userInfoRepository.existsByNickname(any(String.class))).thenReturn(false);
+        UserInfoRequest userInfoRequest = new UserInfoRequest("dave2", new MockMultipartFile(
+                "imageFile",           // 요청 필드명
+                "profile.png",         // 원본 파일명
+                "image/png",           // Content-Type
+                "dummy-image".getBytes(UTF_8)
+        ));
         UserInfoDTO updatedUserInfoDTO = new UserInfoDTO(1L, 1L, "wns1628@gmail.com", "dave2", null, UserRole.USER, null);
 
         assertThat(userService.updateUserInfo(signUserInfo, userInfoRequest)).usingRecursiveComparison()
@@ -247,33 +281,41 @@ class UserServiceTest {
         SignUserInfo signUserInfo = new SignUserInfo(1L, 1L, UserRole.USER);
 
         PasswordChangeRequest passwordChangeRequest =
-                new PasswordChangeRequest("1234", "12345", "123456");
+                new PasswordChangeRequest(password, "12345", "123456");
 
         when(signInfoRepository.findByUserNum(signUserInfo.userNum()))
-                .thenReturn(Optional.of(new SignInfo("wns1628@gmail.com", "1234")));
+                .thenReturn(Optional.of(new SignInfo("wns1628@gmail.com", encodedPassword)));
+        when(passwordEncoder.matches(password, encodedPassword)).thenReturn(true);
+
 
         assertThatThrownBy(() -> userService.changePassword(signUserInfo, passwordChangeRequest))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessage("비밀번호가 틀렸습니다.");
+                .hasMessage("비밀번호 확인 불일치");
     }
 
     @Test
     @DisplayName("비밀번호 변경 성공")
     void changePasswordSuccess() {
         SignUserInfo signUserInfo = new SignUserInfo(1L, 1L, UserRole.USER);
-        SignInfo signInfo = new SignInfo("wns1628@gmail.com", "1234");
+        SignInfo signInfo = new SignInfo("wns1628@gmail.com", encodedPassword);
 
         PasswordChangeRequest passwordChangeRequest =
-                new PasswordChangeRequest("1234", "12345", "12345");
+                new PasswordChangeRequest(password, "12345", "12345");
 
         when(signInfoRepository.findByUserNum(signUserInfo.userNum()))
                 .thenReturn(Optional.of(signInfo));
-        when(passwordEncoder.matches(signInfo.getPassword(), "1234")).thenReturn(true);
-        when(passwordEncoder.encode(passwordChangeRequest.nextPassword())).thenReturn("12345");
+        when(passwordEncoder.matches(password, encodedPassword)).thenReturn(true);
+        when(passwordEncoder.encode(passwordChangeRequest.nextPassword())).thenReturn("encodedPassword2");
 
         System.out.println(signInfo.getPassword());
         userService.changePassword(signUserInfo, passwordChangeRequest);
-        assertThat(signInfo.getPassword()).isEqualTo("12345");
+        assertThat(signInfo.getPassword()).isEqualTo("encodedPassword2");
+    }
+
+    @Test
+    @DisplayName("좋아요한 게시글 목록 불러오기")
+    void getLikePosts(){
+
     }
 
     @Test
