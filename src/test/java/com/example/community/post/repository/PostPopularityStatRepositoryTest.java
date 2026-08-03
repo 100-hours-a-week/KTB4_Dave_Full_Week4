@@ -13,16 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 class PostPopularityStatRepositoryTest {
-    private static final Instant WINDOW_END_AT =
-            Instant.parse("2026-08-02T14:00:00Z");
-
     @Autowired
     private PostPopularityStatRepository postPopularityStatRepository;
 
@@ -99,8 +95,7 @@ class PostPopularityStatRepositoryTest {
         stat.initializeCounts(
                 viewCount5m,
                 viewCount30m,
-                viewCount60m,
-                WINDOW_END_AT
+                viewCount60m
         );
         return stat;
     }

@@ -117,8 +117,7 @@ public class PostViewService {
                     stat.initializeCounts(
                             counts.viewCount5m,
                             counts.viewCount30m,
-                            counts.viewCount60m,
-                            targetEndAt
+                            counts.viewCount60m
                     );
                     return stat;
                 })
@@ -194,8 +193,7 @@ public class PostViewService {
             stat.updateRollingCounts(
                     newBucketCount,
                     expired30MinuteCounts.getOrDefault(postNum, 0L),
-                    expired60MinuteCounts.getOrDefault(postNum, 0L),
-                    windowEndAt
+                    expired60MinuteCounts.getOrDefault(postNum, 0L)
             );
 
             if (stat.hasNoViews()) {

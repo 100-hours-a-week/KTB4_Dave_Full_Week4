@@ -212,7 +212,6 @@ CREATE TABLE `post_popularity_stat` (
                                         `view_count30m` BIGINT NOT NULL DEFAULT 0,
                                         `view_count60m` BIGINT NOT NULL DEFAULT 0,
                                         `popularity_score` BIGINT NOT NULL DEFAULT 0,
-                                        `window_end_at` DATETIME(6) NOT NULL,
 
                                         PRIMARY KEY (`post_num`),
 

@@ -14,8 +14,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
-
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -55,9 +53,6 @@ public class PostPopularityStat {
     @Column(name = "popularityScore", nullable = false)
     private long popularityScore;
 
-    @Column(name = "windowEndAt", nullable = false)
-    private Instant windowEndAt;
-
     public PostPopularityStat(Post post) {
         this.post = post;
     }
@@ -65,8 +60,7 @@ public class PostPopularityStat {
     public void updateRollingCounts(
             long newBucketCount,
             long expired30MinuteCount,
-            long expired60MinuteCount,
-            Instant windowEndAt
+            long expired60MinuteCount
     ) {
         this.viewCount5m = newBucketCount;
         this.viewCount30m = subtractExpired(
@@ -77,20 +71,17 @@ public class PostPopularityStat {
                 viewCount60m + newBucketCount,
                 expired60MinuteCount
         );
-        this.windowEndAt = windowEndAt;
         updatePopularityScore();
     }
 
     public void initializeCounts(
             long viewCount5m,
             long viewCount30m,
-            long viewCount60m,
-            Instant windowEndAt
+            long viewCount60m
     ) {
         this.viewCount5m = viewCount5m;
         this.viewCount30m = viewCount30m;
         this.viewCount60m = viewCount60m;
-        this.windowEndAt = windowEndAt;
         updatePopularityScore();
     }
 

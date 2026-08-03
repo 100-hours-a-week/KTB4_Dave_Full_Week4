@@ -52,7 +52,7 @@ public class UserService{
 
 
     @Transactional
-    public SignUpResponse signUp(SignUpRequest signUpRequest) throws IOException {
+    public SignUpResponse signUp(SignUpRequest signUpRequest)  {
         if(signInfoRepository.existsByEmail(signUpRequest.email())){
             throw new DuplicateException("중복 이메일 존재");
         }
@@ -100,7 +100,7 @@ public class UserService{
     }
 
     @Transactional
-    public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) throws IOException {
+    public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) {
         UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 

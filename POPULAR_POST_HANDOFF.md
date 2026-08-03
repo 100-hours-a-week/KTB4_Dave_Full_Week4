@@ -89,10 +89,9 @@ view_count5m
 view_count30m
 view_count60m
 popularity_score
-window_end_at
 ```
 
-`view_count60m == 0`이 되면 후보에서 삭제한다. 누적 구간 관계상 60분 값이 0이면 5분과 30분 값도 0이어야 한다. `post_num`은 공유 기본 키이며 `Post`와 지연 로딩 `@OneToOne` 관계로 매핑한다.
+`view_count60m == 0`이 되면 후보에서 삭제한다. 누적 구간 관계상 60분 값이 0이면 5분과 30분 값도 0이어야 한다. `post_num`은 공유 기본 키이며 `Post`와 지연 로딩 `@OneToOne` 관계로 매핑한다. 전체 집계의 기준 시각은 통계 행마다 중복 저장하지 않고 `popularity_aggregation_checkpoint.last_processed_end_at`만 사용한다.
 
 관련 파일:
 

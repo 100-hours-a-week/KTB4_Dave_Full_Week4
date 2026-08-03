@@ -97,7 +97,6 @@ class PostViewServiceTest {
         assertThat(stat.getViewCount30m()).isEqualTo(30L);
         assertThat(stat.getViewCount60m()).isEqualTo(35L);
         assertThat(stat.getPopularityScore()).isEqualTo(85L);
-        assertThat(stat.getWindowEndAt()).isEqualTo(COMPLETED_WINDOW_END);
         assertThat(checkpoint.getLastProcessedEndAt())
                 .isEqualTo(COMPLETED_WINDOW_END);
     }
@@ -119,8 +118,7 @@ class PostViewServiceTest {
         stat.initializeCounts(
                 7L,
                 20L,
-                40L,
-                Instant.parse("2026-08-02T13:55:00Z")
+                40L
         );
         List<PostViewBucket> relevantBuckets = List.of(
                 bucket(1L, "2026-08-02T13:55:00Z", 10L),
@@ -141,7 +139,6 @@ class PostViewServiceTest {
         assertThat(stat.getViewCount30m()).isEqualTo(27L);
         assertThat(stat.getViewCount60m()).isEqualTo(48L);
         assertThat(stat.getPopularityScore()).isEqualTo(95L);
-        assertThat(stat.getWindowEndAt()).isEqualTo(COMPLETED_WINDOW_END);
         assertThat(checkpoint.getLastProcessedEndAt())
                 .isEqualTo(COMPLETED_WINDOW_END);
     }
@@ -163,8 +160,7 @@ class PostViewServiceTest {
         stat.initializeCounts(
                 7L,
                 20L,
-                40L,
-                Instant.parse("2026-08-02T13:55:00Z")
+                40L
         );
         when(postViewBucketRepository.findByBucketStartAtIn(any()))
                 .thenReturn(List.of());
@@ -180,7 +176,30 @@ class PostViewServiceTest {
         assertThat(stat.getViewCount30m()).isEqualTo(20L);
         assertThat(stat.getViewCount60m()).isEqualTo(40L);
         assertThat(stat.getPopularityScore()).isEqualTo(60L);
-        assertThat(stat.getWindowEndAt()).isEqualTo(COMPLETED_WINDOW_END);
+    }
+
+    @Test
+    @DisplayName("변경할 인기 통계가 없어도 전체 집계 체크포인트를 전진시킨다")
+    void incrementalRefreshAdvancesCheckpointWithoutAffectedStats() {
+        when(clock.instant()).thenReturn(NOW);
+        PopularityAggregationCheckpoint checkpoint =
+                new PopularityAggregationCheckpoint(
+                        PopularityAggregationCheckpoint.JOB_NAME
+                );
+        checkpoint.advanceTo(Instant.parse("2026-08-02T13:55:00Z"));
+        when(checkpointRepository.findByJobNameForUpdate(
+                PopularityAggregationCheckpoint.JOB_NAME
+        )).thenReturn(Optional.of(checkpoint));
+        when(postViewBucketRepository.findByBucketStartAtIn(any()))
+                .thenReturn(List.of());
+        when(postPopularityStatRepository
+                .findPostNumsWithNonZeroFiveMinuteCount())
+                .thenReturn(List.of());
+
+        postViewService.refreshPopularityStats();
+
+        assertThat(checkpoint.getLastProcessedEndAt())
+                .isEqualTo(COMPLETED_WINDOW_END);
     }
 
     @Test

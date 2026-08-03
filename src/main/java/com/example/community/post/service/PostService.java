@@ -169,7 +169,7 @@ public class PostService {
     }
 
     @Transactional
-    public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) throws IOException {
+    public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) {
         UserInfo userInfo = findUserInfo(signUserInfo.profileId());
         String image = imageConverter.updatePostImage(postRequest.image());
         Post post = new Post(userInfo, postRequest.title(),
@@ -180,10 +180,10 @@ public class PostService {
     }
 
     @Transactional
-    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostRequest postRequest) throws IOException {
+    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostRequest postRequest) {
         Post post = checkUserAuthority(signUserInfo, postNum);
-        recordPostBeforeUpdate(post);
         String image = imageConverter.updatePostImage(postRequest.image());
+        recordPostBeforeUpdate(post);
         post.update(postRequest.title(), postRequest.content(), image);
         postRepository.save(post);
 
