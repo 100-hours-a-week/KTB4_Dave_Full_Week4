@@ -155,6 +155,51 @@ class UserLikeRepositoryTest {
         assertThat(result.getTotalElements()).isEqualTo(1);
     }
 
+    @Test
+    @DisplayName("프로필과 게시글에 해당하는 좋아요가 존재하는지 확인한다")
+    void existsByProfileIdAndPostNumReturnsWhetherLikeExists() {
+        Post likedPost = saveLikedPost("liked", 1, 0);
+        userLikeRepository.flush();
+
+        assertThat(userLikeRepository.existsByUserInfo_ProfileIdAndPost_PostNum(
+                liker.getProfileId(),
+                likedPost.getPostNum()
+        )).isTrue();
+        assertThat(userLikeRepository.existsByUserInfo_ProfileIdAndPost_PostNum(
+                author.getProfileId(),
+                likedPost.getPostNum()
+        )).isFalse();
+    }
+
+    @Test
+    @DisplayName("프로필과 게시글에 해당하는 좋아요를 조회한다")
+    void findByProfileIdAndPostNumReturnsLike() {
+        Post likedPost = saveLikedPost("liked", 1, 0);
+        userLikeRepository.flush();
+
+        assertThat(userLikeRepository.findByUserInfo_ProfileIdAndPost_PostNum(
+                liker.getProfileId(),
+                likedPost.getPostNum()
+        )).hasValueSatisfying(userLikePost -> {
+            assertThat(userLikePost.getUserInfo().getProfileId())
+                    .isEqualTo(liker.getProfileId());
+            assertThat(userLikePost.getPost().getPostNum())
+                    .isEqualTo(likedPost.getPostNum());
+        });
+    }
+
+    @Test
+    @DisplayName("프로필과 게시글에 해당하는 좋아요가 없으면 빈 값을 반환한다")
+    void findByProfileIdAndPostNumReturnsEmptyWhenLikeDoesNotExist() {
+        Post likedPost = saveLikedPost("liked", 1, 0);
+        userLikeRepository.flush();
+
+        assertThat(userLikeRepository.findByUserInfo_ProfileIdAndPost_PostNum(
+                author.getProfileId(),
+                likedPost.getPostNum()
+        )).isEmpty();
+    }
+
     private UserInfo saveUser(String email, String nickname) {
         SignInfo signInfo = signInfoRepository.save(
                 new SignInfo(email, "encoded-password")
