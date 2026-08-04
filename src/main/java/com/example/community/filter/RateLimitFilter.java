@@ -63,7 +63,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write("""
         {
-          "message": "요청 횟수가 너무 많습니다.",
+          "code": "요청 횟수가 너무 많습니다.",
           "data": null
         }
         """);

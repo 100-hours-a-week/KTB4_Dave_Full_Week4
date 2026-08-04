@@ -4,6 +4,7 @@ import com.example.community.handler.exception.BadRequestException;
 import com.example.community.handler.exception.DuplicateException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.handler.exception.UnAuthorizedException;
+import com.example.community.post.dto.response.PostPageResponse;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.user.dto.UserInfoDTO;
 import com.example.community.user.dto.request.PasswordChangeRequest;
@@ -17,26 +18,38 @@ import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserRole;
 import com.example.community.user.repository.SignInfoRepository;
 import com.example.community.user.repository.UserInfoRepository;
+import com.example.community.user.repository.UserLikeRepository;
 import com.example.community.util.ImageConverter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 
@@ -46,6 +59,8 @@ class UserServiceTest {
     private SignInfoRepository signInfoRepository;
     @Mock
     private UserInfoRepository userInfoRepository;
+    @Mock
+    private UserLikeRepository userLikeRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
@@ -175,7 +190,7 @@ class UserServiceTest {
         userInfoDTO.setEmail(email);
         assertThat(userService.signIn(new SignInRequest(email, password)))
                 .usingRecursiveComparison()
-                .isEqualTo(userInfoDTO);;
+                .isEqualTo(userInfoDTO);
     }
 
     @Test
@@ -312,10 +327,106 @@ class UserServiceTest {
         assertThat(signInfo.getPassword()).isEqualTo("encodedPassword2");
     }
 
-    @Test
-    @DisplayName("좋아요한 게시글 목록 불러오기")
-    void getLikePosts(){
+    @ParameterizedTest
+    @CsvSource({
+            "likes, post.postState.likeCount",
+            "views, post.postState.viewCount"
+    })
+    @DisplayName("좋아요한 게시글은 요청한 기준과 게시글 번호 역순으로 정렬한다")
+    void getMyLikePostsUsesRequestedSortAndPostNumAsTieBreaker(
+            String sort,
+            String primarySortProperty
+    ) {
+        SignUserInfo signUserInfo = new SignUserInfo(1L, 1L, UserRole.USER);
+        when(userLikeRepository.findByUserInfo_ProfileId(
+                eq(signUserInfo.profileId()),
+                any(Pageable.class)
+        )).thenReturn(Page.empty());
 
+        userService.getMyLikePosts(signUserInfo, 0, 10, sort);
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(userLikeRepository).findByUserInfo_ProfileId(
+                eq(signUserInfo.profileId()),
+                pageableCaptor.capture()
+        );
+
+        Pageable pageable = pageableCaptor.getValue();
+        List<Sort.Order> orders = pageable.getSort().stream().toList();
+
+        assertThat(pageable.getPageNumber()).isZero();
+        assertThat(pageable.getPageSize()).isEqualTo(10);
+        assertThat(orders).hasSize(2);
+        assertThat(orders.get(0).getProperty()).isEqualTo(primarySortProperty);
+        assertThat(orders.get(0).getDirection()).isEqualTo(Sort.Direction.DESC);
+        assertThat(orders.get(1).getProperty()).isEqualTo("post.postNum");
+        assertThat(orders.get(1).getDirection()).isEqualTo(Sort.Direction.DESC);
+    }
+
+    @Test
+    @DisplayName("좋아요한 게시글은 기본적으로 게시글 번호 역순으로 정렬한다")
+    void getMyLikePostsUsesPostNumDescendingAsDefaultSort() {
+        SignUserInfo signUserInfo = new SignUserInfo(1L, 1L, UserRole.USER);
+        when(userLikeRepository.findByUserInfo_ProfileId(
+                eq(signUserInfo.profileId()),
+                any(Pageable.class)
+        )).thenReturn(Page.empty());
+
+        userService.getMyLikePosts(signUserInfo, 0, 10, "latest");
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(userLikeRepository).findByUserInfo_ProfileId(
+                eq(signUserInfo.profileId()),
+                pageableCaptor.capture()
+        );
+
+        assertThat(pageableCaptor.getValue().getSort().stream().toList())
+                .singleElement()
+                .satisfies(order -> {
+                    assertThat(order.getProperty()).isEqualTo("post.postNum");
+                    assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
+                });
+    }
+
+    @Test
+    @DisplayName("좋아요한 게시글이 없으면 첫 페이지에 빈 결과를 반환한다")
+    void getMyLikePostsReturnsEmptyFirstPage() {
+        SignUserInfo signUserInfo = new SignUserInfo(1L, 1L, UserRole.USER);
+        Pageable pageable = PageRequest.of(
+                0,
+                1,
+                Sort.by(Sort.Direction.DESC, "post.postNum")
+        );
+        when(userLikeRepository.findByUserInfo_ProfileId(
+                signUserInfo.profileId(),
+                pageable
+        )).thenReturn(Page.empty(pageable));
+
+        PostPageResponse response = userService.getMyLikePosts(
+                signUserInfo,
+                0,
+                1,
+                "latest"
+        );
+
+        assertThat(response.postTitleResponses()).isEmpty();
+        assertThat(response.page()).isZero();
+        assertThat(response.pageSize()).isEqualTo(1);
+        assertThat(response.postCount()).isZero();
+        assertThat(response.totalCount()).isZero();
+        assertThat(response.totalPage()).isZero();
+    }
+
+    @Test
+    @DisplayName("유저 삭제 시 존재하지 않는 프로필 번호이면 실패")
+    void deleteUserFailsWhenProfileIdDoesNotExist() {
+        SignUserInfo signUserInfo = new SignUserInfo(1L, 1L, UserRole.USER);
+        when(userInfoRepository.findByProfileId(signUserInfo.profileId()))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.deleteUser(signUserInfo))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("존재하지 않는 유저");
     }
 
     @Test
@@ -326,11 +437,16 @@ class UserServiceTest {
         UserDeleteResponse userDeleteResponse =
                 new UserDeleteResponse(signUserInfo.userNum(), true);
         SignInfo signInfo = new SignInfo("wns1628@gmail.com", "1234");
-        when(signInfoRepository.findByUserNum(1L)).thenReturn(Optional.of(signInfo));
-        when(userInfoRepository.findByProfileId(1L)).thenReturn(Optional.of(new UserInfo(signInfo, "dave", null)));
+        signInfo.setUserNum(signUserInfo.userNum());
+        UserInfo userInfo = new UserInfo(signInfo, "dave", null);
+        when(userInfoRepository.findByProfileId(signUserInfo.profileId()))
+                .thenReturn(Optional.of(userInfo));
 
         assertThat(userService.deleteUser(signUserInfo))
                 .usingRecursiveComparison()
                 .isEqualTo(userDeleteResponse);
+        assertThat(userInfo.isDeleted()).isTrue();
+        assertThat(signInfo.isDeleted()).isTrue();
+        verifyNoInteractions(signInfoRepository);
     }
 }

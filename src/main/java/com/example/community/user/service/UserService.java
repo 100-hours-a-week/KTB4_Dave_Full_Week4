@@ -150,13 +150,10 @@ public class UserService{
 
     @Transactional
     public UserDeleteResponse deleteUser(SignUserInfo signUserInfo) {
-        SignInfo signInfo = signInfoRepository.findByUserNum(signUserInfo.userNum())
-                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
         UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
-        signInfo.delete();
         userInfo.delete();
 
-        return new UserDeleteResponse(signUserInfo.userNum(), signInfo.isDeleted());
+        return new UserDeleteResponse(userInfo.getSignInfo().getUserNum(), userInfo.isDeleted());
     }
 }

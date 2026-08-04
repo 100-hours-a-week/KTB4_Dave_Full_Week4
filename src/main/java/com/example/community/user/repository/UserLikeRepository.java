@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -12,7 +14,17 @@ import java.util.Optional;
 @Repository
 public interface UserLikeRepository extends JpaRepository<UserLikePost, Long> {
     @EntityGraph(attributePaths = {"userInfo", "post", "post.postState"})
-    Page<UserLikePost> findByUserInfo_ProfileId(long profileId, Pageable pageable);
+    @Query("""
+            select ulp
+            from UserLikePost ulp
+            where ulp.userInfo.profileId = :profileId
+              and ulp.post.deletedAt is null
+              and ulp.post.postState.reportCount <= 5
+            """)
+    Page<UserLikePost> findByUserInfo_ProfileId(
+            @Param("profileId") long profileId,
+            Pageable pageable
+    );
 
     boolean existsByUserInfo_ProfileIdAndPost_PostNum(Long profileId, Long postNum);
     Optional<UserLikePost> findByUserInfo_ProfileIdAndPost_PostNum(Long profileId, Long postNum);
