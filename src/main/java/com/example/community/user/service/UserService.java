@@ -129,7 +129,7 @@ public class UserService{
     }
 
     @Transactional(readOnly = true)
-    public PostPageResponse getLikePosts(long profileId, int page, int size, String sort) {
+    public PostPageResponse getMyLikePosts(SignUserInfo signUserInfo, int page, int size, String sort) {
         Sort sortType = switch(sort){
             case "likes" -> Sort.by(Sort.Direction.DESC, "post.postState.likeCount")
                     .and(Sort.by(
@@ -144,7 +144,7 @@ public class UserService{
             default -> Sort.by(Sort.Direction.DESC, "post.postNum");
         };
         Pageable pageable = PageRequest.of(page, size, sortType);
-        Page<UserLikePost> userLikePosts = userLikeRepository.findByUserInfo_ProfileId(profileId, pageable);
+        Page<UserLikePost> userLikePosts = userLikeRepository.findByUserInfo_ProfileId(signUserInfo.profileId(), pageable);
         return PostPageResponse.fromUserLike(userLikePosts);
     }
 

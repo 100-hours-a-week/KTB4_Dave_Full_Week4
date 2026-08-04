@@ -25,7 +25,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 
@@ -38,7 +37,7 @@ public class UserController {
     private final RefreshTokenService refreshTokenService;
 
     @PostMapping()
-    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@ModelAttribute @Valid SignUpRequest signUpRequest) throws IOException {
+    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@ModelAttribute @Valid SignUpRequest signUpRequest)  {
         return ResponseEntity.created(URI.create("/users/state")).
                 body(ApiResponse.of("회원가입 성공", userService.signUp(signUpRequest)));
     }
@@ -84,11 +83,11 @@ public class UserController {
 
     @GetMapping("/myLike")
     public ResponseEntity<ApiResponse<PostPageResponse>> getMyLikePost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "latest") String sort){
-        return ResponseEntity.ok(new ApiResponse<>("좋아요 한 게시글 목록 불러오기 성공", userService.getLikePosts(signUserInfo.profileId(), page, size, sort)));
+        return ResponseEntity.ok(new ApiResponse<>("좋아요 한 게시글 목록 불러오기 성공", userService.getMyLikePosts(signUserInfo, page, size, sort)));
     }
 
     @PatchMapping("/info")
-    public ResponseEntity<ApiResponse<UserInfoResponse>> updateInfo(@SignUser SignUserInfo signUserInfo, @ModelAttribute @Valid UserInfoRequest userInfoRequest) throws IOException {
+    public ResponseEntity<ApiResponse<UserInfoResponse>> updateInfo(@SignUser SignUserInfo signUserInfo, @ModelAttribute @Valid UserInfoRequest userInfoRequest) {
         return ResponseEntity.ok(ApiResponse.of("회원정보 수정 완료",userService.updateUserInfo(signUserInfo,userInfoRequest)));
     }
 

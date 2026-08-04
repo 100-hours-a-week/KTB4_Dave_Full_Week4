@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.net.URI;
 
 @RestController
@@ -35,14 +34,14 @@ public class PostController {
     }
 
     @PostMapping()
-    public ResponseEntity<ApiResponse<PostResponse>> addPost(@SignUser SignUserInfo signUserInfo, @ModelAttribute @Valid PostRequest postRequest) throws IOException {
+    public ResponseEntity<ApiResponse<PostResponse>> addPost(@SignUser SignUserInfo signUserInfo, @ModelAttribute @Valid PostRequest postRequest) {
 
         return ResponseEntity.created(URI.create("/posts"))
                 .body(new ApiResponse<>("게시글 등록 성공",postService.addPost(signUserInfo, postRequest)));
     }
 
     @PatchMapping("/{postNum}")
-    public ResponseEntity<ApiResponse<PostResponse>> updatePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum , @ModelAttribute @Valid PostRequest postRequest) throws IOException {
+    public ResponseEntity<ApiResponse<PostResponse>> updatePost(@SignUser SignUserInfo signUserInfo, @PathVariable long postNum , @ModelAttribute @Valid PostRequest postRequest) {
 
         return ResponseEntity.ok(new ApiResponse<>("게시글 수정 성공", postService.updatePost(signUserInfo, postNum, postRequest)));
     }
