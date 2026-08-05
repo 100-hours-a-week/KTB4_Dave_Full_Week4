@@ -32,10 +32,15 @@ tokenExpire:
   access: 600000
 
 popular-post:
+  candidate-max-age: ${POPULAR_POST_CANDIDATE_MAX_AGE:3d}
   scheduler:
     enabled: ${POPULAR_POST_SCHEDULER_ENABLED:true}
     cron: "10 */5 * * * *"
     zone: UTC
+  cleanup:
+    enabled: ${POPULAR_POST_CLEANUP_ENABLED:true}
+    cron: "0 0 4 * * *"
+    zone: Asia/Seoul
 
 logging:
   level:

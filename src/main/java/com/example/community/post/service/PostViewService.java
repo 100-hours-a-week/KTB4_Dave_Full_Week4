@@ -1,5 +1,6 @@
 package com.example.community.post.service;
 
+import com.example.community.post.configuration.PopularPostProperties;
 import com.example.community.post.entity.PopularityAggregationCheckpoint;
 import com.example.community.post.entity.Post;
 import com.example.community.post.entity.PostPopularityStat;
@@ -8,6 +9,7 @@ import com.example.community.post.repository.PopularityAggregationCheckpointRepo
 import com.example.community.post.repository.PostPopularityStatRepository;
 import com.example.community.post.repository.PostViewBucketRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PostViewService {
     private static final Duration BUCKET_DURATION = Duration.ofMinutes(5);
     private static final Duration POPULARITY_WINDOW = Duration.ofMinutes(60);
@@ -28,27 +31,41 @@ public class PostViewService {
     private final PostPopularityStatRepository postPopularityStatRepository;
     private final PopularityAggregationCheckpointRepository checkpointRepository;
     private final Clock clock;
+    private final PopularPostProperties popularPostProperties;
 
     @Transactional
-    public void recordView(long postNum) {
-        Instant bucketStartAt = floorToFiveMinutes(clock.instant());
-        postViewBucketRepository.upsertViewCount(postNum, bucketStartAt, 1L);
+    public void recordView(long postNum, Instant writeAt) {
+        Instant now = clock.instant();
+        Instant candidateSince = candidateSince(now);
+        if (writeAt.isBefore(candidateSince)) {
+            return;
+        }
+
+        Instant bucketStartAt = floorToFiveMinutes(now);
+        postViewBucketRepository.upsertViewCount(
+                postNum,
+                bucketStartAt,
+                1L,
+                candidateSince
+        );
     }
 
     @Transactional
     public void refreshPopularityStats() {
-        Instant targetEndAt = floorToFiveMinutes(clock.instant());
+        Instant now = clock.instant();
+        Instant targetEndAt = floorToFiveMinutes(now);
+        Instant candidateSince = candidateSince(now);
         PopularityAggregationCheckpoint checkpoint = lockCheckpoint();
 
         if (checkpoint.getLastProcessedEndAt() == null) {
-            rebuildPopularityStats(targetEndAt);
+            rebuildPopularityStats(targetEndAt, candidateSince);
             checkpoint.advanceTo(targetEndAt);
             return;
         }
 
         Instant nextEndAt = checkpoint.getLastProcessedEndAt().plus(BUCKET_DURATION);
         while (!nextEndAt.isAfter(targetEndAt)) {
-            updateRollingWindow(nextEndAt);
+            updateRollingWindow(nextEndAt, candidateSince);
             checkpoint.advanceTo(nextEndAt);
             nextEndAt = nextEndAt.plus(BUCKET_DURATION);
         }
@@ -56,8 +73,28 @@ public class PostViewService {
 
     @Transactional(readOnly = true)
     public List<Long> getTop10PopularPostNums() {
+        Instant candidateSince = candidateSince(clock.instant());
         return postPopularityStatRepository.findPopularPostNums(
+                candidateSince,
                 PageRequest.of(0, POPULAR_POST_LIMIT)
+        );
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void cleanupExpiredPopularityData() {
+        lockCheckpoint();
+        Instant candidateSince = candidateSince(clock.instant());
+        int deletedStatCount = postPopularityStatRepository
+                .deleteAllByPostWriteAtBefore(candidateSince);
+        int deletedBucketCount = postViewBucketRepository
+                .deleteAllByPostWriteAtBefore(candidateSince);
+
+        log.info(
+                "오래된 인기글 데이터를 정리했습니다. candidateSince={}, " +
+                        "deletedStats={}, deletedBuckets={}",
+                candidateSince,
+                deletedStatCount,
+                deletedBucketCount
         );
     }
 
@@ -70,6 +107,10 @@ public class PostViewService {
         return Instant.ofEpochSecond(flooredEpochSecond);
     }
 
+    private Instant candidateSince(Instant now) {
+        return now.minus(popularPostProperties.candidateMaxAge());
+    }
+
     private PopularityAggregationCheckpoint lockCheckpoint() {
         return checkpointRepository
                 .findByJobNameForUpdate(PopularityAggregationCheckpoint.JOB_NAME)
@@ -80,9 +121,15 @@ public class PostViewService {
                 ));
     }
 
-    private void rebuildPopularityStats(Instant windowEndAt) {
+    private void rebuildPopularityStats(
+            Instant windowEndAt,
+            Instant candidateSince
+    ) {
         PopularityWindow window = PopularityWindow.endingAt(windowEndAt);
-        List<PostViewBucket> buckets = loadBucketsForRebuild(window);
+        List<PostViewBucket> buckets = loadBucketsForRebuild(
+                window,
+                candidateSince
+        );
         List<PostPopularityStat> popularityStats = buildPopularityStats(
                 window,
                 buckets
@@ -91,12 +138,14 @@ public class PostViewService {
     }
 
     private List<PostViewBucket> loadBucketsForRebuild(
-            PopularityWindow window
+            PopularityWindow window,
+            Instant candidateSince
     ) {
         return postViewBucketRepository
-                .findByBucketStartAtGreaterThanEqualAndBucketStartAtLessThan(
+                .findForPopularityRebuild(
                         window.start60m(),
-                        window.endAt()
+                        window.endAt(),
+                        candidateSince
                 );
     }
 
@@ -125,8 +174,14 @@ public class PostViewService {
         postPopularityStatRepository.saveAll(popularityStats);
     }
 
-    private void updateRollingWindow(Instant windowEndAt) {
-        RollingWindowChanges changes = loadRollingWindowChanges(windowEndAt);
+    private void updateRollingWindow(
+            Instant windowEndAt,
+            Instant candidateSince
+    ) {
+        RollingWindowChanges changes = loadRollingWindowChanges(
+                windowEndAt,
+                candidateSince
+        );
         Map<Long, PostPopularityStat> statsByPost =
                 loadPopularityStats(changes.affectedPostNums());
         PopularityStatUpdates updates = applyRollingUpdates(
@@ -136,15 +191,21 @@ public class PostViewService {
         persistPopularityStatUpdates(updates);
     }
 
-    private RollingWindowChanges loadRollingWindowChanges(Instant windowEndAt) {
+    private RollingWindowChanges loadRollingWindowChanges(
+            Instant windowEndAt,
+            Instant candidateSince
+    ) {
         RollingWindowBoundaries boundaries =
                 RollingWindowBoundaries.from(windowEndAt);
         RollingWindowChanges changes = new RollingWindowChanges(boundaries);
-        postViewBucketRepository.findByBucketStartAtIn(boundaries.bucketStarts())
+        postViewBucketRepository.findForRollingWindow(
+                        boundaries.bucketStarts(),
+                        candidateSince
+                )
                 .forEach(changes::addBucket);
         changes.addAffectedPostNums(
                 postPopularityStatRepository
-                        .findPostNumsWithNonZeroFiveMinuteCount()
+                        .findPostNumsWithNonZeroFiveMinuteCount(candidateSince)
         );
         return changes;
     }

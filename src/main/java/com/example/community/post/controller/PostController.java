@@ -48,7 +48,7 @@ public class PostController {
 
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<PostPageResponse>> getMyPost(@SignUser SignUserInfo signUserInfo, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,  @RequestParam(defaultValue = "latest") String sort){
-        return ResponseEntity.ok(new ApiResponse<>("내가 쓴 게시글 목록 불러오기 성공", postService.getPostsByProfileId(signUserInfo.profileId(), page, size, sort)));
+        return ResponseEntity.ok(new ApiResponse<>("내가 쓴 게시글 목록 불러오기 성공", postService.getMyPosts(signUserInfo, page, size, sort)));
     }
 
     @PostMapping("/{postNum}/like")

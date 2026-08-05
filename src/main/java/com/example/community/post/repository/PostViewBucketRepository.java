@@ -31,6 +31,7 @@ public interface PostViewBucketRepository extends JpaRepository<PostViewBucket, 
             WHERE post.post_num = :postNum
               AND post.deleted_at IS NULL
               AND post_stat.report_count <= 5
+              AND post.write_at >= :candidateSince
             ON DUPLICATE KEY UPDATE
                 view_count = post_view_bucket.view_count + :amount
             """,
@@ -39,14 +40,46 @@ public interface PostViewBucketRepository extends JpaRepository<PostViewBucket, 
     int upsertViewCount(
             @Param("postNum") long postNum,
             @Param("bucketStartAt") Instant bucketStartAt,
-            @Param("amount") long amount
+            @Param("amount") long amount,
+            @Param("candidateSince") Instant candidateSince
     );
 
-    List<PostViewBucket> findByBucketStartAtIn(Collection<Instant> bucketStartTimes);
-
-    List<PostViewBucket> findByBucketStartAtGreaterThanEqualAndBucketStartAtLessThan(
-            Instant startTime,
-            Instant endTime
+    @Query("""
+            select bucket
+            from PostViewBucket bucket
+            join fetch bucket.post post
+            where bucket.bucketStartAt in :bucketStartTimes
+              and post.writeAt >= :candidateSince
+            """)
+    List<PostViewBucket> findForRollingWindow(
+            @Param("bucketStartTimes") Collection<Instant> bucketStartTimes,
+            @Param("candidateSince") Instant candidateSince
     );
 
+    @Query("""
+            select bucket
+            from PostViewBucket bucket
+            join fetch bucket.post post
+            where bucket.bucketStartAt >= :startTime
+              and bucket.bucketStartAt < :endTime
+              and post.writeAt >= :candidateSince
+            """)
+    List<PostViewBucket> findForPopularityRebuild(
+            @Param("startTime") Instant startTime,
+            @Param("endTime") Instant endTime,
+            @Param("candidateSince") Instant candidateSince
+    );
+
+    @Modifying(flushAutomatically = true)
+    @Query("""
+            delete from PostViewBucket bucket
+            where bucket.post.postNum in (
+                select post.postNum
+                from Post post
+                where post.writeAt < :candidateSince
+            )
+            """)
+    int deleteAllByPostWriteAtBefore(
+            @Param("candidateSince") Instant candidateSince
+    );
 }

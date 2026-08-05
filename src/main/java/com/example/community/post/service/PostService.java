@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -58,10 +59,23 @@ public class PostService {
                 );
     }
 
-    private Post checkUserAuthority(SignUserInfo signUserInfo, long postNum) {
+    private Post checkPostOwner(SignUserInfo signUserInfo, long postNum) {
         Post post = findPost(postNum);
-        if(!post.getUserInfo().getProfileId().equals(signUserInfo.profileId())
-                && signUserInfo.userRole() != UserRole.ADMIN){
+        if (!post.getUserInfo().getProfileId()
+                .equals(signUserInfo.profileId())) {
+            throw new ForbiddenException("접근 권한 부족");
+        }
+        return post;
+    }
+
+    private Post checkPostDeleteAuthority(
+            SignUserInfo signUserInfo,
+            long postNum
+    ) {
+        Post post = findPost(postNum);
+        if (!post.getUserInfo().getProfileId()
+                .equals(signUserInfo.profileId())
+                && signUserInfo.userRole() != UserRole.ADMIN) {
             throw new ForbiddenException("접근 권한 부족");
         }
         return post;
@@ -139,12 +153,18 @@ public class PostService {
                         (pv) -> {
                             if (pv.view()) {
                                 post.view();
-                                postViewService.recordView(post.getPostNum());
+                                postViewService.recordView(
+                                        post.getPostNum(),
+                                        post.getWriteAt()
+                                );
                             }
                         },
                         () -> {
                             postViewRepository.save(new PostView(post, userInfo));
-                            postViewService.recordView(post.getPostNum());
+                            postViewService.recordView(
+                                    post.getPostNum(),
+                                    post.getWriteAt()
+                            );
                         }
                 );
     }
@@ -155,9 +175,14 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostPageResponse getPostsByProfileId(long profileId, int page, int size, String sort) {
+    public PostPageResponse getMyPosts(
+            SignUserInfo signUserInfo,
+            int page,
+            int size,
+            String sort
+    ) {
         Pageable pageable = PageRequest.of(page, size, getSort(sort));
-        Page<Post> posts = postRepository.findPostByUserInfo_ProfileId(profileId, pageable);
+        Page<Post> posts = postRepository.findPostByUserInfo_ProfileId(signUserInfo.profileId(), pageable);
 
         return PostPageResponse.from(posts);
     }
@@ -180,7 +205,7 @@ public class PostService {
 
     @Transactional
     public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostRequest postRequest) {
-        Post post = checkUserAuthority(signUserInfo, postNum);
+        Post post = checkPostOwner(signUserInfo, postNum);
         String image = imageConverter.updatePostImage(postRequest.image());
         recordPostBeforeUpdate(post);
         post.update(postRequest.title(), postRequest.content(), image);
@@ -193,21 +218,21 @@ public class PostService {
     public PostLikeResponse likePost(SignUserInfo signUserInfo, long postNum) {
         UserInfo userInfo = findUserInfo(signUserInfo.profileId());
         Post post = findPost(postNum);
-        boolean isLike = false;
-        if(userLikeRepository.existsByUserInfo_ProfileIdAndPost_PostNum(signUserInfo.profileId(), postNum)){
-            postUnlike(signUserInfo.profileId(), postNum);
-        }
-        else{
-            postLike(userInfo, post);
-            isLike = true;
-        }
+        Optional<UserLikePost> existingLike = userLikeRepository
+                .findByUserInfo_ProfileIdAndPost_PostNum(
+                        signUserInfo.profileId(),
+                        postNum
+                );
+        existingLike.ifPresentOrElse(
+                this::postUnlike,
+                () -> postLike(userInfo, post)
+        );
+        boolean isLike = existingLike.isEmpty();
         
         return new PostLikeResponse(post.getPostState().getLikeCount(), isLike);
     }
 
-    private void postUnlike(long profileId, long postNum){
-        UserLikePost userLikePost = userLikeRepository.findByUserInfo_ProfileIdAndPost_PostNum(profileId, postNum)
-                .orElseThrow(() -> new NotFoundException("좋아요 안 한 게시글"));
+    private void postUnlike(UserLikePost userLikePost){
         userLikePost.getPost().unlike();
         userLikeRepository.delete(userLikePost);
     }
@@ -259,7 +284,7 @@ public class PostService {
 
     @Transactional
     public void deletePost(SignUserInfo signUserInfo, long postNum) {
-        Post post = checkUserAuthority(signUserInfo, postNum);
+        Post post = checkPostDeleteAuthority(signUserInfo, postNum);
         post.delete();
     }
 }

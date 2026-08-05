@@ -18,7 +18,17 @@
 - 5분마다 완료된 버킷만 사용해 최근 5분, 30분, 60분 조회수를 갱신한다.
 - 요청마다 원본 버킷을 `SUM/GROUP BY`하지 않고 비정규화된 후보 테이블을 조회한다.
 - 인기 점수 상위 10개 게시글을 제공한다.
+- 최초 작성 시각이 현재 기준 72시간 이내인 게시글만 인기글 후보로 취급한다.
 - 삭제된 게시글과 신고 횟수 5회를 초과한 블라인드 게시글은 결과에서 제외한다.
+- 72시간을 초과한 게시글의 버킷과 통계는 매일 04:00 KST에 물리적으로 삭제한다.
+
+## 인기글 후보 기간
+
+- “최근 3일”은 달력 날짜가 아니라 정확한 72시간이다.
+- 기준은 게시글의 최초 작성 시각인 `Post.writeAt`이며 수정 시각은 후보 기간을 연장하지 않는다.
+- 정확히 `현재 시각 - 72시간`에 작성된 게시글은 포함하고, 그보다 오래된 게시글은 제외한다.
+- 후보 기간은 `popular-post.candidate-max-age`로 설정하며 기본값은 `3d`다.
+- 일반 누적 조회수는 게시글 나이와 관계없이 기존 정책대로 증가한다.
 
 ## 인기 점수
 
@@ -70,7 +80,7 @@ expired60BucketStart = windowEndAt - 65분
 
 ### `post_view_bucket`
 
-5분 단위 원본 조회수다. `(post_num, bucket_start_at)`에 유니크 제약이 있으며 조회 시 native upsert로 `view_count`를 증가시킨다. upsert는 삭제되지 않고 신고 횟수가 5회 이하인 게시글에만 수행한다.
+5분 단위 원본 조회수다. `(post_num, bucket_start_at)`에 유니크 제약이 있으며 조회 시 native upsert로 `view_count`를 증가시킨다. upsert는 삭제되지 않고 신고 횟수가 5회 이하이며 최초 작성 후 72시간이 지나지 않은 게시글에만 수행한다. 서비스가 먼저 작성 시각을 검사하지만, 잘못된 인자가 전달되더라도 오래된 게시글의 버킷이 생성되지 않도록 native query가 DB의 실제 `post.write_at`을 다시 검사한다.
 
 관련 파일:
 
@@ -115,8 +125,9 @@ popularity_score
 
 ```text
 PostService에서 24시간 중복 조회 판정
-→ 실제 조회수 증가가 인정된 경우에만 PostViewService.recordView(postNum)
-→ 현재 5분 버킷에 1 upsert
+→ 실제 조회수 증가가 인정된 경우 PostViewService.recordView(postNum, writeAt)
+→ PostViewService가 72시간 후보 여부를 판정
+→ 후보인 경우에만 현재 5분 버킷에 1 upsert
 ```
 
 기존 `PostView.view()`는 조회수가 실제로 인정됐는지 알 수 있도록 `boolean`을 반환하도록 변경됐다.
@@ -125,7 +136,7 @@ PostService에서 24시간 중복 조회 판정
 
 ### 최초 집계
 
-체크포인트의 `lastProcessedEndAt`이 `null`이면 완료된 최근 1시간 버킷을 읽어 후보 테이블을 한 번 재구축한다. 이후 체크포인트를 현재 완료 시각으로 이동한다.
+체크포인트의 `lastProcessedEndAt`이 `null`이면 완료된 최근 1시간 버킷 중 게시글 작성 시각이 후보 기간 이내인 데이터만 읽어 후보 테이블을 한 번 재구축한다. 이후 체크포인트를 현재 완료 시각으로 이동한다.
 
 ### 증분 집계
 
@@ -135,7 +146,7 @@ PostService에서 24시간 중복 조회 판정
 - 30분 집계에서 만료되는 버킷
 - 60분 집계에서 만료되는 버킷
 
-스케줄이 누락된 경우 체크포인트 다음 구간부터 현재 완료 구간까지 5분 단위로 순차 처리한다.
+스케줄이 누락된 경우 체크포인트 다음 구간부터 현재 완료 구간까지 5분 단위로 순차 처리한다. 버킷과 직전 5분 통계 후보를 읽을 때도 동일한 72시간 조건을 적용한다.
 
 ### 상위 10개 조회
 
@@ -144,6 +155,7 @@ PostService에서 24시간 중복 조회 판정
 ```text
 post.deletedAt IS NOT NULL
 postState.reportCount > 5
+post.writeAt < 현재 시각 - candidateMaxAge
 ```
 
 `PostViewService.getTop10PopularPostNums()`가 `PageRequest.of(0, 10)`을 사용한다.
@@ -164,25 +176,36 @@ GET /posts/popular
 
 - `src/main/java/com/example/community/configuration/SchedulingConfig.java`
 - `src/main/java/com/example/community/post/scheduler/PopularPostScheduler.java`
+- `src/main/java/com/example/community/post/scheduler/PopularPostCleanupScheduler.java`
 - `src/main/resources/application.yaml`
 
 설정:
 
 ```yaml
 popular-post:
+  candidate-max-age: ${POPULAR_POST_CANDIDATE_MAX_AGE:3d}
   scheduler:
     enabled: ${POPULAR_POST_SCHEDULER_ENABLED:true}
     cron: "10 */5 * * * *"
     zone: UTC
+  cleanup:
+    enabled: ${POPULAR_POST_CLEANUP_ENABLED:true}
+    cron: "0 0 4 * * *"
+    zone: Asia/Seoul
 ```
 
 테스트 환경에서는 스케줄러 자동 실행을 비활성화한다.
 
 ```yaml
 popular-post:
+  candidate-max-age: 3d
   scheduler:
     enabled: false
+  cleanup:
+    enabled: false
 ```
+
+일일 정리는 5분 집계와 동일한 `popularity_aggregation_checkpoint` 행에 비관적 쓰기 락을 획득한다. 두 작업이 겹치면 한쪽이 락을 기다리므로 통계 갱신과 물리 삭제가 동시에 실행되지 않는다. 오래된 통계 삭제 후 버킷 삭제가 실패하면 하나의 트랜잭션 전체가 롤백된다.
 
 ## DDL
 
@@ -192,6 +215,7 @@ popular-post:
 - `post_popularity_stat`
 - `popularity_aggregation_checkpoint`
 - 체크포인트 초기 행 `('POPULAR_POSTS', NULL)`
+- 후보 기간 쿼리에 사용하는 `post.write_at`의 `idx_post_write_at` 인덱스
 
 현재 운영 설정은 다음과 같다.
 
@@ -200,14 +224,17 @@ spring.jpa.hibernate.ddl-auto: validate
 spring.sql.init.mode: never
 ```
 
-따라서 기존 EC2 MySQL에는 스키마가 자동으로 반영되지 않는다. 배포 전에 사용자가 별도의 증분 SQL을 작성해 세 테이블과 체크포인트 초기 행을 직접 적용해야 한다. 이전 요청에 따라 별도의 `add_post_view_bucket.sql` 파일은 저장소에서 삭제했다.
+따라서 기존 EC2 MySQL에는 스키마가 자동으로 반영되지 않는다. 배포 전에 사용자가 별도의 증분 SQL을 작성해 세 테이블, 체크포인트 초기 행, `idx_post_write_at` 인덱스의 존재 여부를 확인하고 누락된 항목을 직접 적용해야 한다. 이전 요청에 따라 별도의 `add_post_view_bucket.sql` 파일은 저장소에서 삭제했다.
 
 ## 테스트
 
 핵심 테스트:
 
 - `src/test/java/com/example/community/post/service/PostViewServiceTest.java`
+- `src/test/java/com/example/community/post/service/PostViewCleanupTransactionTest.java`
+- `src/test/java/com/example/community/post/repository/PostViewBucketRepositoryTest.java`
 - `src/test/java/com/example/community/post/repository/PostPopularityStatRepositoryTest.java`
+- `src/test/java/com/example/community/post/scheduler/PopularPostCleanupSchedulerTest.java`
 
 검증 항목:
 
@@ -221,6 +248,13 @@ spring.sql.init.mode: never
 - 최근 조회 우선 동점 정렬
 - 삭제·블라인드 게시글 제외
 - `Pageable`을 통한 조회 결과 개수 제한
+- 정확히 72시간 경계 포함 및 1초 초과 게시글 제외
+- 서비스 판정과 native upsert의 DB 작성 시각 방어 조건
+- 최초·증분 집계와 상위 10개 조회의 후보 기간 필터
+- 일일 정리의 최근 데이터 보존과 오래된 데이터 삭제
+- 5분 집계와 일일 정리의 체크포인트 락 공유
+- 버킷 삭제 실패 시 통계 삭제까지 롤백
+- 매일 04:00 KST 정리 스케줄
 
 마지막 검증 결과:
 
@@ -236,6 +270,7 @@ BUILD SUCCESSFUL
 3. `PostView` 엔티티 내부의 24시간 판정에는 아직 `Instant.now()`가 사용된다. 인기글 버킷과 스케줄 경계는 주입된 `Clock`을 사용하지만, 조회 중복 판정도 완전히 테스트 가능한 시간 구조로 만들려면 후속 리팩터링이 필요하다.
 4. `post_view_bucket`은 원본 데이터이고 `post_popularity_stat`은 언제든 재생성 가능한 파생 데이터로 취급해야 한다.
 5. 현재 작업 트리에는 인기글 기능 외에 사용자가 진행 중인 `Post`, `PostState`, `PostResponse`, `PostRepository` 관련 변경이 섞여 있다. 다른 기기에서 작업할 때 이 변경을 임의로 되돌리거나 덮어쓰면 안 된다.
+6. 고정된 상위 10개 목록과 인기글 관련 캐싱은 현재 범위에 포함하지 않으며 별도 후속 작업으로 진행한다.
 
 ## 다른 기기에서 시작할 때 확인할 명령
 

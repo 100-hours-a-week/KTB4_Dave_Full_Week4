@@ -14,6 +14,8 @@ tokenExpire:
   access: 600000
 
 popular-post:
+  candidate-max-age: 3d
   scheduler:
     enabled: false
-
+  cleanup:
+    enabled: false
