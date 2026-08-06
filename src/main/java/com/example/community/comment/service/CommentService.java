@@ -21,6 +21,7 @@ import com.example.community.user.entity.UserRole;
 import com.example.community.user.repository.UserInfoRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,9 +42,28 @@ public class CommentService{
         this.commentEditRepository = commentEditRepository;
     }
 
-    private Comment checkUserAuthority(SignUserInfo signUserInfo, long commentNum) {
-        Comment comment = commentRepository.findByCommentNum(commentNum)
+    private Comment findComment(long commentNum) {
+        return commentRepository.findByCommentNum(commentNum)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 댓글"));
+    }
+
+    private Comment checkCommentOwner(
+            SignUserInfo signUserInfo,
+            long commentNum
+    ) {
+        Comment comment = findComment(commentNum);
+        if (!comment.getUserInfo().getProfileId()
+                .equals(signUserInfo.profileId())) {
+            throw new ForbiddenException("접근 권한 부족");
+        }
+        return comment;
+    }
+
+    private Comment checkCommentDeleteAuthority(
+            SignUserInfo signUserInfo,
+            long commentNum
+    ) {
+        Comment comment = findComment(commentNum);
         if(!comment.getUserInfo().getProfileId().equals(signUserInfo.profileId())
                 && signUserInfo.userRole() != UserRole.ADMIN){
             throw new ForbiddenException("접근 권한 부족");
@@ -51,11 +71,19 @@ public class CommentService{
         return comment;
     }
 
+    private PageRequest commentPageRequest(int page, int size) {
+        return PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.ASC, "commentNum")
+        );
+    }
+
     @Transactional
     public CommentAddResponse addCommentToPost(SignUserInfo signUserInfo, long postNum, CommentToPostRequest commentRequest) {
         UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
-        Post post = postRepository.findByPostNum(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
+        Post post = postRepository.findByPostNum(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
         Comment comment = new Comment(post, userInfo, commentRequest.content());
         commentRepository.save(comment);
         postRepository.save(post);
@@ -67,7 +95,7 @@ public class CommentService{
     public CommentAddResponse addCommentToComment(SignUserInfo signUserInfo, long postNum, CommentToCommentRequest commentRequest) {
         UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
-        Post post = postRepository.findByPostNum(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 유저"));
+        Post post = postRepository.findByPostNum(postNum).orElseThrow(() -> new NotFoundException("존재하지 않는 게시글"));
         Comment parent = commentRepository.findByCommentNum(commentRequest.parentNum())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 댓글"));
         Comment comment = new Comment(post, parent, userInfo, commentRequest.content());
@@ -80,28 +108,28 @@ public class CommentService{
 
     @Transactional(readOnly = true)
     public CommentPageResponse getPostCommentPage(long postNum, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size);
+        PageRequest pageRequest = commentPageRequest(page, size);
         Page<Comment> comments = commentRepository.findByPost_postNum(postNum, pageRequest);
         return CommentPageResponse.from(comments);
     }
 
     @Transactional(readOnly = true)
     public CommentPageResponse adminGetPostCommentPage(long postNum, int page, int size){
-        PageRequest pageRequest = PageRequest.of(page, size);
+        PageRequest pageRequest = commentPageRequest(page, size);
         Page<Comment> comments = commentRepository.findByPost_postNum(postNum, pageRequest);
         return CommentPageResponse.adminFrom(comments);
     }
 
     @Transactional(readOnly = true)
     public CommentPageResponse getChildCommentPage(long commentNum, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size);
+        PageRequest pageRequest = commentPageRequest(page, size);
         Page<Comment> comments = commentRepository.findByParentNum(commentNum, pageRequest);
         return CommentPageResponse.from(comments);
     }
 
     @Transactional(readOnly = true)
     public CommentPageResponse adminGetChildCommentPage(long commentNum, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size);
+        PageRequest pageRequest = commentPageRequest(page, size);
         Page<Comment> comments = commentRepository.findByParentNum(commentNum, pageRequest);
         return CommentPageResponse.adminFrom(comments);
     }
@@ -115,7 +143,7 @@ public class CommentService{
 
     @Transactional
     public CommentResponse updateComment(SignUserInfo signUserInfo, long commentNum, CommentEditRequest commentEditRequest) {
-        Comment comment = checkUserAuthority(signUserInfo, commentNum);
+        Comment comment = checkCommentOwner(signUserInfo, commentNum);
         CommentEditRecord commentEditRecord = CommentEditRecord.from(comment);
 
         commentEditRepository.save(commentEditRecord);
@@ -127,7 +155,7 @@ public class CommentService{
 
     @Transactional
     public void deleteComment(SignUserInfo signUserInfo, long commentNum) {
-        Comment comment = checkUserAuthority(signUserInfo, commentNum);
+        Comment comment = checkCommentDeleteAuthority(signUserInfo, commentNum);
         comment.delete();
         commentRepository.save(comment);
     }

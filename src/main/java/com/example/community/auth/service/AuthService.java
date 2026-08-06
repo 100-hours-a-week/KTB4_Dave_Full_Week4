@@ -11,6 +11,7 @@ import com.example.community.user.entity.SignInfo;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.util.JWTUtil;
+import com.example.community.util.ImageUrlBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final UserInfoRepository userInfoRepository;
     private final JWTUtil jwtUtil;
+    private final ImageUrlBuilder imageUrlBuilder;
 
     @Transactional
     public RefreshResponse refresh(String refreshToken){
@@ -53,6 +55,9 @@ public class AuthService {
         String refreshToken = jwtUtil.generateRefreshToken(userInfoDTO.getUserNum());
         refreshTokenService.addRefreshToken(userInfoDTO.getUserNum(), refreshToken);
 
-        return new AuthResponse(refreshToken, SignInResponse.of(userInfoDTO, accessToken));
+        return new AuthResponse(
+                refreshToken,
+                SignInResponse.of(userInfoDTO, accessToken, imageUrlBuilder)
+        );
     }
 }

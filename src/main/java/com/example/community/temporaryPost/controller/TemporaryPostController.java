@@ -1,9 +1,10 @@
 package com.example.community.temporaryPost.controller;
 
-import com.example.community.post.dto.request.PostRequest;
+import com.example.community.post.dto.request.PostUpdateRequest;
 import com.example.community.resolver.SignUser;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.response.ApiResponse;
+import com.example.community.temporaryPost.dto.request.TemporaryPostRequest;
 import com.example.community.temporaryPost.dto.response.TemporaryKeyResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryPostResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryPostTitleResponse;
@@ -14,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -24,13 +24,22 @@ public class TemporaryPostController {
     private final TemporaryPostService temporaryPostService;
 
     @PostMapping()
-    public ResponseEntity<ApiResponse<TemporaryKeyResponse>> issueTemporaryId(@SignUser SignUserInfo signUserInfo){
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("임시 저장 ID 발급",temporaryPostService.issueTemporaryId(signUserInfo)));
+    public ResponseEntity<ApiResponse<TemporaryKeyResponse>> createTemporaryPost(
+            @SignUser SignUserInfo signUserInfo,
+            @ModelAttribute @Valid TemporaryPostRequest postRequest
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(
+                        "임시저장 완료",
+                        temporaryPostService.createTemporaryPost(
+                                signUserInfo,
+                                postRequest
+                        )
+                ));
     }
 
     @PutMapping("/{temporaryId}")
-    public ResponseEntity<ApiResponse<TemporaryPostResponse>> updateTemporaryPost(@SignUser SignUserInfo signUserInfo, @PathVariable Long temporaryId, @ModelAttribute @Valid PostRequest postRequest) throws IOException {
-        System.out.println("controller");
+    public ResponseEntity<ApiResponse<TemporaryPostResponse>> updateTemporaryPost(@SignUser SignUserInfo signUserInfo, @PathVariable Long temporaryId, @ModelAttribute @Valid PostUpdateRequest postRequest) {
         return ResponseEntity.ok(new ApiResponse<>("임시저장 완료",temporaryPostService.updateTemporaryPost(signUserInfo, temporaryId, postRequest)));
     }
 

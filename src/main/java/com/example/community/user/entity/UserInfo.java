@@ -61,6 +61,7 @@ public class UserInfo {
 
     public void delete(){
         deletedAt = Instant.now();
+        signInfo.delete();
     }
 
 

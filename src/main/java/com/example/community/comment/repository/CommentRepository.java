@@ -12,15 +12,28 @@ import java.util.Optional;
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
     @EntityGraph(attributePaths = {"userInfo"})
-    @Query("select c from Comment c " +
-            "where c.post.postNum = :postNum and c.depth = 0 order by c.commentNum desc")
+    @Query("""
+            select c
+            from Comment c
+            where c.post.postNum = :postNum
+              and c.depth = 0
+            """)
     Page<Comment> findByPost_postNum(long postNum, Pageable pageable);
 
     @EntityGraph(attributePaths = {"userInfo"})
-    @Query("select c from Comment c where c.comment.commentNum = :parentNum")
+    @Query("""
+            select c
+            from Comment c
+            where c.comment.commentNum = :parentNum
+            """)
     Page<Comment> findByParentNum(long parentNum, Pageable pageable);
 
     @EntityGraph(attributePaths = {"userInfo"})
-    @Query("select c from Comment c where c.commentNum = :commentNum")
+    @Query("""
+            select c
+            from Comment c
+            where c.commentNum = :commentNum
+              and c.deletedAt is null
+            """)
     Optional<Comment> findByCommentNum(long commentNum);
 }

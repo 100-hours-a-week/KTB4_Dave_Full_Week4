@@ -22,6 +22,9 @@ DROP TABLE IF EXISTS `comment_edit_record`;
 DROP TABLE IF EXISTS `comment`;
 DROP TABLE IF EXISTS `post_edit_record`;
 DROP TABLE IF EXISTS `post_report`;
+DROP TABLE IF EXISTS `popularity_aggregation_checkpoint`;
+DROP TABLE IF EXISTS `post_popularity_stat`;
+DROP TABLE IF EXISTS `post_view_bucket`;
 DROP TABLE IF EXISTS `post_view`;
 DROP TABLE IF EXISTS `user_like_post`;
 DROP TABLE IF EXISTS `temporary_post`;
@@ -160,6 +163,94 @@ CREATE TABLE `post_stat` (
 ) ENGINE = InnoDB
   DEFAULT CHARACTER SET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
+
+
+-- =========================================================
+-- 5-1. 게시글 시간대별 조회수 버킷
+--
+-- 게시글별 5분 단위 조회수 증가량을 저장합니다.
+-- 동일 게시글과 버킷 시작 시각 조합은 하나만 존재합니다.
+-- =========================================================
+
+CREATE TABLE `post_view_bucket` (
+                                    `post_view_bucket_id` BIGINT NOT NULL AUTO_INCREMENT,
+                                    `post_num` BIGINT NOT NULL,
+                                    `bucket_start_at` DATETIME(6) NOT NULL,
+                                    `view_count` BIGINT NOT NULL DEFAULT 0,
+
+                                    PRIMARY KEY (`post_view_bucket_id`),
+
+                                    CONSTRAINT `uk_post_view_bucket_post_time`
+                                        UNIQUE (`post_num`, `bucket_start_at`),
+
+                                    KEY `idx_post_view_bucket_time`
+                                        (`bucket_start_at`),
+
+                                    KEY `idx_post_view_bucket_post_time`
+                                        (`post_num`, `bucket_start_at`),
+
+                                    CONSTRAINT `fk_post_view_bucket_post`
+                                        FOREIGN KEY (`post_num`)
+                                            REFERENCES `post` (`post_num`)
+                                            ON UPDATE RESTRICT
+                                            ON DELETE CASCADE,
+
+                                    CONSTRAINT `ck_post_view_bucket_view_count`
+                                        CHECK (`view_count` >= 0)
+) ENGINE = InnoDB
+  DEFAULT CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+
+-- =========================================================
+-- 5-2. 인기글 롤링 집계
+-- =========================================================
+
+CREATE TABLE `post_popularity_stat` (
+                                        `post_num` BIGINT NOT NULL,
+                                        `view_count5m` BIGINT NOT NULL DEFAULT 0,
+                                        `view_count30m` BIGINT NOT NULL DEFAULT 0,
+                                        `view_count60m` BIGINT NOT NULL DEFAULT 0,
+                                        `popularity_score` BIGINT NOT NULL DEFAULT 0,
+
+                                        PRIMARY KEY (`post_num`),
+
+                                        KEY `idx_post_popularity_score`
+                                            (`popularity_score` DESC,
+                                             `view_count5m` DESC,
+                                             `view_count30m` DESC,
+                                             `post_num` DESC),
+
+                                        CONSTRAINT `fk_post_popularity_stat_post`
+                                            FOREIGN KEY (`post_num`)
+                                                REFERENCES `post` (`post_num`)
+                                                ON UPDATE RESTRICT
+                                                ON DELETE CASCADE,
+
+                                        CONSTRAINT `ck_post_popularity_view_count5m`
+                                            CHECK (`view_count5m` >= 0),
+
+                                        CONSTRAINT `ck_post_popularity_view_count30m`
+                                            CHECK (`view_count30m` >= 0),
+
+                                        CONSTRAINT `ck_post_popularity_view_count60m`
+                                            CHECK (`view_count60m` >= 0)
+) ENGINE = InnoDB
+  DEFAULT CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+
+CREATE TABLE `popularity_aggregation_checkpoint` (
+                                                     `job_name` VARCHAR(50) NOT NULL,
+                                                     `last_processed_end_at` DATETIME(6) NULL,
+
+                                                     PRIMARY KEY (`job_name`)
+) ENGINE = InnoDB
+  DEFAULT CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+INSERT INTO `popularity_aggregation_checkpoint` (`job_name`, `last_processed_end_at`)
+VALUES ('POPULAR_POSTS', NULL);
 
 
 -- =========================================================

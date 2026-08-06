@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -20,6 +21,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleNotValid(MethodArgumentNotValidException exception){
         return ResponseEntity.status(400).body(ErrorResponse.of("입력데이터가 유효하지 않습니다." + exception.getMessage()));
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponse> handleMethodValidation(
+            HandlerMethodValidationException exception
+    ) {
+        return ResponseEntity.status(400)
+                .body(ErrorResponse.of(
+                        "입력데이터가 유효하지 않습니다."
+                                + exception.getMessage()
+                ));
     }
 
     @ExceptionHandler(NotFoundException.class)

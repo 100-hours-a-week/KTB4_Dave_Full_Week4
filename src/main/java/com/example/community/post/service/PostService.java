@@ -5,6 +5,7 @@ import com.example.community.handler.exception.DuplicateException;
 import com.example.community.handler.exception.ForbiddenException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.post.dto.request.PostRequest;
+import com.example.community.post.dto.request.PostUpdateRequest;
 import com.example.community.post.dto.response.*;
 import com.example.community.post.entity.Post;
 import com.example.community.post.entity.PostEditRecord;
@@ -15,21 +16,26 @@ import com.example.community.post.repository.PostReportRepository;
 import com.example.community.post.repository.PostRepository;
 import com.example.community.post.repository.PostViewRepository;
 import com.example.community.resolver.SignUserInfo;
+import com.example.community.temporaryPost.entity.TemporaryPost;
+import com.example.community.temporaryPost.repository.TemporaryPostRepository;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserLikePost;
 import com.example.community.user.entity.UserRole;
 import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.user.repository.UserLikeRepository;
 import com.example.community.util.ImageConverter;
+import com.example.community.util.ImageUpdateResolver;
+import com.example.community.util.ImageUrlBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +46,10 @@ public class PostService {
     private final PostReportRepository postReportRepository;
     private final UserInfoRepository userInfoRepository;
     private final UserLikeRepository userLikeRepository;
+    private final TemporaryPostRepository temporaryPostRepository;
     private final ImageConverter imageConverter;
+    private final ImageUrlBuilder imageUrlBuilder;
+    private final PostViewService postViewService;
 
     private Post findPost(long postNum){
         return postRepository.findByPostNum(postNum)
@@ -58,10 +67,23 @@ public class PostService {
                 );
     }
 
-    private Post checkUserAuthority(SignUserInfo signUserInfo, long postNum) {
+    private Post checkPostOwner(SignUserInfo signUserInfo, long postNum) {
         Post post = findPost(postNum);
-        if(!post.getUserInfo().getProfileId().equals(signUserInfo.profileId())
-                && signUserInfo.userRole() != UserRole.ADMIN){
+        if (!post.getUserInfo().getProfileId()
+                .equals(signUserInfo.profileId())) {
+            throw new ForbiddenException("접근 권한 부족");
+        }
+        return post;
+    }
+
+    private Post checkPostDeleteAuthority(
+            SignUserInfo signUserInfo,
+            long postNum
+    ) {
+        Post post = findPost(postNum);
+        if (!post.getUserInfo().getProfileId()
+                .equals(signUserInfo.profileId())
+                && signUserInfo.userRole() != UserRole.ADMIN) {
             throw new ForbiddenException("접근 권한 부족");
         }
         return post;
@@ -114,18 +136,18 @@ public class PostService {
     }
 
     @Transactional
-    public PostResponse getPost(SignUserInfo signUserInfo, long postNum) {
+    public PostDetailResponse getPost(SignUserInfo signUserInfo, long postNum) {
         Post post = findPost(postNum);
         if (post.isBlind()) {
             throw new ForbiddenException("신고 처리된 게시글");
         }
 
         if (signUserInfo == null || signUserInfo.profileId() == null) {
-            return PostResponse.from(post);
+            return PostDetailResponse.from(post, imageUrlBuilder);
         }
         updatePostView(signUserInfo.profileId(), post);
 
-        return PostResponse.from(post);
+        return PostDetailResponse.from(post, imageUrlBuilder);
     }
 
     private void updatePostView(long profileId, Post post){
@@ -137,74 +159,123 @@ public class PostService {
                 )
                 .ifPresentOrElse(
                         (pv) -> {
-                            pv.view();
-                            post.view();
+                            if (pv.view()) {
+                                post.view();
+                                postViewService.recordView(
+                                        post.getPostNum(),
+                                        post.getWriteAt()
+                                );
+                            }
                         },
-                        () -> postViewRepository.save(
-                                new PostView(post, userInfo)
-                        )
+                        () -> {
+                            postViewRepository.save(new PostView(post, userInfo));
+                            postViewService.recordView(
+                                    post.getPostNum(),
+                                    post.getWriteAt()
+                            );
+                        }
                 );
     }
 
     @Transactional(readOnly = true)
     public PostResponse adminGetPost(long postNum){
-        return PostResponse.adminFrom(findPost(postNum));
+        return PostResponse.adminFrom(findPost(postNum), imageUrlBuilder);
     }
 
     @Transactional(readOnly = true)
-    public PostPageResponse getPostsByProfileId(long profileId, int page, int size, String sort) {
+    public PostPageResponse getMyPosts(
+            SignUserInfo signUserInfo,
+            int page,
+            int size,
+            String sort
+    ) {
         Pageable pageable = PageRequest.of(page, size, getSort(sort));
-        Page<Post> posts = postRepository.findPostByUserInfo_ProfileId(profileId, pageable);
+        Page<Post> posts = postRepository.findPostByUserInfo_ProfileId(signUserInfo.profileId(), pageable);
 
         return PostPageResponse.from(posts);
     }
 
     private void recordPostBeforeUpdate(Post post){
-        PostEditRecord postEditRecord = PostEditRecord.from(post);
+        PostEditRecord postEditRecord = new PostEditRecord(post);
         postEditRepository.save(postEditRecord);
     }
 
     @Transactional
-    public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) throws IOException {
+    public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) {
         UserInfo userInfo = findUserInfo(signUserInfo.profileId());
-        String image = imageConverter.updatePostImage(postRequest.image());
+        TemporaryPost temporaryPost = findTemporaryPostForPublish(
+                signUserInfo,
+                postRequest.temporaryPostId()
+        );
+        String image = ImageUpdateResolver.resolveForCreate(
+                postRequest.objectKey(),
+                postRequest.image(),
+                objectKey -> temporaryPost != null
+                        && Objects.equals(
+                                temporaryPost.getImage(),
+                                objectKey
+                        ),
+                imageConverter::updatePostImage
+        );
         Post post = new Post(userInfo, postRequest.title(),
                 postRequest.content(), image);
         postRepository.save(post);
 
-        return PostResponse.from(post);
+        return PostResponse.from(post, imageUrlBuilder);
+    }
+
+    private TemporaryPost findTemporaryPostForPublish(
+            SignUserInfo signUserInfo,
+            Long temporaryPostId
+    ) {
+        if (temporaryPostId == null) {
+            return null;
+        }
+        return temporaryPostRepository
+                .findByTemporaryIdAndUserInfo_ProfileId(
+                        temporaryPostId,
+                        signUserInfo.profileId()
+                )
+                .orElseThrow(() -> new BadRequestException(
+                        "유효하지 않은 임시저장글입니다."
+                ));
     }
 
     @Transactional
-    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostRequest postRequest) throws IOException {
-        Post post = checkUserAuthority(signUserInfo, postNum);
+    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostUpdateRequest postRequest) {
+        Post post = checkPostOwner(signUserInfo, postNum);
+        String image = ImageUpdateResolver.resolve(
+                post.getImage(),
+                postRequest.objectKey(),
+                postRequest.image(),
+                imageConverter::updatePostImage
+        );
         recordPostBeforeUpdate(post);
-        String image = imageConverter.updatePostImage(postRequest.image());
         post.update(postRequest.title(), postRequest.content(), image);
         postRepository.save(post);
 
-        return PostResponse.from(post);
+        return PostResponse.from(post, imageUrlBuilder);
     }
 
     @Transactional
     public PostLikeResponse likePost(SignUserInfo signUserInfo, long postNum) {
         UserInfo userInfo = findUserInfo(signUserInfo.profileId());
         Post post = findPost(postNum);
-        boolean isLike = false;
-        if(userLikeRepository.existsByUserInfo_ProfileIdAndPost_PostNum(signUserInfo.profileId(), postNum)){
-            postUnlike(signUserInfo.profileId(), postNum);
-        }
-        else{
-            postLike(userInfo, post);
-            isLike = true;
-        }
+        Optional<UserLikePost> existingLike = userLikeRepository
+                .findByUserInfo_ProfileIdAndPost_PostNum(
+                        signUserInfo.profileId(),
+                        postNum
+                );
+        existingLike.ifPresentOrElse(
+                this::postUnlike,
+                () -> postLike(userInfo, post)
+        );
+        boolean isLike = existingLike.isEmpty();
         
         return new PostLikeResponse(post.getPostState().getLikeCount(), isLike);
     }
 
-    private void postUnlike(long profileId, long postNum){
-        UserLikePost userLikePost = userLikeRepository.findByUserInfo_ProfileIdAndPost_PostNum(profileId, postNum)
-                .orElseThrow(() -> new NotFoundException("좋아요 안 한 게시글"));
+    private void postUnlike(UserLikePost userLikePost){
         userLikePost.getPost().unlike();
         userLikeRepository.delete(userLikePost);
     }
@@ -239,18 +310,24 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostSliceResponse getPopularPosts(int page, int size){
-        Pageable pageable = PageRequest.of(page, size);
-        Slice<Long> postNums = postViewRepository.findPopularPosts(Instant.now().minus(1, ChronoUnit.HOURS), pageable);
-        List<Post> posts = postRepository.findPostByPostNumIn(postNums.getContent());
-        Slice<Post> postSlice = new PageImpl<>(posts, pageable, posts.size());
+    public PostSliceResponse getTop10PopularPosts(){
+        List<Long> postNums = postViewService.getTop10PopularPostNums();
+        Map<Long, Post> postsByPostNum = new HashMap<>();
+        postRepository.findPostByPostNumIn(postNums)
+                .forEach(post -> postsByPostNum.put(post.getPostNum(), post));
+        List<Post> orderedPosts = postNums.stream()
+                .map(postsByPostNum::get)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        Pageable pageable = PageRequest.of(0, 10);
+        Slice<Post> postSlice = new SliceImpl<>(orderedPosts, pageable, false);
 
         return PostSliceResponse.from(postSlice);
     }
 
     @Transactional
     public void deletePost(SignUserInfo signUserInfo, long postNum) {
-        Post post = checkUserAuthority(signUserInfo, postNum);
+        Post post = checkPostDeleteAuthority(signUserInfo, postNum);
         post.delete();
     }
 }

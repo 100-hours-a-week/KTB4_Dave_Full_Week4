@@ -9,7 +9,14 @@ aws:
   s3:
     bucket: community-925581110470-ap-northeast-2-an
     region: ap-northeast-2
+    base-url: https://test-bucket.s3.ap-northeast-2.amazonaws.com/
 tokenExpire:
   refresh: 1800000
   access: 600000
 
+popular-post:
+  candidate-max-age: 3d
+  scheduler:
+    enabled: false
+  cleanup:
+    enabled: false

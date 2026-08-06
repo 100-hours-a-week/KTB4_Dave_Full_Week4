@@ -21,6 +21,8 @@ import com.example.community.user.repository.SignInfoRepository;
 import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.user.repository.UserLikeRepository;
 import com.example.community.util.ImageConverter;
+import com.example.community.util.ImageUpdateResolver;
+import com.example.community.util.ImageUrlBuilder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,8 +31,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-
 
 @Service
 public class UserService{
@@ -38,21 +38,25 @@ public class UserService{
     private final UserInfoRepository userInfoRepository;
     private final UserLikeRepository userLikeRepository;
     private final ImageConverter imageConverter;
+    private final ImageUrlBuilder imageUrlBuilder;
     private final PasswordEncoder passwordEncoder;
 
     public UserService(SignInfoRepository signInfoRepository,
                        UserLikeRepository userLikeRepository, UserInfoRepository userInfoRepository,
-                       ImageConverter imageConverter, PasswordEncoder passwordEncoder){
+                       ImageConverter imageConverter,
+                       ImageUrlBuilder imageUrlBuilder,
+                       PasswordEncoder passwordEncoder){
         this.signInfoRepository = signInfoRepository;
         this.userInfoRepository = userInfoRepository;
         this.userLikeRepository = userLikeRepository;
         this.imageConverter = imageConverter;
+        this.imageUrlBuilder = imageUrlBuilder;
         this.passwordEncoder = passwordEncoder;
     }
 
 
     @Transactional
-    public SignUpResponse signUp(SignUpRequest signUpRequest) throws IOException {
+    public SignUpResponse signUp(SignUpRequest signUpRequest)  {
         if(signInfoRepository.existsByEmail(signUpRequest.email())){
             throw new DuplicateException("중복 이메일 존재");
         }
@@ -100,19 +104,21 @@ public class UserService{
     }
 
     @Transactional
-    public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) throws IOException {
+    public UserInfoResponse updateUserInfo(SignUserInfo signUserInfo, UserInfoRequest userInfoRequest) {
         UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
 
         if(isExistNickname(userInfoRequest.nickname()) && !userInfoRequest.nickname().equals(userInfo.getNickname())){
             throw new DuplicateException("중복 닉네임 존재");
         }
-        String profileImage = null;
-        if(userInfoRequest.imageFile() != null) {
-            profileImage = imageConverter.updateProfileImage(userInfoRequest.imageFile());
-        }
+        String profileImage = ImageUpdateResolver.resolve(
+                userInfo.getProfileImage(),
+                userInfoRequest.objectKey(),
+                userInfoRequest.imageFile(),
+                imageConverter::updateProfileImage
+        );
         userInfo.update(userInfoRequest.nickname(), profileImage);
-        return UserInfoResponse.from(userInfo);
+        return UserInfoResponse.from(userInfo, imageUrlBuilder);
     }
 
     @Transactional
@@ -131,7 +137,7 @@ public class UserService{
     }
 
     @Transactional(readOnly = true)
-    public PostPageResponse getLikePosts(long profileId, int page, int size, String sort) {
+    public PostPageResponse getMyLikePosts(SignUserInfo signUserInfo, int page, int size, String sort) {
         Sort sortType = switch(sort){
             case "likes" -> Sort.by(Sort.Direction.DESC, "post.postState.likeCount")
                     .and(Sort.by(
@@ -146,19 +152,16 @@ public class UserService{
             default -> Sort.by(Sort.Direction.DESC, "post.postNum");
         };
         Pageable pageable = PageRequest.of(page, size, sortType);
-        Page<UserLikePost> userLikePosts = userLikeRepository.findByUserInfo_ProfileId(profileId, pageable);
+        Page<UserLikePost> userLikePosts = userLikeRepository.findByUserInfo_ProfileId(signUserInfo.profileId(), pageable);
         return PostPageResponse.fromUserLike(userLikePosts);
     }
 
     @Transactional
     public UserDeleteResponse deleteUser(SignUserInfo signUserInfo) {
-        SignInfo signInfo = signInfoRepository.findByUserNum(signUserInfo.userNum())
-                .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
         UserInfo userInfo = userInfoRepository.findByProfileId(signUserInfo.profileId())
                 .orElseThrow(()-> new NotFoundException("존재하지 않는 유저"));
-        signInfo.delete();
         userInfo.delete();
 
-        return new UserDeleteResponse(signUserInfo.userNum(), signInfo.isDeleted());
+        return new UserDeleteResponse(userInfo.getSignInfo().getUserNum(), userInfo.isDeleted());
     }
 }
