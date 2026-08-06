@@ -5,6 +5,7 @@ import com.example.community.handler.exception.DuplicateException;
 import com.example.community.handler.exception.ForbiddenException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.post.dto.request.PostRequest;
+import com.example.community.post.dto.request.PostUpdateRequest;
 import com.example.community.post.dto.response.*;
 import com.example.community.post.entity.Post;
 import com.example.community.post.entity.PostEditRecord;
@@ -15,12 +16,16 @@ import com.example.community.post.repository.PostReportRepository;
 import com.example.community.post.repository.PostRepository;
 import com.example.community.post.repository.PostViewRepository;
 import com.example.community.resolver.SignUserInfo;
+import com.example.community.temporaryPost.entity.TemporaryPost;
+import com.example.community.temporaryPost.repository.TemporaryPostRepository;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserLikePost;
 import com.example.community.user.entity.UserRole;
 import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.user.repository.UserLikeRepository;
 import com.example.community.util.ImageConverter;
+import com.example.community.util.ImageUpdateResolver;
+import com.example.community.util.ImageUrlBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -29,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -40,7 +46,9 @@ public class PostService {
     private final PostReportRepository postReportRepository;
     private final UserInfoRepository userInfoRepository;
     private final UserLikeRepository userLikeRepository;
+    private final TemporaryPostRepository temporaryPostRepository;
     private final ImageConverter imageConverter;
+    private final ImageUrlBuilder imageUrlBuilder;
     private final PostViewService postViewService;
 
     private Post findPost(long postNum){
@@ -128,18 +136,18 @@ public class PostService {
     }
 
     @Transactional
-    public PostResponse getPost(SignUserInfo signUserInfo, long postNum) {
+    public PostDetailResponse getPost(SignUserInfo signUserInfo, long postNum) {
         Post post = findPost(postNum);
         if (post.isBlind()) {
             throw new ForbiddenException("신고 처리된 게시글");
         }
 
         if (signUserInfo == null || signUserInfo.profileId() == null) {
-            return PostResponse.from(post);
+            return PostDetailResponse.from(post, imageUrlBuilder);
         }
         updatePostView(signUserInfo.profileId(), post);
 
-        return PostResponse.from(post);
+        return PostDetailResponse.from(post, imageUrlBuilder);
     }
 
     private void updatePostView(long profileId, Post post){
@@ -171,7 +179,7 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public PostResponse adminGetPost(long postNum){
-        return PostResponse.adminFrom(findPost(postNum));
+        return PostResponse.adminFrom(findPost(postNum), imageUrlBuilder);
     }
 
     @Transactional(readOnly = true)
@@ -188,30 +196,65 @@ public class PostService {
     }
 
     private void recordPostBeforeUpdate(Post post){
-        PostEditRecord postEditRecord = PostEditRecord.from(post);
+        PostEditRecord postEditRecord = new PostEditRecord(post);
         postEditRepository.save(postEditRecord);
     }
 
     @Transactional
     public PostResponse addPost(SignUserInfo signUserInfo, PostRequest postRequest) {
         UserInfo userInfo = findUserInfo(signUserInfo.profileId());
-        String image = imageConverter.updatePostImage(postRequest.image());
+        TemporaryPost temporaryPost = findTemporaryPostForPublish(
+                signUserInfo,
+                postRequest.temporaryPostId()
+        );
+        String image = ImageUpdateResolver.resolveForCreate(
+                postRequest.objectKey(),
+                postRequest.image(),
+                objectKey -> temporaryPost != null
+                        && Objects.equals(
+                                temporaryPost.getImage(),
+                                objectKey
+                        ),
+                imageConverter::updatePostImage
+        );
         Post post = new Post(userInfo, postRequest.title(),
                 postRequest.content(), image);
         postRepository.save(post);
 
-        return PostResponse.from(post);
+        return PostResponse.from(post, imageUrlBuilder);
+    }
+
+    private TemporaryPost findTemporaryPostForPublish(
+            SignUserInfo signUserInfo,
+            Long temporaryPostId
+    ) {
+        if (temporaryPostId == null) {
+            return null;
+        }
+        return temporaryPostRepository
+                .findByTemporaryIdAndUserInfo_ProfileId(
+                        temporaryPostId,
+                        signUserInfo.profileId()
+                )
+                .orElseThrow(() -> new BadRequestException(
+                        "유효하지 않은 임시저장글입니다."
+                ));
     }
 
     @Transactional
-    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostRequest postRequest) {
+    public PostResponse updatePost(SignUserInfo signUserInfo, long postNum, PostUpdateRequest postRequest) {
         Post post = checkPostOwner(signUserInfo, postNum);
-        String image = imageConverter.updatePostImage(postRequest.image());
+        String image = ImageUpdateResolver.resolve(
+                post.getImage(),
+                postRequest.objectKey(),
+                postRequest.image(),
+                imageConverter::updatePostImage
+        );
         recordPostBeforeUpdate(post);
         post.update(postRequest.title(), postRequest.content(), image);
         postRepository.save(post);
 
-        return PostResponse.from(post);
+        return PostResponse.from(post, imageUrlBuilder);
     }
 
     @Transactional

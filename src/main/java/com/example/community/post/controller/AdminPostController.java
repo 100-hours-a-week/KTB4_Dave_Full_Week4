@@ -6,6 +6,8 @@ import com.example.community.post.dto.response.PostPageResponse;
 import com.example.community.post.dto.response.PostResponse;
 import com.example.community.post.service.PostService;
 import com.example.community.response.ApiResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,19 +19,19 @@ public class AdminPostController {
     private final PostService postService;
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<PostPageResponse>> getPostByPage(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "latest") String sort){
+    public ResponseEntity<ApiResponse<PostPageResponse>> getPostByPage(@RequestParam(defaultValue = "0") @Min(0) int page, @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size, @RequestParam(defaultValue = "latest") String sort){
         PostPageResponse posts = postService.adminGetPostsByPage(page, size, sort);
         return ResponseEntity.ok(new ApiResponse<>("관리자 모드 : 게시글 조회 성공", posts));
     }
 
     @GetMapping("/{postNum}")
-    public ResponseEntity<ApiResponse<PostResponse>> getPost(@PathVariable long postNum){
+    public ResponseEntity<ApiResponse<PostResponse>> getPost(@PathVariable @Min(1) long postNum){
         PostResponse post = postService.adminGetPost(postNum);
         return ResponseEntity.ok(new ApiResponse<>("관리자 모드 : 게시글 상세 조회 성공", post));
     }
 
     @GetMapping("/editList/{postNum}")
-    public ResponseEntity<ApiResponse<PostEditPageResponse>> getPostEdtByPage(@PathVariable long postNum, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+    public ResponseEntity<ApiResponse<PostEditPageResponse>> getPostEdtByPage(@PathVariable @Min(1) long postNum, @RequestParam(defaultValue = "0") @Min(0) int page, @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size){
         PostEditPageResponse posts = postService.getPostEditsByPage(postNum, page, size);
         return ResponseEntity.ok(new ApiResponse<>("관리자 모드 : 게시글 수정 이력 조회 성공", posts));
     }

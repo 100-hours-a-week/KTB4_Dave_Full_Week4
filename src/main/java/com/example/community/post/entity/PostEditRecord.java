@@ -43,37 +43,15 @@ public class PostEditRecord {
     @Column(name = "writeAt", nullable = false)
     private Instant writeAt;
 
-    public PostEditRecord(Post post, Integer version, String title, String content, String image, Instant writeAt){
+    public PostEditRecord(Post post){
         if(post == null){
             throw new IllegalArgumentException("post가 null");
-        }
-        if(version == null || version < 0){
-            throw new IllegalArgumentException("version은 음수일 수 없음");
-        }
-        if(title == null || title.isBlank() || content == null || content.isBlank()){
-            throw new IllegalArgumentException("제목과 내용은 비어있으면 안됨");
-        }
-        if(writeAt == null){
-            throw new IllegalArgumentException("writeTime이 null");
         }
         this.post = post;
-        this.version = version;
-        this.title = title;
-        this.content = content;
-        this.image = image;
-        this.writeAt = writeAt;
-    }
-    public static PostEditRecord from(Post post){
-        if(post == null){
-            throw new IllegalArgumentException("post가 null");
-        }
-        return new PostEditRecord(
-                post,
-                post.getVersion(),
-                post.getMaskedTitle(),
-                post.getContent(),
-                post.getImage(),
-                post.getEditedAt() != null ? post.getEditedAt() : post.getWriteAt()
-        );
+        this.version = post.getVersion();
+        this.title = post.getTitle();
+        this.content = post.getContent();
+        this.image = post.getImage();
+        this.writeAt = post.getEditedAt() == null ? post.getWriteAt() : post.getEditedAt();
     }
 }

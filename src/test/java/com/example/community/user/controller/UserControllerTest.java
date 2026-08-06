@@ -25,6 +25,7 @@ import com.example.community.user.dto.response.UserDeleteResponse;
 import com.example.community.user.dto.response.UserInfoResponse;
 import com.example.community.user.entity.UserRole;
 import com.example.community.user.service.UserService;
+import com.example.community.util.ImageUrlBuilder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,6 +38,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -75,6 +77,10 @@ class UserControllerTest {
     private static final String NEXT_PASSWORD = "NewPassword2@";
     private static final SignUserInfo SIGN_USER_INFO =
             new SignUserInfo(1L, 1L, UserRole.USER);
+    private static final String IMAGE_BASE_URL =
+            "https://test-bucket.s3.ap-northeast-2.amazonaws.com/";
+    private static final ImageUrlBuilder IMAGE_URL_BUILDER =
+            new ImageUrlBuilder(IMAGE_BASE_URL);
 
     @Autowired
     private MockMvc mockMvc;
@@ -311,11 +317,18 @@ class UserControllerTest {
                 1L,
                 EMAIL,
                 "dave",
-                null,
+                "profiles/profile.png",
                 UserRole.USER,
                 null
         );
-        AuthResponse authResponse = new AuthResponse(refreshToken, SignInResponse.of(userInfoDTO, accessToken));
+        AuthResponse authResponse = new AuthResponse(
+                refreshToken,
+                SignInResponse.of(
+                        userInfoDTO,
+                        accessToken,
+                        IMAGE_URL_BUILDER
+                )
+        );
 
         when(userService.signIn(request)).thenReturn(userInfoDTO);
         when(authService.tokenIssue(userInfoDTO)).thenReturn(authResponse);
@@ -327,7 +340,11 @@ class UserControllerTest {
                 .andExpect(cookie().exists("refresh"))
                 .andExpect(cookie().httpOnly("refresh", true))
                 .andExpect(jsonPath("$.code").value("로그인 성공"))
-                .andExpect(jsonPath("$.data.accessToken").value(accessToken));
+                .andExpect(jsonPath("$.data.accessToken").value(accessToken))
+                .andExpect(jsonPath("$.data.profileImage")
+                        .value(IMAGE_BASE_URL + "profiles/profile.png"))
+                .andExpect(jsonPath("$.data.objectKey")
+                        .value("profiles/profile.png"));
 
         verify(userService).signIn(request);
         verify(authService).tokenIssue(userInfoDTO);
@@ -452,11 +469,16 @@ class UserControllerTest {
     @Test
     @DisplayName("회원정보 수정 성공")
     void updateInfoSuccess() throws Exception {
-        UserInfoRequest request = new UserInfoRequest("dave2", null);
+        UserInfoRequest request = new UserInfoRequest(
+                "dave2",
+                "profiles/profile.png",
+                null
+        );
 
         UserInfoResponse response = new UserInfoResponse(
                 "dave2",
-                null
+                "https://community-925581110470-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/profiles/profile.png",
+                "profiles/profile.png"
         );
 
         when(userService.updateUserInfo(SIGN_USER_INFO, request))
@@ -464,6 +486,7 @@ class UserControllerTest {
 
         mockMvc.perform(multipart("/users/info")
                         .param("nickname", request.nickname())
+                        .param("objectKey", request.objectKey())
                         .with(mockRequest -> {
                             mockRequest.setMethod("PATCH");
                             return mockRequest;
@@ -471,7 +494,8 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("회원정보 수정 완료"))
                 .andExpect(jsonPath("$.data.nickname").value(response.nickname()))
-                .andExpect(jsonPath("$.data.profileImage").value(response.profileImage()));
+                .andExpect(jsonPath("$.data.profileImage").value(response.profileImage()))
+                .andExpect(jsonPath("$.data.objectKey").value(response.objectKey()));
 
         verify(userService).updateUserInfo(SIGN_USER_INFO, request);
     }
@@ -479,7 +503,11 @@ class UserControllerTest {
     @Test
     @DisplayName("회원정보 수정 시 다른 사용자의 닉네임과 중복되면 409 응답")
     void updateInfoReturnsConflictWhenNicknameIsDuplicated() throws Exception {
-        UserInfoRequest request = new UserInfoRequest("other", null);
+        UserInfoRequest request = new UserInfoRequest(
+                "other",
+                "profiles/profile.png",
+                null
+        );
         when(userService.updateUserInfo(SIGN_USER_INFO, request))
                 .thenThrow(new DuplicateException("중복 닉네임 존재"));
 
@@ -493,11 +521,40 @@ class UserControllerTest {
     @Test
     @DisplayName("회원정보 수정 시 닉네임 길이가 10자를 초과하면 400 응답")
     void updateInfoReturnsBadRequestWhenNicknameIsTooLong() throws Exception {
-        UserInfoRequest request = new UserInfoRequest("12345678901", null);
+        UserInfoRequest request = new UserInfoRequest(
+                "12345678901",
+                "profiles/profile.png",
+                null
+        );
 
         performUpdateInfo(request)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", startsWith("입력데이터가 유효하지 않습니다.")));
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    @DisplayName("회원정보 수정 시 objectKey와 파일을 같이 보내면 400 응답")
+    void updateInfoReturnsBadRequestForObjectKeyAndImage() throws Exception {
+        MockMultipartFile image = new MockMultipartFile(
+                "imageFile",
+                "profile.png",
+                "image/png",
+                new byte[]{1}
+        );
+        UserInfoRequest request = new UserInfoRequest(
+                "dave2",
+                "profiles/profile.png",
+                image
+        );
+
+        performUpdateInfo(request)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath(
+                        "$.code",
+                        startsWith("입력데이터가 유효하지 않습니다.")
+                ));
 
         verifyNoInteractions(userService);
     }
@@ -632,12 +689,19 @@ class UserControllerTest {
     private ResultActions performUpdateInfo(
             UserInfoRequest request
     ) throws Exception {
-        return mockMvc.perform(multipart("/users/info")
+        var requestBuilder = multipart("/users/info")
                 .param("nickname", request.nickname())
                 .with(mockRequest -> {
                     mockRequest.setMethod("PATCH");
                     return mockRequest;
-                }));
+                });
+        if (request.objectKey() != null) {
+            requestBuilder.param("objectKey", request.objectKey());
+        }
+        if (request.imageFile() instanceof MockMultipartFile image) {
+            requestBuilder.file(image);
+        }
+        return mockMvc.perform(requestBuilder);
     }
 
     private ResultActions performChangePassword(

@@ -8,8 +8,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TemporaryPostJpaRepository extends JpaRepository<TemporaryPost, Long> {
+public interface TemporaryPostRepository extends JpaRepository<TemporaryPost, Long> {
     Optional<TemporaryPost> findByTemporaryId(Long temporaryId);
+    Optional<TemporaryPost> findByTemporaryIdAndUserInfo_ProfileId(
+            Long temporaryId,
+            Long profileId
+    );
     List<TemporaryPost> findByUserInfo_ProfileId(Long profileId);
 
 }

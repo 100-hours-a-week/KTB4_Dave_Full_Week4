@@ -11,7 +11,6 @@ import java.util.Optional;
 
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
-    boolean existsBySignInfo_UserNumAndToken(long userNum, String token);
     @EntityGraph(attributePaths = {"signInfo"})
     Optional<RefreshToken> findByToken(String token);
     @Modifying(clearAutomatically = true)

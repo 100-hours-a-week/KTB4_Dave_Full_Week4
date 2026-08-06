@@ -282,7 +282,7 @@ class PostViewServiceTest {
         assertThat(createdStat.getViewCount60m()).isEqualTo(4L);
         assertThat(createdStat.getPopularityScore()).isEqualTo(16L);
         verify(postPopularityStatRepository).deleteAllByIdInBatch(
-                List.<Long>of()
+                List.of()
         );
     }
 
@@ -312,10 +312,10 @@ class PostViewServiceTest {
         postViewService.refreshPopularityStats();
 
         verify(postPopularityStatRepository).saveAll(
-                List.<PostPopularityStat>of()
+                List.of()
         );
         verify(postPopularityStatRepository).deleteAllByIdInBatch(
-                List.<Long>of()
+                List.of()
         );
     }
 
@@ -352,7 +352,7 @@ class PostViewServiceTest {
         assertThat(stat.getViewCount60m()).isZero();
         assertThat(stat.getPopularityScore()).isZero();
         verify(postPopularityStatRepository).saveAll(
-                List.<PostPopularityStat>of()
+                List.of()
         );
         verify(postPopularityStatRepository).deleteAllByIdInBatch(
                 List.of(1L)

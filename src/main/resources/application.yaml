@@ -26,6 +26,7 @@ aws:
   s3:
     bucket: community-925581110470-ap-northeast-2-an
     region: ap-northeast-2
+    base-url: ${AWS_S3_BASE_URL}
 
 tokenExpire:
   refresh: 1800000

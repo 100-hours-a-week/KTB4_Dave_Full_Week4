@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -96,10 +95,23 @@ class ImageConverterTest {
         verifyNoInteractions(s3Client);
     }
 
+    @Test
+    @DisplayName("원본 파일명이 null이면 예외가 발생하고 S3를 호출하지 않는다")
+    void updateImageRejectsNullOriginalFilename() {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getOriginalFilename()).thenReturn(null);
+
+        assertThatThrownBy(() -> imageConverter.updatePostImage(file))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("파일명이 비어 있습니다.");
+        verifyNoInteractions(s3Client);
+    }
+
     @ParameterizedTest
-    @NullAndEmptySource
-    @DisplayName("원본 파일명이 비어 있으면 예외가 발생하고 S3를 호출하지 않는다")
-    void updateImageRejectsEmptyOriginalFilename(String originalFilename) {
+    @ValueSource(strings = {"", " ", "\t", "\n"})
+    @DisplayName("원본 파일명이 빈 문자열이나 공백이면 예외가 발생하고 S3를 호출하지 않는다")
+    void updateImageRejectsBlankOriginalFilename(String originalFilename) {
         MockMultipartFile file = imageFile(originalFilename);
 
         assertThatThrownBy(() -> imageConverter.updatePostImage(file))

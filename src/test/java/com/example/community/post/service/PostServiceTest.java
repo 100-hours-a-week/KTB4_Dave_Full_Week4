@@ -3,8 +3,10 @@ package com.example.community.post.service;
 import com.example.community.handler.exception.BadRequestException;
 import com.example.community.handler.exception.DuplicateException;
 import com.example.community.handler.exception.ForbiddenException;
+import com.example.community.handler.exception.ImageUploadException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.post.dto.request.PostRequest;
+import com.example.community.post.dto.request.PostUpdateRequest;
 import com.example.community.post.dto.response.*;
 import com.example.community.post.entity.Post;
 import com.example.community.post.entity.PostEditRecord;
@@ -15,6 +17,8 @@ import com.example.community.post.repository.PostReportRepository;
 import com.example.community.post.repository.PostRepository;
 import com.example.community.post.repository.PostViewRepository;
 import com.example.community.resolver.SignUserInfo;
+import com.example.community.temporaryPost.entity.TemporaryPost;
+import com.example.community.temporaryPost.repository.TemporaryPostRepository;
 import com.example.community.user.entity.SignInfo;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserLikePost;
@@ -22,6 +26,7 @@ import com.example.community.user.entity.UserRole;
 import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.user.repository.UserLikeRepository;
 import com.example.community.util.ImageConverter;
+import com.example.community.util.ImageUrlBuilder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,10 +36,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -82,7 +87,15 @@ class PostServiceTest {
     private UserLikeRepository userLikeRepository;
 
     @Mock
+    private TemporaryPostRepository temporaryPostRepository;
+
+    @Mock
     private ImageConverter imageConverter;
+
+    @Spy
+    private ImageUrlBuilder imageUrlBuilder = new ImageUrlBuilder(
+            "https://test-bucket.s3.ap-northeast-2.amazonaws.com/"
+    );
 
     @Mock
     private PostViewService postViewService;
@@ -288,12 +301,14 @@ class PostServiceTest {
     @DisplayName("로그인 정보가 없으면 조회 이력을 기록하지 않고 게시글을 반환한다")
     void getPostReturnsPostForAnonymousUser() {
         Post post = post(10L, user(2L, "author"));
+        ReflectionTestUtils.setField(post, "image", "posts/detail.png");
         when(postRepository.findByPostNum(10L))
                 .thenReturn(Optional.of(post));
 
-        PostResponse response = postService.getPost(null, 10L);
+        PostDetailResponse response = postService.getPost(null, 10L);
 
         assertThat(response.postNum()).isEqualTo(10L);
+        assertThat(response.objectKey()).isEqualTo("posts/detail.png");
         assertThat(post.getPostState().getViewCount()).isZero();
         verifyNoInteractions(postViewRepository, postViewService);
     }
@@ -310,7 +325,7 @@ class PostServiceTest {
                 UserRole.USER
         );
 
-        PostResponse response = postService.getPost(signUserInfo, 10L);
+        PostDetailResponse response = postService.getPost(signUserInfo, 10L);
 
         assertThat(response.postNum()).isEqualTo(10L);
         verifyNoInteractions(postViewRepository, postViewService);
@@ -343,7 +358,7 @@ class PostServiceTest {
                 .findByPost_PostNumAndUserInfo_ProfileId(10L, 1L))
                 .thenReturn(Optional.empty());
 
-        PostResponse response = postService.getPost(SIGN_USER, 10L);
+        PostDetailResponse response = postService.getPost(SIGN_USER, 10L);
 
         assertThat(response.viewCount()).isEqualTo(1);
         verify(postViewRepository).save(any(PostView.class));
@@ -365,7 +380,7 @@ class PostServiceTest {
                 .thenReturn(Optional.of(postView));
         when(postView.view()).thenReturn(false);
 
-        PostResponse response = postService.getPost(SIGN_USER, 10L);
+        PostDetailResponse response = postService.getPost(SIGN_USER, 10L);
 
         assertThat(response.viewCount()).isZero();
         verify(postViewRepository, never()).save(any(PostView.class));
@@ -387,7 +402,7 @@ class PostServiceTest {
                 .thenReturn(Optional.of(postView));
         when(postView.view()).thenReturn(true);
 
-        PostResponse response = postService.getPost(SIGN_USER, 10L);
+        PostDetailResponse response = postService.getPost(SIGN_USER, 10L);
 
         assertThat(response.viewCount()).isEqualTo(1);
         verify(postViewService).recordView(10L, WRITE_AT);
@@ -421,7 +436,13 @@ class PostServiceTest {
     void addPostCreatesPost() {
         UserInfo author = user(1L, "author");
         MultipartFile image = mock(MultipartFile.class);
-        PostRequest request = new PostRequest("new-title", "new-content", image);
+        PostRequest request = new PostRequest(
+                "new-title",
+                "new-content",
+                null,
+                null,
+                image
+        );
         when(userInfoRepository.findByProfileId(1L))
                 .thenReturn(Optional.of(author));
         when(imageConverter.updatePostImage(image))
@@ -440,9 +461,130 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("게시글 작성 시 본인 임시글의 objectKey를 재사용한다")
+    void addPostReusesOwnedTemporaryPostObjectKey() {
+        UserInfo author = user(1L, "author");
+        PostRequest request = new PostRequest(
+                "new-title",
+                "new-content",
+                15L,
+                "posts/temporary.png",
+                null
+        );
+        when(userInfoRepository.findByProfileId(1L))
+                .thenReturn(Optional.of(author));
+        TemporaryPost temporaryPost = new TemporaryPost(author);
+        temporaryPost.update(
+                "temporary-title",
+                "temporary-content",
+                "posts/temporary.png"
+        );
+        when(temporaryPostRepository
+                .findByTemporaryIdAndUserInfo_ProfileId(15L, 1L))
+                .thenReturn(Optional.of(temporaryPost));
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> {
+            Post savedPost = invocation.getArgument(0);
+            ReflectionTestUtils.setField(savedPost, "postNum", 10L);
+            return savedPost;
+        });
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+
+        postService.addPost(SIGN_USER, request);
+
+        verify(postRepository).save(postCaptor.capture());
+        assertThat(postCaptor.getValue().getImage())
+                .isEqualTo("posts/temporary.png");
+        verifyNoInteractions(imageConverter);
+    }
+
+    @Test
+    @DisplayName("임시저장글 없이 objectKey만 전달하면 게시글 작성을 거부한다")
+    void addPostRejectsObjectKeyWithoutTemporaryPost() {
+        UserInfo author = user(1L, "author");
+        PostRequest request = new PostRequest(
+                "new-title",
+                "new-content",
+                null,
+                "posts/unverified.png",
+                null
+        );
+        when(userInfoRepository.findByProfileId(1L))
+                .thenReturn(Optional.of(author));
+
+        assertThatThrownBy(() -> postService.addPost(SIGN_USER, request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("유효하지 않은 objectKey입니다.");
+
+        verifyNoInteractions(temporaryPostRepository, imageConverter);
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("게시글 작성 시 본인 임시글에 없는 objectKey는 거부한다")
+    void addPostRejectsUnownedObjectKey() {
+        UserInfo author = user(1L, "author");
+        PostRequest request = new PostRequest(
+                "new-title",
+                "new-content",
+                15L,
+                "posts/other.png",
+                null
+        );
+        when(userInfoRepository.findByProfileId(1L))
+                .thenReturn(Optional.of(author));
+        TemporaryPost temporaryPost = new TemporaryPost(author);
+        temporaryPost.update(
+                "temporary-title",
+                "temporary-content",
+                "posts/current.png"
+        );
+        when(temporaryPostRepository
+                .findByTemporaryIdAndUserInfo_ProfileId(15L, 1L))
+                .thenReturn(Optional.of(temporaryPost));
+
+        assertThatThrownBy(() -> postService.addPost(SIGN_USER, request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("유효하지 않은 objectKey입니다.");
+
+        verify(postRepository, never()).save(any(Post.class));
+        verifyNoInteractions(imageConverter);
+    }
+
+    @Test
+    @DisplayName("게시글 작성 시 본인 소유가 아닌 임시글은 거부한다")
+    void addPostRejectsUnownedTemporaryPost() {
+        UserInfo author = user(1L, "author");
+        PostRequest request = new PostRequest(
+                "new-title",
+                "new-content",
+                15L,
+                "posts/temporary.png",
+                null
+        );
+        when(userInfoRepository.findByProfileId(1L))
+                .thenReturn(Optional.of(author));
+        when(temporaryPostRepository
+                .findByTemporaryIdAndUserInfo_ProfileId(15L, 1L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> postService.addPost(SIGN_USER, request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("유효하지 않은 임시저장글입니다.");
+
+        verify(postRepository, never()).save(any(Post.class));
+        verifyNoInteractions(imageConverter);
+    }
+
+    @Test
     @DisplayName("게시글 작성 사용자가 없으면 등록에 실패한다")
     void addPostThrowsWhenUserDoesNotExist() {
-        PostRequest request = new PostRequest("title", "content", null);
+        PostRequest request = new PostRequest(
+                "title",
+                "content",
+                null,
+                null,
+                null
+        );
         when(userInfoRepository.findByProfileId(1L))
                 .thenReturn(Optional.empty());
 
@@ -456,10 +598,12 @@ class PostServiceTest {
     @DisplayName("작성자는 기존 내용을 이력으로 남기고 게시글을 수정한다")
     void updatePostUpdatesPostForAuthor() {
         Post post = post(10L, user(1L, "author"));
+        ReflectionTestUtils.setField(post, "image", "posts/old.png");
         MultipartFile image = mock(MultipartFile.class);
-        PostRequest request = new PostRequest(
+        PostUpdateRequest request = new PostUpdateRequest(
                 "updated-title",
                 "updated-content",
+                null,
                 image
         );
         when(postRepository.findByPostNum(10L))
@@ -477,16 +621,140 @@ class PostServiceTest {
 
         verify(postEditRepository).save(editCaptor.capture());
         assertThat(editCaptor.getValue().getTitle()).isEqualTo("title-10");
+        assertThat(editCaptor.getValue().getImage()).isEqualTo("posts/old.png");
         assertThat(response.title()).isEqualTo("updated-title");
         assertThat(post.getContent()).isEqualTo("updated-content");
         assertThat(post.getImage()).isEqualTo("posts/updated.png");
     }
 
     @Test
+    @DisplayName("현재 objectKey를 전달하면 기존 게시글 이미지를 유지한다")
+    void updatePostKeepsExistingImage() {
+        Post post = post(10L, user(1L, "author"));
+        ReflectionTestUtils.setField(post, "image", "posts/old.png");
+        PostUpdateRequest request = new PostUpdateRequest(
+                "updated-title",
+                "updated-content",
+                "posts/old.png",
+                null
+        );
+        when(postRepository.findByPostNum(10L))
+                .thenReturn(Optional.of(post));
+
+        postService.updatePost(SIGN_USER, 10L, request);
+
+        assertThat(post.getImage()).isEqualTo("posts/old.png");
+        verifyNoInteractions(imageConverter);
+    }
+
+    @Test
+    @DisplayName("게시글 수정 시 현재 값과 다른 objectKey는 거부한다")
+    void updatePostRejectsMismatchedObjectKey() {
+        Post post = post(10L, user(1L, "author"));
+        ReflectionTestUtils.setField(post, "image", "posts/old.png");
+        PostUpdateRequest request = new PostUpdateRequest(
+                "updated-title",
+                "updated-content",
+                "posts/other.png",
+                null
+        );
+        when(postRepository.findByPostNum(10L))
+                .thenReturn(Optional.of(post));
+
+        assertThatThrownBy(
+                () -> postService.updatePost(SIGN_USER, 10L, request)
+        ).isInstanceOf(BadRequestException.class)
+                .hasMessage("유효하지 않은 objectKey입니다.");
+
+        assertThat(post.getImage()).isEqualTo("posts/old.png");
+        verifyNoInteractions(imageConverter, postEditRepository);
+    }
+
+    @Test
+    @DisplayName("objectKey와 이미지가 없으면 게시글 이미지를 삭제한다")
+    void updatePostDeletesExistingImage() {
+        Post post = post(10L, user(1L, "author"));
+        ReflectionTestUtils.setField(post, "image", "posts/old.png");
+        PostUpdateRequest request = new PostUpdateRequest(
+                "updated-title",
+                "updated-content",
+                null,
+                null
+        );
+        when(postRepository.findByPostNum(10L))
+                .thenReturn(Optional.of(post));
+        ArgumentCaptor<PostEditRecord> editCaptor =
+                ArgumentCaptor.forClass(PostEditRecord.class);
+
+        postService.updatePost(SIGN_USER, 10L, request);
+
+        verify(postEditRepository).save(editCaptor.capture());
+        assertThat(editCaptor.getValue().getImage()).isEqualTo("posts/old.png");
+        assertThat(post.getImage()).isNull();
+        verifyNoInteractions(imageConverter);
+    }
+
+    @Test
+    @DisplayName("objectKey 없이 빈 이미지가 오면 게시글 이미지를 삭제한다")
+    void updatePostDeletesExistingImageForEmptyFile() {
+        Post post = post(10L, user(1L, "author"));
+        ReflectionTestUtils.setField(post, "image", "posts/old.png");
+        MultipartFile emptyImage = mock(MultipartFile.class);
+        when(emptyImage.isEmpty()).thenReturn(true);
+        PostUpdateRequest request = new PostUpdateRequest(
+                "updated-title",
+                "updated-content",
+                null,
+                emptyImage
+        );
+        when(postRepository.findByPostNum(10L))
+                .thenReturn(Optional.of(post));
+
+        postService.updatePost(SIGN_USER, 10L, request);
+
+        assertThat(post.getImage()).isNull();
+        verifyNoInteractions(imageConverter);
+    }
+
+    @Test
+    @DisplayName("게시글 이미지 업로드에 실패하면 기존 값과 수정 이력을 변경하지 않는다")
+    void updatePostDoesNotChangePostWhenImageUploadFails() {
+        Post post = post(10L, user(1L, "author"));
+        ReflectionTestUtils.setField(post, "image", "posts/old.png");
+        MultipartFile image = mock(MultipartFile.class);
+        PostUpdateRequest request = new PostUpdateRequest(
+                "updated-title",
+                "updated-content",
+                null,
+                image
+        );
+        when(postRepository.findByPostNum(10L))
+                .thenReturn(Optional.of(post));
+        when(imageConverter.updatePostImage(image))
+                .thenThrow(new ImageUploadException("upload failed", null));
+
+        assertThatThrownBy(() -> postService.updatePost(
+                SIGN_USER,
+                10L,
+                request
+        )).isInstanceOf(ImageUploadException.class);
+
+        assertThat(post.getTitle()).isEqualTo("title-10");
+        assertThat(post.getContent()).isEqualTo("content-10");
+        assertThat(post.getImage()).isEqualTo("posts/old.png");
+        verifyNoInteractions(postEditRepository);
+    }
+
+    @Test
     @DisplayName("관리자도 다른 사용자의 게시글은 수정할 수 없다")
     void updatePostThrowsWhenAdminIsNotAuthor() {
         Post post = post(10L, user(1L, "author"));
-        PostRequest request = new PostRequest("admin-title", "content", null);
+        PostUpdateRequest request = new PostUpdateRequest(
+                "admin-title",
+                "content",
+                null,
+                null
+        );
         when(postRepository.findByPostNum(10L))
                 .thenReturn(Optional.of(post));
 
@@ -503,7 +771,12 @@ class PostServiceTest {
         Post post = post(10L, user(2L, "author"));
         when(postRepository.findByPostNum(10L))
                 .thenReturn(Optional.of(post));
-        PostRequest request = new PostRequest("title", "content", null);
+        PostUpdateRequest request = new PostUpdateRequest(
+                "title",
+                "content",
+                null,
+                null
+        );
 
         assertThatThrownBy(
                 () -> postService.updatePost(SIGN_USER, 10L, request)
@@ -516,7 +789,12 @@ class PostServiceTest {
     @DisplayName("존재하지 않는 게시글은 수정할 수 없다")
     void updatePostThrowsWhenPostDoesNotExist() {
         when(postRepository.findByPostNum(10L)).thenReturn(Optional.empty());
-        PostRequest request = new PostRequest("title", "content", null);
+        PostUpdateRequest request = new PostUpdateRequest(
+                "title",
+                "content",
+                null,
+                null
+        );
 
         assertThatThrownBy(
                 () -> postService.updatePost(SIGN_USER, 10L, request)
@@ -806,15 +1084,11 @@ class PostServiceTest {
     }
 
     private PostEditRecord editRecord(long editId, Post post) {
-        PostEditRecord editRecord = new PostEditRecord(
-                post,
-                0,
-                "old-title",
-                "old-content",
-                null,
-                WRITE_AT
-        );
+        PostEditRecord editRecord = new PostEditRecord(post);
         ReflectionTestUtils.setField(editRecord, "editId", editId);
+        ReflectionTestUtils.setField(editRecord, "title", "old-title");
+        ReflectionTestUtils.setField(editRecord, "content", "old-content");
+        ReflectionTestUtils.setField(editRecord, "writeAt", WRITE_AT);
         return editRecord;
     }
 

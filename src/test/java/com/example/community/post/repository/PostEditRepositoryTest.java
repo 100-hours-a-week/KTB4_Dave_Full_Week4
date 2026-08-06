@@ -14,8 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-
-import java.time.Instant;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -124,16 +123,19 @@ class PostEditRepositoryTest {
     }
 
     private PostEditRecord saveEditRecord(Post post, int version) {
-        return postEditRepository.save(
-                new PostEditRecord(
-                        post,
-                        version,
-                        "title-" + version,
-                        "content-" + version,
-                        null,
-                        Instant.now()
-                )
+        PostEditRecord editRecord = new PostEditRecord(post);
+        ReflectionTestUtils.setField(editRecord, "version", version);
+        ReflectionTestUtils.setField(
+                editRecord,
+                "title",
+                "title-" + version
         );
+        ReflectionTestUtils.setField(
+                editRecord,
+                "content",
+                "content-" + version
+        );
+        return postEditRepository.save(editRecord);
     }
 
     private Page<PostEditRecord> findEditRecords(long postNum) {

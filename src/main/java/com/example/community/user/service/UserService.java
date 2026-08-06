@@ -21,6 +21,8 @@ import com.example.community.user.repository.SignInfoRepository;
 import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.user.repository.UserLikeRepository;
 import com.example.community.util.ImageConverter;
+import com.example.community.util.ImageUpdateResolver;
+import com.example.community.util.ImageUrlBuilder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,15 +38,19 @@ public class UserService{
     private final UserInfoRepository userInfoRepository;
     private final UserLikeRepository userLikeRepository;
     private final ImageConverter imageConverter;
+    private final ImageUrlBuilder imageUrlBuilder;
     private final PasswordEncoder passwordEncoder;
 
     public UserService(SignInfoRepository signInfoRepository,
                        UserLikeRepository userLikeRepository, UserInfoRepository userInfoRepository,
-                       ImageConverter imageConverter, PasswordEncoder passwordEncoder){
+                       ImageConverter imageConverter,
+                       ImageUrlBuilder imageUrlBuilder,
+                       PasswordEncoder passwordEncoder){
         this.signInfoRepository = signInfoRepository;
         this.userInfoRepository = userInfoRepository;
         this.userLikeRepository = userLikeRepository;
         this.imageConverter = imageConverter;
+        this.imageUrlBuilder = imageUrlBuilder;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -105,12 +111,14 @@ public class UserService{
         if(isExistNickname(userInfoRequest.nickname()) && !userInfoRequest.nickname().equals(userInfo.getNickname())){
             throw new DuplicateException("중복 닉네임 존재");
         }
-        String profileImage = null;
-        if(userInfoRequest.imageFile() != null) {
-            profileImage = imageConverter.updateProfileImage(userInfoRequest.imageFile());
-        }
+        String profileImage = ImageUpdateResolver.resolve(
+                userInfo.getProfileImage(),
+                userInfoRequest.objectKey(),
+                userInfoRequest.imageFile(),
+                imageConverter::updateProfileImage
+        );
         userInfo.update(userInfoRequest.nickname(), profileImage);
-        return UserInfoResponse.from(userInfo);
+        return UserInfoResponse.from(userInfo, imageUrlBuilder);
     }
 
     @Transactional

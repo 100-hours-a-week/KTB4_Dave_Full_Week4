@@ -17,7 +17,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             from Comment c
             where c.post.postNum = :postNum
               and c.depth = 0
-            order by c.commentNum asc
             """)
     Page<Comment> findByPost_postNum(long postNum, Pageable pageable);
 
@@ -26,11 +25,15 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             select c
             from Comment c
             where c.comment.commentNum = :parentNum
-            order by c.commentNum asc
             """)
     Page<Comment> findByParentNum(long parentNum, Pageable pageable);
 
     @EntityGraph(attributePaths = {"userInfo"})
-    @Query("select c from Comment c where c.commentNum = :commentNum")
+    @Query("""
+            select c
+            from Comment c
+            where c.commentNum = :commentNum
+              and c.deletedAt is null
+            """)
     Optional<Comment> findByCommentNum(long commentNum);
 }
