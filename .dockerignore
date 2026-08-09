@@ -8,3 +8,6 @@ build/libs/*
 .env
 .env.*
 *.iml
+
+# Local load-test tooling is never part of the production image build context.
+load-test/

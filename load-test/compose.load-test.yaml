@@ -1,0 +1,70 @@
+services:
+  mysql:
+    image: "mysql:${MYSQL_VERSION:?Set MYSQL_VERSION to the exact RDS MySQL version in load-test/.env}"
+    environment:
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-community_perf}"
+      MYSQL_USER: "${MYSQL_USER:-community_perf}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in load-test/.env}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in load-test/.env}"
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+00:00
+    cpus: "2.0"
+    mem_limit: 2g
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../src/main/resources/db/mysql/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+      - ./mysql/002-seed.sql:/docker-entrypoint-initdb.d/002-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
+    labels:
+      com.example.community.scope: load-test
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: "${MYSQL_DATABASE:-community_perf}"
+      DB_USERNAME: "${MYSQL_USER:-community_perf}"
+      DB_PASSWORD: "${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in load-test/.env}"
+      JWT_SECRET: "${JWT_SECRET:?Set JWT_SECRET in load-test/.env}"
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx128m
+
+      # Do not use real AWS credentials in load tests. Image fields stay empty.
+      AWS_ACCESS_KEY_ID: load-test-disabled
+      AWS_SECRET_ACCESS_KEY: load-test-disabled
+      AWS_SESSION_TOKEN: load-test-disabled
+      AWS_S3_BASE_URL: http://s3-disabled.invalid
+
+      POPULAR_POST_CACHE_ENABLED: "${POPULAR_POST_CACHE_ENABLED:-true}"
+      POPULAR_POST_SCHEDULER_ENABLED: "false"
+      POPULAR_POST_CLEANUP_ENABLED: "false"
+
+      # Suppress SQL/bind logging so console I/O does not dominate the test.
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB: WARN
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_JDBC_CORE: WARN
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: WARN
+      LOGGING_LEVEL_ORG_HIBERNATE_ORM_JDBC_BIND: WARN
+    cpus: "1.0"
+    mem_limit: 256m
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    labels:
+      com.example.community.scope: load-test
+
+volumes:
+  mysql-data:
+    labels:
+      com.example.community.scope: load-test
