@@ -308,7 +308,7 @@ foreach ($existingMetadataFile in $existingMetadataFiles) {
     if ($runMetadata.variant -in @('B', 'C') -and
         $existingMetadata.variant -in @('B', 'C') -and
         $existingMetadata.commit -ne $runMetadata.commit) {
-        throw "Variants B and C must use the same develop commit. Existing: $($existingMetadata.commit), current: $($runMetadata.commit)"
+        throw "Variants B and C must use the same develop2 commit. Existing: $($existingMetadata.commit), current: $($runMetadata.commit)"
     }
 
     if ($existingMetadata.k6Version -and $existingMetadata.k6Version -ne $k6Version) {

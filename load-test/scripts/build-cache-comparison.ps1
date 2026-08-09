@@ -72,7 +72,7 @@ $bCommits = @($cacheRows | Where-Object { $_.variant -eq 'B' } | Select-Object -
 $cCommits = @($cacheRows | Where-Object { $_.variant -eq 'C' } | Select-Object -ExpandProperty commit -Unique)
 if ($bCommits.Count -gt 1 -or $cCommits.Count -gt 1 -or
     ($bCommits.Count -eq 1 -and $cCommits.Count -eq 1 -and $bCommits[0] -ne $cCommits[0])) {
-    throw 'Variants B and C must contain results from exactly the same develop commit.'
+    throw 'Variants B and C must contain results from exactly the same develop2 commit.'
 }
 
 $groupedRows = $cacheRows | Group-Object cache_path, requested_rps

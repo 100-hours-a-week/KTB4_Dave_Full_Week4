@@ -11,14 +11,14 @@
 | 구분 | 브랜치 | 캐시 | 비교 의미 |
 | --- | --- | --- | --- |
 | A | `main` | 캐시 코드 없음 | 기존 기준선 |
-| B | `develop` | OFF | 리팩터링/쿼리 변경 기준선 |
-| C | `develop` | ON | 캐시 적용 결과 |
+| B | `develop2` | OFF | 리팩터링/쿼리 변경 기준선 |
+| C | `develop2` | ON | 캐시 적용 결과 |
 
 - B → C: 같은 코드와 커밋에서 캐시 설정만 바뀌므로 캐시의 순효과다.
 - A → B: 캐시 외에 포함된 리팩터링과 쿼리 변경의 영향이다.
 - A → C: `main` 대비 최종 변경 전체의 효과다.
 
-`lifecycle.ps1`은 A를 `main`, B/C를 `develop`에서만 시작할 수 있게 하고,
+`lifecycle.ps1`은 A를 `main`, B/C를 `develop2`에서만 시작할 수 있게 하고,
 B와 C가 서로 다른 커밋이면 결과 집계를 거부한다. 부하 테스트 설정 커밋은
 두 브랜치에 동일하게 적용한 뒤 비교해야 한다. 실행기는 테스트 스크립트와
 seed 파일의 해시도 비교해 서로 다르면 중단한다. 결과 디렉터리는 Git에서
@@ -76,16 +76,16 @@ git switch main
 .\load-test\scripts\lifecycle.ps1 -Action down
 ```
 
-### B: develop, 캐시 OFF
+### B: develop2, 캐시 OFF
 
 ```powershell
-git switch develop
+git switch develop2
 .\load-test\scripts\lifecycle.ps1 -Action up -Variant B
 .\load-test\scripts\run-suite.ps1 -ComparisonId cache-v1 -Suite All
 .\load-test\scripts\lifecycle.ps1 -Action down
 ```
 
-### C: 같은 develop 커밋, 캐시 ON
+### C: 같은 develop2 커밋, 캐시 ON
 
 B 실행 뒤 코드나 커밋을 바꾸지 않는다.
 

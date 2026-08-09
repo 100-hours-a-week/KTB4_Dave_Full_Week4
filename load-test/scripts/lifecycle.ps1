@@ -92,7 +92,7 @@ Assert-SafeProjectName $projectName
 switch ($Action) {
     'up' {
         if ([string]::IsNullOrWhiteSpace($Variant)) {
-            throw 'Variant is required for startup. Use -Variant A (main), B (develop/cache off), or C (develop/cache on).'
+            throw 'Variant is required for startup. Use -Variant A (main), B (develop2/cache off), or C (develop2/cache on).'
         }
 
         if (Test-Path -LiteralPath $currentRunFile -PathType Leaf) {
@@ -118,7 +118,7 @@ switch ($Action) {
             throw 'The working tree is dirty. Commit the load-test harness before running a comparison, or pass -AllowDirty for a non-comparable diagnostic run.'
         }
 
-        $expectedBranch = if ($Variant -eq 'A') { 'main' } else { 'develop' }
+        $expectedBranch = if ($Variant -eq 'A') { 'main' } else { 'develop2' }
         if ($gitBranch -ne $expectedBranch) {
             throw "Variant $Variant must run from branch '$expectedBranch', but the current branch is '$gitBranch'."
         }
