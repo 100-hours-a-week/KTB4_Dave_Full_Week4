@@ -2,6 +2,7 @@ package com.example.community.util;
 
 import com.example.community.handler.exception.ImageUploadException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,9 +14,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -40,6 +44,13 @@ class ImageConverterTest {
     void setUp() {
         imageConverter = new ImageConverter(s3Client);
         ReflectionTestUtils.setField(imageConverter, "bucket", BUCKET);
+    }
+
+    @AfterEach
+    void clearTransactionSynchronization() {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     @ParameterizedTest
@@ -145,6 +156,38 @@ class ImageConverterTest {
                 .hasMessage("이미지 파일을 읽을 수 없습니다.")
                 .hasCause(cause);
         verifyNoInteractions(s3Client);
+    }
+
+    @Test
+    @DisplayName("업로드 뒤 DB 트랜잭션이 롤백되면 새 S3 객체를 삭제한다")
+    void updateImageDeletesUploadedObjectOnRollback() {
+        TransactionSynchronizationManager.initSynchronization();
+        MockMultipartFile file = imageFile("image.png");
+
+        String objectKey = imageConverter.updatePostImage(file);
+        TransactionSynchronizationManager.getSynchronizations()
+                .forEach(synchronization -> synchronization.afterCompletion(
+                        TransactionSynchronization.STATUS_ROLLED_BACK
+                ));
+
+        ArgumentCaptor<DeleteObjectRequest> requestCaptor =
+                ArgumentCaptor.forClass(DeleteObjectRequest.class);
+        verify(s3Client).deleteObject(requestCaptor.capture());
+        assertThat(requestCaptor.getValue().bucket()).isEqualTo(BUCKET);
+        assertThat(requestCaptor.getValue().key()).isEqualTo(objectKey);
+    }
+
+    @Test
+    @DisplayName("기존 이미지 삭제는 DB 커밋이 끝난 뒤 실행한다")
+    void deleteAfterCommitWaitsForTransactionCommit() {
+        TransactionSynchronizationManager.initSynchronization();
+
+        imageConverter.deleteAfterCommit("posts/old.png");
+
+        verify(s3Client, never()).deleteObject(any(DeleteObjectRequest.class));
+        TransactionSynchronizationManager.getSynchronizations()
+                .forEach(TransactionSynchronization::afterCommit);
+        verify(s3Client).deleteObject(any(DeleteObjectRequest.class));
     }
 
     private MockMultipartFile imageFile(String originalFilename) {

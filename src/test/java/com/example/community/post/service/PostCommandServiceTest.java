@@ -305,6 +305,7 @@ class PostCommandServiceTest {
         assertThat(post.getContent()).isEqualTo("updated-content");
         assertThat(post.getImage()).isEqualTo("posts/updated.png");
         verify(eventPublisher).publishEvent(new PostChangedEvent.Updated(10L));
+        verify(imageConverter).deleteAfterCommit("posts/old.png");
     }
 
     @Test
@@ -371,7 +372,7 @@ class PostCommandServiceTest {
         verify(postEditRepository).save(editCaptor.capture());
         assertThat(editCaptor.getValue().getImage()).isEqualTo("posts/old.png");
         assertThat(post.getImage()).isNull();
-        verifyNoInteractions(imageConverter);
+        verify(imageConverter).deleteAfterCommit("posts/old.png");
     }
 
     @Test
@@ -393,7 +394,7 @@ class PostCommandServiceTest {
         postCommandService.updatePost(SIGN_USER, 10L, request);
 
         assertThat(post.getImage()).isNull();
-        verifyNoInteractions(imageConverter);
+        verify(imageConverter).deleteAfterCommit("posts/old.png");
     }
 
     @Test

@@ -2,11 +2,15 @@ package com.example.community.util;
 
 import com.example.community.handler.exception.ImageUploadException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -15,6 +19,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ImageConverter {
 
     private static final String POST_PREFIX = "posts/";
@@ -57,7 +62,56 @@ public class ImageConverter {
             throw new ImageUploadException("이미지 파일을 읽을 수 없습니다.", exception);
         }
 
+        deleteOnTransactionRollback(objectKey);
         return objectKey;
+    }
+
+    public void deleteAfterCommit(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) {
+            return;
+        }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            deleteQuietly(objectKey);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        deleteQuietly(objectKey);
+                    }
+                }
+        );
+    }
+
+    private void deleteOnTransactionRollback(String objectKey) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (status == STATUS_ROLLED_BACK) {
+                            deleteQuietly(objectKey);
+                        }
+                    }
+                }
+        );
+    }
+
+    private void deleteQuietly(String objectKey) {
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(objectKey)
+                    .build());
+        } catch (RuntimeException exception) {
+            log.error("S3 이미지 정리에 실패했습니다: objectKey={}", objectKey,
+                    exception);
+        }
     }
 
     private String extractExtension(String originalFilename) {

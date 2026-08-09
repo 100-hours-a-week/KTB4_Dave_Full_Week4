@@ -70,6 +70,24 @@ class PopularCacheInvalidationTest {
     }
 
     @Test
+    @DisplayName("댓글 수정은 해당 댓글 캐시만 무효화한다")
+    void commentUpdatedInvalidatesOnlyComment() {
+        listener.onCommentChanged(new CommentChangedEvent.Updated(30L));
+
+        verify(commentStore).invalidateComment(30L);
+        verifyNoInteractions(snapshotService, detailStore, snapshotStore);
+    }
+
+    @Test
+    @DisplayName("최상위 댓글 삭제는 해당 댓글 캐시만 무효화한다")
+    void rootCommentDeletedInvalidatesOnlyComment() {
+        listener.onCommentChanged(new CommentChangedEvent.Deleted(30L, null));
+
+        verify(commentStore).invalidateComment(30L);
+        verifyNoInteractions(snapshotService, detailStore, snapshotStore);
+    }
+
+    @Test
     @DisplayName("대댓글 삭제는 해당 댓글과 부모 댓글 캐시를 무효화한다")
     void deletedReplyInvalidatesReplyAndParent() {
         listener.onCommentChanged(new CommentChangedEvent.Deleted(30L, 20L));

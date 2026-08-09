@@ -1,11 +1,13 @@
 package com.example.community.filter;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -95,6 +97,20 @@ class RateLimitFilterTest {
         );
 
         verify(filterChain, times(11)).doFilter(any(), any());
+    }
+
+    @Test
+    @DisplayName("IP 버킷 캐시는 최대 크기와 유휴 만료 정책을 가진다")
+    void bucketCacheHasBoundedExpirationPolicy() {
+        @SuppressWarnings("unchecked")
+        Cache<String, ?> bucketCache = (Cache<String, ?>)
+                ReflectionTestUtils.getField(rateLimitFilter, "bucketCache");
+
+        assertThat(bucketCache).isNotNull();
+        assertThat(bucketCache.policy().eviction()).isPresent();
+        assertThat(bucketCache.policy().eviction().orElseThrow().getMaximum())
+                .isEqualTo(100_000L);
+        assertThat(bucketCache.policy().expireAfterAccess()).isPresent();
     }
 
     private MockHttpServletRequest request(String uri, String remoteAddress) {

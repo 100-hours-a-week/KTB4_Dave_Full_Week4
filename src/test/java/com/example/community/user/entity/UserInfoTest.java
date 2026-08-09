@@ -32,4 +32,44 @@ class UserInfoTest {
         assertThat(userInfo.getProfileImage()).isNull();
         assertThat(signInfo.isDeleted()).isTrue();
     }
+
+    @Test
+    @DisplayName("같은 식별자의 프로필은 동등하고 nullable 필드에 안전하다")
+    void equalityUsesPersistedIdentifier() {
+        SignInfo signInfo = new SignInfo(
+                "user@example.com",
+                "encoded-password"
+        );
+        UserInfo first = new UserInfo(
+                1L,
+                signInfo,
+                "first",
+                null,
+                UserRole.USER,
+                null
+        );
+        UserInfo second = new UserInfo(
+                1L,
+                signInfo,
+                "second",
+                null,
+                UserRole.USER,
+                null
+        );
+
+        assertThat(first).isEqualTo(second);
+        assertThat(first.hashCode()).isEqualTo(second.hashCode());
+    }
+
+    @Test
+    @DisplayName("아직 저장되지 않은 서로 다른 프로필은 동등하지 않다")
+    void transientEntitiesAreNotEqual() {
+        SignInfo signInfo = new SignInfo(
+                "user@example.com",
+                "encoded-password"
+        );
+
+        assertThat(new UserInfo(signInfo, "nickname", null))
+                .isNotEqualTo(new UserInfo(signInfo, "nickname", null));
+    }
 }

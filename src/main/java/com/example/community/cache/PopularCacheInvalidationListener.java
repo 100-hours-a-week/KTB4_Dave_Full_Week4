@@ -23,23 +23,27 @@ public class PopularCacheInvalidationListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onPostChanged(PostChangedEvent event) {
         snapshotService.invalidateIfContains(event.postNum());
-        if (event instanceof PostChangedEvent.Updated) {
-            detailStore.invalidateBody(event.postNum());
-            return;
+        switch (event) {
+            case PostChangedEvent.Updated ignored ->
+                    detailStore.invalidateBody(event.postNum());
+            case PostChangedEvent.Removed ignored -> {
+                detailStore.invalidatePost(event.postNum());
+                commentStore.invalidatePost(event.postNum());
+            }
         }
-        detailStore.invalidatePost(event.postNum());
-        commentStore.invalidatePost(event.postNum());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCommentChanged(CommentChangedEvent event) {
-        if (event instanceof CommentChangedEvent.Created created) {
-            invalidateCreatedComment(created);
-        } else if (event instanceof CommentChangedEvent.Updated(long commentNum)) {
-            commentStore.invalidateComment(commentNum);
-        } else if (event instanceof CommentChangedEvent.Deleted(long commentNum, Long parentNum)) {
-            commentStore.invalidateComment(commentNum);
-            invalidateParentIfPresent(parentNum);
+        switch (event) {
+            case CommentChangedEvent.Created created ->
+                    invalidateCreatedComment(created);
+            case CommentChangedEvent.Updated updated ->
+                    commentStore.invalidateComment(updated.commentNum());
+            case CommentChangedEvent.Deleted deleted -> {
+                commentStore.invalidateComment(deleted.commentNum());
+                invalidateParentIfPresent(deleted.parentNum());
+            }
         }
     }
 

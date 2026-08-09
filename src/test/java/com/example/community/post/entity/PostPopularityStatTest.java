@@ -90,5 +90,18 @@ class PostPopularityStatTest {
         assertThatThrownBy(() -> stat.updateRollingCounts(1, 0, 3))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("인기글 조회수 집계 결과는 음수가 될 수 없습니다.");
+        assertThat(stat.getViewCount5m()).isZero();
+        assertThat(stat.getViewCount30m()).isEqualTo(10);
+        assertThat(stat.getViewCount60m()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("차감 결과가 음수가 되는 롤링 갱신을 사전에 감지한다")
+    void detectsInvalidRollingCountsBeforeMutation() {
+        stat.initializeCounts(2, 3, 4);
+
+        assertThat(stat.canUpdateRollingCounts(1, 5, 0)).isFalse();
+        assertThat(stat.canUpdateRollingCounts(1, 0, 6)).isFalse();
+        assertThat(stat.canUpdateRollingCounts(1, 4, 5)).isTrue();
     }
 }

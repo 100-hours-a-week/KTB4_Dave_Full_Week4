@@ -136,6 +136,22 @@ class JWTUtilTest {
     }
 
     @Test
+    @DisplayName("만료된 리프레시 토큰의 타입 판별은 만료 예외를 던진다")
+    void refreshTokenTypeCheckRejectsExpiredToken() {
+        JWTUtil expiredTokenUtil = new JWTUtil(
+                SECRET,
+                ACCESS_EXPIRATION,
+                -1L
+        );
+        String expiredRefreshToken =
+                expiredTokenUtil.generateRefreshToken(1L);
+
+        assertThatThrownBy(() ->
+                expiredTokenUtil.isRefreshToken(expiredRefreshToken)
+        ).isInstanceOf(ExpiredJwtException.class);
+    }
+
+    @Test
     @DisplayName("유효하고 만료되지 않은 토큰은 만료 상태가 아니다")
     void isTokenExpiredReturnsFalseForValidToken() {
         String token = jwtUtil.generateAccessToken(1L, 2L, UserRole.USER);

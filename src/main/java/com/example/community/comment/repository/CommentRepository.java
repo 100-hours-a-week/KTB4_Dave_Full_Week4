@@ -99,4 +99,10 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
               and c.deletedAt is null
             """)
     Optional<Comment> findByCommentNum(long commentNum);
+
+    @EntityGraph(attributePaths = {"userInfo"})
+    Optional<Comment> findByCommentNumAndPost_PostNumAndDeletedAtIsNull(
+            long commentNum,
+            long postNum
+    );
 }

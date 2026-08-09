@@ -6,6 +6,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.time.Instant;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -87,6 +89,35 @@ class SignInfoTest {
 
         assertThat(signInfo.isDeleted()).isTrue();
         assertThat(signInfo.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("같은 식별자의 회원 정보는 동등하고 같은 해시 코드를 가진다")
+    void equalityUsesPersistedIdentifier() {
+        SignInfo first = new SignInfo(
+                1L,
+                "first@example.com",
+                "first-password",
+                null,
+                Instant.parse("2026-08-01T00:00:00Z")
+        );
+        SignInfo second = new SignInfo(
+                1L,
+                "second@example.com",
+                "second-password",
+                null,
+                Instant.parse("2026-08-02T00:00:00Z")
+        );
+
+        assertThat(first).isEqualTo(second);
+        assertThat(first.hashCode()).isEqualTo(second.hashCode());
+    }
+
+    @Test
+    @DisplayName("아직 저장되지 않은 서로 다른 회원 정보는 동등하지 않다")
+    void transientEntitiesAreNotEqual() {
+        assertThat(new SignInfo("user@example.com", "password"))
+                .isNotEqualTo(new SignInfo("user@example.com", "password"));
     }
 
     private SignInfo signInfo() {

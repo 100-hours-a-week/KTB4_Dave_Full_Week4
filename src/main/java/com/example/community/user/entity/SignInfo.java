@@ -73,12 +73,19 @@ public class SignInfo {
         return deletedAt != null;
     }
 
-    public boolean equals(SignInfo signInfo){
-        if(!this.userNum.equals(signInfo.getUserNum())) return false;
-        if(!this.email.equals(signInfo.getEmail())) return false;
-        if(!this.password.equals(signInfo.getPassword())) return false;
-        if(!this.deletedAt.equals(signInfo.getDeletedAt())) return false;
-        if(!this.lastLogin.equals(signInfo.getLastLogin())) return false;
-        return true;
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (!(object instanceof SignInfo signInfo)) {
+            return false;
+        }
+        return userNum != null && userNum.equals(signInfo.getUserNum());
+    }
+
+    @Override
+    public int hashCode() {
+        return SignInfo.class.hashCode();
     }
 }
