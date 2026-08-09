@@ -14,6 +14,8 @@ import com.example.community.user.entity.UserRole;
 import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.util.ImageUrlBuilder;
 import com.example.community.util.JWTUtil;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -92,15 +94,15 @@ class AuthServiceTest {
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("refresh토큰이 아닙니다.");
 
-        verify(jwtUtil, never()).isTokenExpired(OLD_REFRESH_TOKEN);
         verifyNoInteractions(refreshTokenService, userInfoRepository);
     }
 
     @Test
     @DisplayName("만료된 리프레시 토큰이면 예외가 발생한다")
     void refreshFailsWhenTokenIsExpired() {
-        when(jwtUtil.isRefreshToken(OLD_REFRESH_TOKEN)).thenReturn(true);
-        when(jwtUtil.isTokenExpired(OLD_REFRESH_TOKEN)).thenReturn(true);
+        when(jwtUtil.isRefreshToken(OLD_REFRESH_TOKEN)).thenThrow(
+                new ExpiredJwtException(null, null, "expired")
+        );
 
         assertThatThrownBy(() -> authService.refresh(OLD_REFRESH_TOKEN))
                 .isInstanceOf(UnAuthorizedException.class)
@@ -110,10 +112,23 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("형식이 잘못된 리프레시 토큰이면 잘못된 요청으로 처리한다")
+    void refreshFailsWhenTokenIsMalformed() {
+        when(jwtUtil.isRefreshToken(OLD_REFRESH_TOKEN)).thenThrow(
+                new MalformedJwtException("malformed")
+        );
+
+        assertThatThrownBy(() -> authService.refresh(OLD_REFRESH_TOKEN))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("유효하지 않은 refresh토큰입니다.");
+
+        verifyNoInteractions(refreshTokenService, userInfoRepository);
+    }
+
+    @Test
     @DisplayName("DB에 저장된 리프레시 토큰이 없으면 예외를 그대로 전달한다")
     void refreshFailsWhenStoredTokenDoesNotExist() {
         when(jwtUtil.isRefreshToken(OLD_REFRESH_TOKEN)).thenReturn(true);
-        when(jwtUtil.isTokenExpired(OLD_REFRESH_TOKEN)).thenReturn(false);
         when(refreshTokenService.getRefreshToken(OLD_REFRESH_TOKEN))
                 .thenThrow(new NotFoundException("유효하지 않은 리프레시 토큰"));
 
@@ -247,7 +262,6 @@ class AuthServiceTest {
 
     private void stubValidRefreshToken(SignInfo tokenOwner) {
         when(jwtUtil.isRefreshToken(OLD_REFRESH_TOKEN)).thenReturn(true);
-        when(jwtUtil.isTokenExpired(OLD_REFRESH_TOKEN)).thenReturn(false);
         when(refreshTokenService.getRefreshToken(OLD_REFRESH_TOKEN))
                 .thenReturn(new RefreshTokenDTO(
                         10L,

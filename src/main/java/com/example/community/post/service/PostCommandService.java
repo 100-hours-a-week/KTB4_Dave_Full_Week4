@@ -54,11 +54,16 @@ public class PostCommandService {
             PostUpdateRequest request
     ) {
         Post post = findOwnedPost(signUserInfo, postNum);
+        String previousImage = post.getImage();
         String image = postImageResolver.resolveForUpdate(post, request);
         recordPostBeforeUpdate(post);
         post.update(request.title(), request.content(), image);
         postRepository.save(post);
         eventPublisher.publishEvent(new PostChangedEvent.Updated(postNum));
+        postImageResolver.deleteReplacedImageAfterCommit(
+                previousImage,
+                image
+        );
         return PostResponse.from(post, imageUrlBuilder);
     }
 
@@ -67,6 +72,10 @@ public class PostCommandService {
         Post post = findDeletablePost(signUserInfo, postNum);
         post.delete();
         eventPublisher.publishEvent(new PostChangedEvent.Removed(postNum));
+        postImageResolver.deleteReplacedImageAfterCommit(
+                post.getImage(),
+                null
+        );
     }
 
     private Post findOwnedPost(SignUserInfo signUserInfo, long postNum) {

@@ -57,7 +57,7 @@ public class CommentCommandService {
     ) {
         UserInfo userInfo = findUserInfo(signUserInfo.profileId());
         Post post = findPost(postNum);
-        Comment parent = findComment(request.parentNum());
+        Comment parent = findCommentInPost(request.parentNum(), postNum);
         Comment comment = new Comment(
                 post,
                 parent,
@@ -128,6 +128,17 @@ public class CommentCommandService {
 
     private Comment findComment(long commentNum) {
         return commentRepository.findByCommentNum(commentNum)
+                .orElseThrow(() ->
+                        new NotFoundException("존재하지 않는 댓글")
+                );
+    }
+
+    private Comment findCommentInPost(long commentNum, long postNum) {
+        return commentRepository
+                .findByCommentNumAndPost_PostNumAndDeletedAtIsNull(
+                        commentNum,
+                        postNum
+                )
                 .orElseThrow(() ->
                         new NotFoundException("존재하지 않는 댓글")
                 );

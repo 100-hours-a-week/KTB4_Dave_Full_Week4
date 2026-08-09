@@ -10,6 +10,7 @@ import com.example.community.comment.entity.CommentEditRecord;
 import com.example.community.comment.event.CommentChangedEvent;
 import com.example.community.comment.repository.CommentEditRepository;
 import com.example.community.comment.repository.CommentRepository;
+import com.example.community.handler.exception.BadRequestException;
 import com.example.community.handler.exception.ForbiddenException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.post.entity.Post;
@@ -175,7 +176,8 @@ class CommentCommandServiceTest {
                 .thenReturn(Optional.of(author));
         when(postRepository.findByPostNum(10L))
                 .thenReturn(Optional.of(post));
-        when(commentRepository.findByCommentNum(20L))
+        when(commentRepository
+                .findByCommentNumAndPost_PostNumAndDeletedAtIsNull(20L, 10L))
                 .thenReturn(Optional.of(parent));
         assignCommentNumWhenSaved(21L);
 
@@ -207,7 +209,8 @@ class CommentCommandServiceTest {
                 .thenReturn(Optional.of(author));
         when(postRepository.findByPostNum(10L))
                 .thenReturn(Optional.of(post));
-        when(commentRepository.findByCommentNum(20L))
+        when(commentRepository
+                .findByCommentNumAndPost_PostNumAndDeletedAtIsNull(20L, 10L))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commentCommandService.addCommentToComment(
@@ -219,6 +222,35 @@ class CommentCommandServiceTest {
 
         verify(commentRepository, never()).save(any(Comment.class));
         verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    @DisplayName("다른 게시글의 댓글에는 대댓글을 등록할 수 없다")
+    void addCommentToCommentRejectsParentFromDifferentPost() {
+        UserInfo author = user(1L, "author");
+        Post requestedPost = post(10L, author);
+        Post parentPost = post(11L, author);
+        Comment parent = comment(20L, parentPost, author, "parent");
+        when(userInfoRepository.findByProfileId(1L))
+                .thenReturn(Optional.of(author));
+        when(postRepository.findByPostNum(10L))
+                .thenReturn(Optional.of(requestedPost));
+        when(commentRepository
+                .findByCommentNumAndPost_PostNumAndDeletedAtIsNull(20L, 10L))
+                .thenReturn(Optional.of(parent));
+
+        assertThatThrownBy(() -> commentCommandService.addCommentToComment(
+                AUTHOR,
+                10L,
+                new CommentToCommentRequest("child", 20L)
+        )).isInstanceOf(BadRequestException.class)
+                .hasMessage(
+                        "부모 댓글과 같은 게시글에만 답글을 작성할 수 있습니다."
+                );
+
+        verify(commentRepository, never()).save(any(Comment.class));
+        verify(postRepository, never()).save(any(Post.class));
+        verifyNoInteractions(eventPublisher);
     }
 
 

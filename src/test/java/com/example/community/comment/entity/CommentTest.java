@@ -86,6 +86,24 @@ class CommentTest {
     }
 
     @Test
+    @DisplayName("부모 댓글과 다른 게시글에는 답글을 생성할 수 없다")
+    void childCommentRejectsParentFromDifferentPost() {
+        Post otherPost = new Post(userInfo, "other", "content", null);
+        Comment parent = new Comment(otherPost, userInfo, "parent");
+
+        assertThatThrownBy(() ->
+                new Comment(post, parent, userInfo, "child")
+        )
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage(
+                        "부모 댓글과 같은 게시글에만 답글을 작성할 수 있습니다."
+                );
+
+        assertThat(parent.getChildCount()).isZero();
+        assertThat(post.getCommentCount()).isZero();
+    }
+
+    @Test
     @DisplayName("깊이 3 댓글에는 답글을 생성할 수 없다")
     void childCommentRejectsReplyBeyondMaximumDepth() {
         Comment depth0 = new Comment(post, userInfo, "depth-0");

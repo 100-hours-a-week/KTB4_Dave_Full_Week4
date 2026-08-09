@@ -46,6 +46,16 @@ public class PostImageResolver {
         );
     }
 
+    void deleteReplacedImageAfterCommit(
+            String previousObjectKey,
+            String currentObjectKey
+    ) {
+        if (previousObjectKey != null
+                && !Objects.equals(previousObjectKey, currentObjectKey)) {
+            imageConverter.deleteAfterCommit(previousObjectKey);
+        }
+    }
+
     private TemporaryPost findTemporaryPostForPublish(
             SignUserInfo signUserInfo,
             Long temporaryPostId

@@ -69,13 +69,19 @@ public class UserInfo {
         return deletedAt != null;
     }
 
-    public boolean equals(UserInfo userInfo){
-        if(!this.profileId.equals(userInfo.getProfileId())) return false;
-        if(!this.signInfo.equals(userInfo.getSignInfo())) return false;
-        if(!this.nickname.equals(userInfo.getNickname())) return false;
-        if(!this.profileImage.equals(userInfo.getProfileImage())) return false;
-        if(!this.role.equals(userInfo.getRole())) return false;
-        if(!this.deletedAt.equals(userInfo.getDeletedAt())) return false;
-        return true;
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (!(object instanceof UserInfo userInfo)) {
+            return false;
+        }
+        return profileId != null && profileId.equals(userInfo.getProfileId());
+    }
+
+    @Override
+    public int hashCode() {
+        return UserInfo.class.hashCode();
     }
 }

@@ -189,6 +189,24 @@ class CommentRepositoryTest {
     }
 
     @Test
+    @DisplayName("부모 댓글 조회는 요청한 게시글에 속한 댓글만 반환한다")
+    void findParentCommentRequiresMatchingPost() {
+        Comment parent = saveRootComment(post, "parent");
+        Post otherPost = savePost("other-post");
+
+        assertThat(commentRepository
+                .findByCommentNumAndPost_PostNumAndDeletedAtIsNull(
+                        parent.getCommentNum(),
+                        post.getPostNum()
+                )).contains(parent);
+        assertThat(commentRepository
+                .findByCommentNumAndPost_PostNumAndDeletedAtIsNull(
+                        parent.getCommentNum(),
+                        otherPost.getPostNum()
+                )).isEmpty();
+    }
+
+    @Test
     @DisplayName("캐시용 첫 페이지 projection은 최상위 댓글과 페이지 정보를 반환한다")
     void findFirstPageCacheValuesReturnsRootComments() {
         Comment first = saveRootComment(post, "first");

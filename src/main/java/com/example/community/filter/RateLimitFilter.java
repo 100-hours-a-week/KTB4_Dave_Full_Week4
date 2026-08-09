@@ -1,5 +1,7 @@
 package com.example.community.filter;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,13 +12,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
     // IP별로 Bucket 관리 (메모리 기반)
-    private final Map<String, Bucket> bucketCache = new ConcurrentHashMap<>();
+    private static final int MAXIMUM_IP_BUCKETS = 100_000;
+    private static final Duration BUCKET_IDLE_EXPIRATION =
+            Duration.ofMinutes(10);
+
+    private final Cache<String, Bucket> bucketCache = Caffeine.newBuilder()
+            .maximumSize(MAXIMUM_IP_BUCKETS)
+            .expireAfterAccess(BUCKET_IDLE_EXPIRATION)
+            .build();
     //RateLimit 적용 대상 API 목록
     private static final String[] PROTECTED_PATHS = {
       "/users/email"
@@ -27,7 +34,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         if(shouldRateLimit(requestURI)){
             String ip = getIP(request);
-            Bucket bucket = bucketCache.computeIfAbsent(ip, key -> createBucket());
+            Bucket bucket = bucketCache.get(ip, key -> createBucket());
             if (bucket.tryConsume(1)) {
                 filterChain.doFilter(request, response);
             } else {

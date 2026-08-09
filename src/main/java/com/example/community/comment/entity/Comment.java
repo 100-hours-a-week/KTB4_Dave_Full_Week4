@@ -56,6 +56,13 @@ public class Comment {
         if(post == null || userInfo == null || comment == null || content.isBlank()){
             throw new IllegalArgumentException("필수 인자가 비어있습니다.");
         }
+        if (comment.getPost() != post
+                && (post.getPostNum() == null
+                || !post.getPostNum().equals(comment.getPost().getPostNum()))) {
+            throw new BadRequestException(
+                    "부모 댓글과 같은 게시글에만 답글을 작성할 수 있습니다."
+            );
+        }
         if (comment.getDepth() >= 3) {
             throw new BadRequestException("답글을 달 수 없는 댓글입니다.");
         }

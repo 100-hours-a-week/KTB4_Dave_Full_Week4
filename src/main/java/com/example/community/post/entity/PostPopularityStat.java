@@ -53,16 +53,27 @@ public class PostPopularityStat {
             long expired30MinuteCount,
             long expired60MinuteCount
     ) {
-        this.viewCount5m = newBucketCount;
-        this.viewCount30m = subtractExpired(
+        long nextViewCount30m = subtractExpired(
                 viewCount30m + newBucketCount,
                 expired30MinuteCount
         );
-        this.viewCount60m = subtractExpired(
+        long nextViewCount60m = subtractExpired(
                 viewCount60m + newBucketCount,
                 expired60MinuteCount
         );
+        this.viewCount5m = newBucketCount;
+        this.viewCount30m = nextViewCount30m;
+        this.viewCount60m = nextViewCount60m;
         updatePopularityScore();
+    }
+
+    public boolean canUpdateRollingCounts(
+            long newBucketCount,
+            long expired30MinuteCount,
+            long expired60MinuteCount
+    ) {
+        return viewCount30m + newBucketCount >= expired30MinuteCount
+                && viewCount60m + newBucketCount >= expired60MinuteCount;
     }
 
     public void initializeCounts(

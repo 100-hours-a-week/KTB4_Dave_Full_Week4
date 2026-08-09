@@ -13,6 +13,8 @@ import com.example.community.user.entity.UserInfo;
 import com.example.community.user.repository.UserInfoRepository;
 import com.example.community.util.ImageUrlBuilder;
 import com.example.community.util.JWTUtil;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,12 +52,7 @@ public class AuthService {
 
     @Transactional
     public RefreshResponse refresh(String refreshToken){
-        if(!jwtUtil.isRefreshToken(refreshToken)){
-            throw new BadRequestException("refresh토큰이 아닙니다.");
-        }
-        if(jwtUtil.isTokenExpired(refreshToken)){
-            throw new UnAuthorizedException("로그인이 필요합니다.");
-        }
+        validateRefreshToken(refreshToken);
         RefreshTokenDTO refresh = refreshTokenService.getRefreshToken(refreshToken);
         SignInfo signInfo = refresh.signInfo();
 
@@ -76,6 +73,18 @@ public class AuthService {
                 signInfo.getUserNum()
         );
         return new RefreshResponse(access, newRefresh);
+    }
+
+    private void validateRefreshToken(String refreshToken) {
+        try {
+            if (!jwtUtil.isRefreshToken(refreshToken)) {
+                throw new BadRequestException("refresh토큰이 아닙니다.");
+            }
+        } catch (ExpiredJwtException exception) {
+            throw new UnAuthorizedException("로그인이 필요합니다.");
+        } catch (JwtException | IllegalArgumentException exception) {
+            throw new BadRequestException("유효하지 않은 refresh토큰입니다.");
+        }
     }
 
     private String createAndStoreRefreshToken(long userNum) {
