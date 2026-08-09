@@ -32,7 +32,7 @@ public class PostQueryService {
                 PostSortPolicy.forPosts(sort)
         );
         Page<Post> posts = postRepository.findPostByPage(pageable);
-        return PostPageResponse.from(posts);
+        return PostPageResponse.from(posts, imageUrlBuilder);
     }
 
     public PostDetailResponse getPost(
@@ -67,7 +67,7 @@ public class PostQueryService {
                 signUserInfo.profileId(),
                 pageable
         );
-        return PostPageResponse.from(posts);
+        return PostPageResponse.from(posts, imageUrlBuilder);
     }
 
     @Transactional(readOnly = true)

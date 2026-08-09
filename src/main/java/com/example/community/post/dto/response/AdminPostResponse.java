@@ -28,7 +28,7 @@ public record AdminPostResponse(
         return new AdminPostResponse(
                 post.getPostNum(),
                 post.getUserInfo().getNickname(),
-                post.getUserInfo().getProfileImage(),
+                imageUrlBuilder.build(post.getUserInfo().getProfileImage()),
                 post.getTitle(),
                 post.getContent(),
                 imageUrlBuilder.build(post.getImage()),

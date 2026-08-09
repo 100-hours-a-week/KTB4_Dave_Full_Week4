@@ -31,7 +31,7 @@ public record PostDetailResponse(
         return new PostDetailResponse(
                 body.postNum(),
                 body.displayNickname(),
-                body.displayProfileImage(),
+                imageUrlBuilder.build(body.displayProfileImage()),
                 body.title(),
                 body.content(),
                 imageUrlBuilder.build(body.imageObjectKey()),

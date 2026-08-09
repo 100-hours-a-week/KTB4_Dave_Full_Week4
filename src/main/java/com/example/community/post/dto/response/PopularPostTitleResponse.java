@@ -1,5 +1,7 @@
 package com.example.community.post.dto.response;
 
+import com.example.community.util.ImageUrlBuilder;
+
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -27,6 +29,18 @@ public record PopularPostTitleResponse(
                 authorDeletedAt == null ? profileImage : null,
                 title,
                 writeAt.atOffset(ZoneOffset.of("+09:00"))
+        );
+    }
+
+    public PopularPostTitleResponse withProfileImageUrl(
+            ImageUrlBuilder imageUrlBuilder
+    ) {
+        return new PopularPostTitleResponse(
+                postNum,
+                nickname,
+                imageUrlBuilder.build(profileImage),
+                title,
+                writeAt
         );
     }
 }

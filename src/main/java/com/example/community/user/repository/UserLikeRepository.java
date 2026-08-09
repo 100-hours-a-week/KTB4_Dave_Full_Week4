@@ -13,7 +13,12 @@ import java.util.Optional;
 
 @Repository
 public interface UserLikeRepository extends JpaRepository<UserLikePost, Long> {
-    @EntityGraph(attributePaths = {"userInfo", "post", "post.postState"})
+    @EntityGraph(attributePaths = {
+            "userInfo",
+            "post",
+            "post.userInfo",
+            "post.postState"
+    })
     @Query("""
             select ulp
             from UserLikePost ulp

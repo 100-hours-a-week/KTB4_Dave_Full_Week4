@@ -126,7 +126,10 @@ class PostQueryServiceTest {
     @Test
     @DisplayName("게시글 목록 Repository 결과를 응답으로 변환한다")
     void getPostsByPageReturnsRepositoryPage() {
-        Post post = post(10L, user(1L, "author"));
+        Post post = post(
+                10L,
+                user(1L, "author", "profiles/author.png")
+        );
         when(postRepository.findPostByPage(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(post)));
 
@@ -137,8 +140,14 @@ class PostQueryServiceTest {
         );
 
         assertThat(response.postTitleResponses())
-                .extracting(PostTitleResponse::postNum)
-                .containsExactly(10L);
+                .singleElement()
+                .satisfies(summary -> {
+                    assertThat(summary.postNum()).isEqualTo(10L);
+                    assertThat(summary.profileImage()).isEqualTo(
+                            "https://test-bucket.s3.ap-northeast-2.amazonaws.com/"
+                                    + "profiles/author.png"
+                    );
+                });
     }
 
 
@@ -203,6 +212,10 @@ class PostQueryServiceTest {
 
         assertThat(response.postNum()).isEqualTo(10L);
         assertThat(response.objectKey()).isEqualTo("posts/detail.png");
+        assertThat(response.profileImage()).isEqualTo(
+                "https://test-bucket.s3.ap-northeast-2.amazonaws.com/"
+                        + "profiles/author.png"
+        );
         verifyNoInteractions(postViewRecordingService);
     }
 

@@ -22,10 +22,18 @@ public final class PostTestFixture {
     }
 
     public static UserInfo user(long profileId, String nickname) {
+        return user(profileId, nickname, null);
+    }
+
+    public static UserInfo user(
+            long profileId,
+            String nickname,
+            String profileImage
+    ) {
         UserInfo userInfo = new UserInfo(
                 new SignInfo(nickname + "@example.com", "password"),
                 nickname,
-                null
+                profileImage
         );
         userInfo.setProfileId(profileId);
         return userInfo;
@@ -47,7 +55,7 @@ public final class PostTestFixture {
         PostBodyData body = new PostBodyData(
                 10L,
                 "author",
-                null,
+                "profiles/author.png",
                 null,
                 "title-10",
                 "content-10",

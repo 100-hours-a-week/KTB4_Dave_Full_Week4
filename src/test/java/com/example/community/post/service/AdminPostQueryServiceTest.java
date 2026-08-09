@@ -60,7 +60,10 @@ class AdminPostQueryServiceTest {
     @Test
     @DisplayName("관리자 게시글 목록은 블라인드된 제목도 원문으로 반환한다")
     void adminGetPostsByPageReturnsOriginalTitle() {
-        Post post = post(10L, user(1L, "author"));
+        Post post = post(
+                10L,
+                user(1L, "author", "profiles/author.png")
+        );
         blind(post);
         Page<Post> page = new PageImpl<>(List.of(post));
         when(postRepository.findPostByPage(any(Pageable.class)))
@@ -74,8 +77,13 @@ class AdminPostQueryServiceTest {
 
         assertThat(response.postTitleResponses())
                 .singleElement()
-                .extracting(AdminPostTitleResponse::title)
-                .isEqualTo("title-10");
+                .satisfies(summary -> {
+                    assertThat(summary.title()).isEqualTo("title-10");
+                    assertThat(summary.profileImage()).isEqualTo(
+                            "https://test-bucket.s3.ap-northeast-2.amazonaws.com/"
+                                    + "profiles/author.png"
+                    );
+                });
     }
 
 

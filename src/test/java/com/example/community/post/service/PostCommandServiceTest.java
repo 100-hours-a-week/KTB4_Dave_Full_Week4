@@ -113,7 +113,11 @@ class PostCommandServiceTest {
     @Test
     @DisplayName("게시글을 정상적으로 등록한다")
     void addPostCreatesPost() {
-        UserInfo author = user(1L, "author");
+        UserInfo author = user(
+                1L,
+                "author",
+                "profiles/author.png"
+        );
         MultipartFile image = mock(MultipartFile.class);
         PostRequest request = new PostRequest(
                 "new-title",
@@ -137,6 +141,10 @@ class PostCommandServiceTest {
         assertThat(response.postNum()).isEqualTo(10L);
         assertThat(response.title()).isEqualTo("new-title");
         assertThat(response.image()).endsWith("posts/new-image.png");
+        assertThat(response.profileImage()).isEqualTo(
+                "https://test-bucket.s3.ap-northeast-2.amazonaws.com/"
+                        + "profiles/author.png"
+        );
     }
 
     @Test

@@ -1,9 +1,13 @@
 package com.example.community.user.service;
 
 import com.example.community.post.dto.response.PostPageResponse;
+import com.example.community.post.entity.Post;
 import com.example.community.resolver.SignUserInfo;
+import com.example.community.user.entity.UserInfo;
+import com.example.community.user.entity.UserLikePost;
 import com.example.community.user.entity.UserRole;
 import com.example.community.user.repository.UserLikeRepository;
+import com.example.community.util.ImageUrlBuilder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,8 +16,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -25,6 +31,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static com.example.community.post.fixture.PostTestFixture.post;
+import static com.example.community.post.fixture.PostTestFixture.user;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -32,8 +40,48 @@ class LikedPostQueryServiceTest {
     @Mock
     private UserLikeRepository userLikeRepository;
 
+    @Spy
+    private ImageUrlBuilder imageUrlBuilder = new ImageUrlBuilder(
+            "https://test-bucket.s3.ap-northeast-2.amazonaws.com/"
+    );
+
     @InjectMocks
     private LikedPostQueryService likedPostQueryService;
+
+    @Test
+    @DisplayName("좋아요한 게시글은 작성자의 프로필 이미지 URL을 반환한다")
+    void getMyLikePostsReturnsAuthorProfileImageUrl() {
+        SignUserInfo signUserInfo = new SignUserInfo(
+                1L,
+                1L,
+                UserRole.USER
+        );
+        UserInfo viewer = user(1L, "viewer", "profiles/viewer.png");
+        UserInfo author = user(2L, "author", "profiles/author.png");
+        Post post = post(10L, author);
+        UserLikePost like = new UserLikePost(viewer, post);
+        when(userLikeRepository.findByUserInfo_ProfileId(
+                eq(signUserInfo.profileId()),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of(like)));
+
+        PostPageResponse response = likedPostQueryService.getMyLikePosts(
+                signUserInfo,
+                0,
+                10,
+                "latest"
+        );
+
+        assertThat(response.postTitleResponses())
+                .singleElement()
+                .satisfies(summary -> {
+                    assertThat(summary.nickname()).isEqualTo("author");
+                    assertThat(summary.profileImage()).isEqualTo(
+                            "https://test-bucket.s3.ap-northeast-2.amazonaws.com/"
+                                    + "profiles/author.png"
+                    );
+                });
+    }
 
 
 

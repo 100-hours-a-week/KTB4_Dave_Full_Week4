@@ -3,6 +3,7 @@ package com.example.community.post.service;
 import com.example.community.post.cache.PopularPostSnapshot;
 import com.example.community.post.dto.response.PopularPostTitleResponse;
 import com.example.community.post.repository.PostRepository;
+import com.example.community.util.ImageUrlBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import java.util.Map;
 public class PopularPostSnapshotLoader {
     private final PopularPostRankingQueryService rankingQueryService;
     private final PostRepository postRepository;
+    private final ImageUrlBuilder imageUrlBuilder;
 
     @Transactional(readOnly = true)
     public PopularPostSnapshot load() {
@@ -27,6 +29,8 @@ public class PopularPostSnapshotLoader {
         Map<Long, PopularPostTitleResponse> summariesByPostNum =
                 new HashMap<>();
         postRepository.findPopularPostTitlesByPostNumIn(postNums)
+                .stream()
+                .map(summary -> summary.withProfileImageUrl(imageUrlBuilder))
                 .forEach(summary -> summariesByPostNum.put(
                         summary.postNum(),
                         summary

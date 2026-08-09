@@ -3,11 +3,13 @@ package com.example.community.post.service;
 import com.example.community.post.cache.PopularPostSnapshot;
 import com.example.community.post.dto.response.PopularPostTitleResponse;
 import com.example.community.post.repository.PostRepository;
+import com.example.community.util.ImageUrlBuilder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
@@ -22,6 +24,10 @@ class PopularPostSnapshotLoaderTest {
     private PopularPostRankingQueryService rankingQueryService;
     @Mock
     private PostRepository postRepository;
+    @Spy
+    private ImageUrlBuilder imageUrlBuilder = new ImageUrlBuilder(
+            "https://test-bucket.s3.ap-northeast-2.amazonaws.com/"
+    );
     @InjectMocks
     private PopularPostSnapshotLoader loader;
 
@@ -39,6 +45,12 @@ class PopularPostSnapshotLoaderTest {
         assertThat(snapshot.orderedPosts())
                 .extracting(PopularPostTitleResponse::postNum)
                 .containsExactly(3L, 1L, 2L);
+        assertThat(snapshot.orderedPosts())
+                .extracting(PopularPostTitleResponse::profileImage)
+                .containsOnly(
+                        "https://test-bucket.s3.ap-northeast-2.amazonaws.com/"
+                                + "profiles/author.png"
+                );
         assertThat(snapshot.postNums()).containsExactlyInAnyOrder(1L, 2L, 3L);
     }
 
@@ -77,7 +89,7 @@ class PopularPostSnapshotLoaderTest {
         return new PopularPostTitleResponse(
                 postNum,
                 "author",
-                null,
+                "profiles/author.png",
                 null,
                 "title-" + postNum,
                 Instant.EPOCH

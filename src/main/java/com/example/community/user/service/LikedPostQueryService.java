@@ -5,6 +5,7 @@ import com.example.community.post.service.PostSortPolicy;
 import com.example.community.resolver.SignUserInfo;
 import com.example.community.user.entity.UserLikePost;
 import com.example.community.user.repository.UserLikeRepository;
+import com.example.community.util.ImageUrlBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class LikedPostQueryService {
     private final UserLikeRepository userLikeRepository;
+    private final ImageUrlBuilder imageUrlBuilder;
 
     @Transactional(readOnly = true)
     public PostPageResponse getMyLikePosts(
@@ -34,6 +36,6 @@ public class LikedPostQueryService {
                         signUserInfo.profileId(),
                         pageable
                 );
-        return PostPageResponse.fromUserLike(likedPosts);
+        return PostPageResponse.fromUserLike(likedPosts, imageUrlBuilder);
     }
 }

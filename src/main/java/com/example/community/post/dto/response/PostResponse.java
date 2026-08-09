@@ -29,7 +29,7 @@ public record PostResponse(
         return new PostResponse(
                 post.getPostNum(),
                 post.getUserInfo().getNickname(),
-                post.getUserInfo().getProfileImage(),
+                imageUrlBuilder.build(post.getUserInfo().getProfileImage()),
                 post.getMaskedTitle(),
                 post.getContent(),
                 imageUrlBuilder.build(post.getImage()),

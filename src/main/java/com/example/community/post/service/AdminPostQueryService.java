@@ -36,7 +36,8 @@ public class AdminPostQueryService {
                 PostSortPolicy.forPosts(sort)
         );
         return AdminPostPageResponse.from(
-                postRepository.findPostByPage(pageable)
+                postRepository.findPostByPage(pageable),
+                imageUrlBuilder
         );
     }
 
