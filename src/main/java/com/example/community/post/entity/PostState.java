@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Table(name = "PostStat")
 public class PostState {
+    public static final int BLIND_REPORT_THRESHOLD = 6;
+
     @Id
     private Long postNum;
 
@@ -48,7 +50,7 @@ public class PostState {
         return reportCount = reportCount + 1;
     }
     public boolean isBlind(){
-        return reportCount > 5;
+        return reportCount >= BLIND_REPORT_THRESHOLD;
     }
 
     public void deleteComment() {

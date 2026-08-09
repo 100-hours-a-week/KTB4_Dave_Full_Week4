@@ -13,7 +13,8 @@ import com.example.community.temporaryPost.dto.request.TemporaryPostRequest;
 import com.example.community.temporaryPost.dto.response.TemporaryKeyResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryPostResponse;
 import com.example.community.temporaryPost.dto.response.TemporaryPostTitleResponse;
-import com.example.community.temporaryPost.service.TemporaryPostService;
+import com.example.community.temporaryPost.service.TemporaryPostCommandService;
+import com.example.community.temporaryPost.service.TemporaryPostQueryService;
 import com.example.community.user.entity.UserRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,14 +33,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.startsWith;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -75,8 +70,11 @@ class TemporaryPostControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean(name = "temporaryPostService")
-    private TemporaryPostService temporaryPostService;
+    @MockitoBean
+    private TemporaryPostCommandService temporaryPostCommandService;
+
+    @MockitoBean
+    private TemporaryPostQueryService temporaryPostQueryService;
 
     @Test
     @DisplayName("첫 임시저장 시 내용을 저장하고 발급한 키를 반환한다")
@@ -92,7 +90,7 @@ class TemporaryPostControllerTest {
                 CONTENT,
                 image
         );
-        when(temporaryPostService.createTemporaryPost(
+        when(temporaryPostCommandService.createTemporaryPost(
                 SIGN_USER_INFO,
                 request
         ))
@@ -109,7 +107,7 @@ class TemporaryPostControllerTest {
                 .andExpect(jsonPath("$.data.objectKey")
                         .value("posts/temporary.png"));
 
-        verify(temporaryPostService).createTemporaryPost(
+        verify(temporaryPostCommandService).createTemporaryPost(
                 SIGN_USER_INFO,
                 request
         );
@@ -124,7 +122,7 @@ class TemporaryPostControllerTest {
                 CONTENT,
                 null
         );
-        when(temporaryPostService.createTemporaryPost(
+        when(temporaryPostCommandService.createTemporaryPost(
                 SIGN_USER_INFO,
                 request
         ))
@@ -134,7 +132,7 @@ class TemporaryPostControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("존재하지 않는 유저"));
 
-        verify(temporaryPostService).createTemporaryPost(
+        verify(temporaryPostCommandService).createTemporaryPost(
                 SIGN_USER_INFO,
                 request
         );
@@ -151,7 +149,7 @@ class TemporaryPostControllerTest {
                         startsWith("입력데이터가 유효하지 않습니다.")
                 ));
 
-        verifyNoInteractions(temporaryPostService);
+        verifyNoInteractions(temporaryPostCommandService, temporaryPostQueryService);
     }
 
     @Test
@@ -164,7 +162,7 @@ class TemporaryPostControllerTest {
                         WRITE_AT
                 )
         );
-        when(temporaryPostService.getTemporaryPosts(SIGN_USER_INFO))
+        when(temporaryPostQueryService.getTemporaryPosts(SIGN_USER_INFO))
                 .thenReturn(response);
 
         mockMvc.perform(get("/temporaryPost"))
@@ -175,13 +173,13 @@ class TemporaryPostControllerTest {
                         .value(TEMPORARY_ID))
                 .andExpect(jsonPath("$.data[0].title").value(TITLE));
 
-        verify(temporaryPostService).getTemporaryPosts(SIGN_USER_INFO);
+        verify(temporaryPostQueryService).getTemporaryPosts(SIGN_USER_INFO);
     }
 
     @Test
     @DisplayName("임시저장글 상세 조회 성공 응답을 반환한다")
     void getTemporaryPostSuccess() throws Exception {
-        when(temporaryPostService.getTemporaryPost(
+        when(temporaryPostQueryService.getTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID
         )).thenReturn(temporaryPostResponse());
@@ -195,7 +193,7 @@ class TemporaryPostControllerTest {
                 .andExpect(jsonPath("$.data.objectKey")
                         .value("posts/temporary.png"));
 
-        verify(temporaryPostService).getTemporaryPost(
+        verify(temporaryPostQueryService).getTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID
         );
@@ -204,7 +202,7 @@ class TemporaryPostControllerTest {
     @Test
     @DisplayName("존재하지 않는 임시저장글 상세 조회 시 404 응답을 반환한다")
     void getTemporaryPostReturnsNotFoundWhenPostDoesNotExist() throws Exception {
-        when(temporaryPostService.getTemporaryPost(
+        when(temporaryPostQueryService.getTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID
         )).thenThrow(new NotFoundException("존재하지 않는 임시저장글"));
@@ -214,7 +212,7 @@ class TemporaryPostControllerTest {
                 .andExpect(jsonPath("$.code")
                         .value("존재하지 않는 임시저장글"));
 
-        verify(temporaryPostService).getTemporaryPost(
+        verify(temporaryPostQueryService).getTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID
         );
@@ -223,7 +221,7 @@ class TemporaryPostControllerTest {
     @Test
     @DisplayName("권한 없는 임시저장글 상세 조회 시 403 응답을 반환한다")
     void getTemporaryPostReturnsForbiddenWhenUserIsNotOwner() throws Exception {
-        when(temporaryPostService.getTemporaryPost(
+        when(temporaryPostQueryService.getTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID
         )).thenThrow(new ForbiddenException("접근권한 부족"));
@@ -232,7 +230,7 @@ class TemporaryPostControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("접근권한 부족"));
 
-        verify(temporaryPostService).getTemporaryPost(
+        verify(temporaryPostQueryService).getTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID
         );
@@ -253,7 +251,7 @@ class TemporaryPostControllerTest {
                 null,
                 image
         );
-        when(temporaryPostService.updateTemporaryPost(
+        when(temporaryPostCommandService.updateTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID,
                 request
@@ -268,7 +266,7 @@ class TemporaryPostControllerTest {
                 .andExpect(jsonPath("$.data.objectKey")
                         .value("posts/temporary.png"));
 
-        verify(temporaryPostService).updateTemporaryPost(
+        verify(temporaryPostCommandService).updateTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID,
                 request
@@ -285,7 +283,7 @@ class TemporaryPostControllerTest {
                 "posts/temporary.png",
                 null
         );
-        when(temporaryPostService.updateTemporaryPost(
+        when(temporaryPostCommandService.updateTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID,
                 request
@@ -296,7 +294,7 @@ class TemporaryPostControllerTest {
                 .andExpect(jsonPath("$.code")
                         .value("존재하지 않는 임시저장글"));
 
-        verify(temporaryPostService).updateTemporaryPost(
+        verify(temporaryPostCommandService).updateTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID,
                 request
@@ -313,7 +311,7 @@ class TemporaryPostControllerTest {
                 "posts/temporary.png",
                 null
         );
-        when(temporaryPostService.updateTemporaryPost(
+        when(temporaryPostCommandService.updateTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID,
                 request
@@ -323,7 +321,7 @@ class TemporaryPostControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("접근권한 부족"));
 
-        verify(temporaryPostService).updateTemporaryPost(
+        verify(temporaryPostCommandService).updateTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID,
                 request
@@ -341,13 +339,13 @@ class TemporaryPostControllerTest {
                         startsWith("입력데이터가 유효하지 않습니다.")
                 ));
 
-        verifyNoInteractions(temporaryPostService);
+        verifyNoInteractions(temporaryPostCommandService, temporaryPostQueryService);
     }
 
     @Test
     @DisplayName("임시저장글 삭제 성공 응답을 반환한다")
     void deleteTemporaryPostSuccess() throws Exception {
-        doNothing().when(temporaryPostService)
+        doNothing().when(temporaryPostCommandService)
                 .deleteTemporaryPost(SIGN_USER_INFO, TEMPORARY_ID);
 
         mockMvc.perform(delete(
@@ -359,7 +357,7 @@ class TemporaryPostControllerTest {
                         .value("임시저장 게시글 삭제 성공"))
                 .andExpect(jsonPath("$.data").doesNotExist());
 
-        verify(temporaryPostService).deleteTemporaryPost(
+        verify(temporaryPostCommandService).deleteTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID
         );
@@ -370,7 +368,7 @@ class TemporaryPostControllerTest {
     void deleteTemporaryPostReturnsNotFoundWhenPostDoesNotExist()
             throws Exception {
         doThrow(new NotFoundException("존재하지 않는 임시저장글"))
-                .when(temporaryPostService)
+                .when(temporaryPostCommandService)
                 .deleteTemporaryPost(SIGN_USER_INFO, TEMPORARY_ID);
 
         mockMvc.perform(delete(
@@ -381,7 +379,7 @@ class TemporaryPostControllerTest {
                 .andExpect(jsonPath("$.code")
                         .value("존재하지 않는 임시저장글"));
 
-        verify(temporaryPostService).deleteTemporaryPost(
+        verify(temporaryPostCommandService).deleteTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID
         );
@@ -392,7 +390,7 @@ class TemporaryPostControllerTest {
     void deleteTemporaryPostReturnsForbiddenWhenUserIsNotOwner()
             throws Exception {
         doThrow(new ForbiddenException("접근권한 부족"))
-                .when(temporaryPostService)
+                .when(temporaryPostCommandService)
                 .deleteTemporaryPost(SIGN_USER_INFO, TEMPORARY_ID);
 
         mockMvc.perform(delete(
@@ -402,7 +400,7 @@ class TemporaryPostControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("접근권한 부족"));
 
-        verify(temporaryPostService).deleteTemporaryPost(
+        verify(temporaryPostCommandService).deleteTemporaryPost(
                 SIGN_USER_INFO,
                 TEMPORARY_ID
         );

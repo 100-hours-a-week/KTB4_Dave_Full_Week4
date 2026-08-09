@@ -15,8 +15,8 @@ public record PostResponse(
         String image,
         int viewCount,
         int likeCount,
-        int reportCount,
         int commentCount,
+        boolean blind,
         boolean isEdited,
         OffsetDateTime writeAt
 ) {
@@ -35,32 +35,10 @@ public record PostResponse(
                 imageUrlBuilder.build(post.getImage()),
                 post.getPostState().getViewCount(),
                 post.getPostState().getLikeCount(),
-                post.getPostState().getReportCount(),
                 post.getPostState().getCommentCount(),
+                post.isBlind(),
                 post.getEditedAt() != null,
                 post.getWriteAt().atOffset(kstOffset)
         );
     }
-
-    public static PostResponse adminFrom(
-            Post post,
-            ImageUrlBuilder imageUrlBuilder
-    ) {
-        ZoneOffset kstOffset = ZoneOffset.of("+09:00");
-        return new PostResponse(
-                post.getPostNum(),
-                post.getUserInfo().getNickname(),
-                post.getUserInfo().getProfileImage(),
-                post.getTitle(),
-                post.getContent(),
-                imageUrlBuilder.build(post.getImage()),
-                post.getPostState().getViewCount(),
-                post.getPostState().getLikeCount(),
-                post.getPostState().getReportCount(),
-                post.getPostState().getCommentCount(),
-                post.getEditedAt() != null,
-                post.getWriteAt().atOffset(kstOffset)
-        );
-    }
-
 }

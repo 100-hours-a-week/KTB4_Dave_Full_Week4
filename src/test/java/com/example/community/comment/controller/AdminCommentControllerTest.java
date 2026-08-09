@@ -4,7 +4,7 @@ import com.example.community.comment.dto.response.CommentEditPageResponse;
 import com.example.community.comment.dto.response.CommentEditResponse;
 import com.example.community.comment.dto.response.CommentPageResponse;
 import com.example.community.comment.dto.response.CommentResponse;
-import com.example.community.comment.service.CommentService;
+import com.example.community.comment.service.AdminCommentQueryService;
 import com.example.community.configuration.WebConfig;
 import com.example.community.filter.JwtFilter;
 import com.example.community.filter.RateLimitFilter;
@@ -55,8 +55,8 @@ class AdminCommentControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean(name = "commentService")
-    private CommentService commentService;
+    @MockitoBean
+    private AdminCommentQueryService commentQueryService;
 
     @Test
     @DisplayName("관리자 댓글 목록은 삭제 댓글 원문과 기본 조회 조건을 반환한다")
@@ -69,7 +69,7 @@ class AdminCommentControllerTest {
                 1,
                 1
         );
-        when(commentService.adminGetPostCommentPage(POST_NUM, 0, 10))
+        when(commentQueryService.getPostCommentPage(POST_NUM, 0, 10))
                 .thenReturn(response);
 
         mockMvc.perform(get("/admin/comments/{postNum}", POST_NUM))
@@ -83,7 +83,7 @@ class AdminCommentControllerTest {
                 .andExpect(jsonPath("$.data.commentResponses[0].deleted")
                         .value(true));
 
-        verify(commentService).adminGetPostCommentPage(POST_NUM, 0, 10);
+        verify(commentQueryService).getPostCommentPage(POST_NUM, 0, 10);
     }
 
     @Test
@@ -97,7 +97,7 @@ class AdminCommentControllerTest {
                 0,
                 0
         );
-        when(commentService.adminGetChildCommentPage(COMMENT_NUM, 1, 5))
+        when(commentQueryService.getChildCommentPage(COMMENT_NUM, 1, 5))
                 .thenReturn(response);
 
         mockMvc.perform(get(
@@ -110,13 +110,13 @@ class AdminCommentControllerTest {
                 .andExpect(jsonPath("$.data.page").value(1))
                 .andExpect(jsonPath("$.data.pageSize").value(5));
 
-        verify(commentService).adminGetChildCommentPage(COMMENT_NUM, 1, 5);
+        verify(commentQueryService).getChildCommentPage(COMMENT_NUM, 1, 5);
     }
 
     @Test
     @DisplayName("관리자 대댓글 조회 대상이 없으면 404 응답")
     void getChildCommentListReturnsNotFound() throws Exception {
-        when(commentService.adminGetChildCommentPage(COMMENT_NUM, 0, 10))
+        when(commentQueryService.getChildCommentPage(COMMENT_NUM, 0, 10))
                 .thenThrow(new NotFoundException("존재하지 않는 댓글"));
 
         mockMvc.perform(get(
@@ -143,7 +143,7 @@ class AdminCommentControllerTest {
                 1,
                 1
         );
-        when(commentService.getCommentEditsByPage(COMMENT_NUM, 0, 10))
+        when(commentQueryService.getCommentEditsByPage(COMMENT_NUM, 0, 10))
                 .thenReturn(response);
 
         mockMvc.perform(get(
@@ -158,13 +158,13 @@ class AdminCommentControllerTest {
                 .andExpect(jsonPath("$.data.commentResponses[0].content")
                         .value("old-content"));
 
-        verify(commentService).getCommentEditsByPage(COMMENT_NUM, 0, 10);
+        verify(commentQueryService).getCommentEditsByPage(COMMENT_NUM, 0, 10);
     }
 
     @Test
     @DisplayName("댓글 수정 이력이 없으면 404 응답")
     void getCommentEditListReturnsNotFound() throws Exception {
-        when(commentService.getCommentEditsByPage(COMMENT_NUM, 0, 10))
+        when(commentQueryService.getCommentEditsByPage(COMMENT_NUM, 0, 10))
                 .thenThrow(new NotFoundException("존재하지 않는 댓글"));
 
         mockMvc.perform(get(

@@ -1,6 +1,6 @@
 package com.example.community.post.scheduler;
 
-import com.example.community.post.service.PostViewService;
+import com.example.community.post.service.PopularityCleanupService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +17,7 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class PopularPostCleanupSchedulerTest {
     @Mock
-    private PostViewService postViewService;
+    private PopularityCleanupService cleanupService;
 
     @InjectMocks
     private PopularPostCleanupScheduler scheduler;
@@ -27,7 +27,7 @@ class PopularPostCleanupSchedulerTest {
     void delegatesCleanupToPostViewService() {
         scheduler.cleanupExpiredPopularityData();
 
-        verify(postViewService).cleanupExpiredPopularityData();
+        verify(cleanupService).cleanupExpiredPopularityData();
     }
 
     @Test

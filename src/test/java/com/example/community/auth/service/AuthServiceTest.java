@@ -7,6 +7,7 @@ import com.example.community.handler.exception.BadRequestException;
 import com.example.community.handler.exception.NotFoundException;
 import com.example.community.handler.exception.UnAuthorizedException;
 import com.example.community.user.dto.UserInfoDTO;
+import com.example.community.user.dto.request.SignInRequest;
 import com.example.community.user.entity.SignInfo;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserRole;
@@ -29,11 +30,7 @@ import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -46,6 +43,9 @@ class AuthServiceTest {
 
     @Mock
     private RefreshTokenService refreshTokenService;
+
+    @Mock
+    private CredentialAuthenticator credentialAuthenticator;
 
     @Mock
     private UserInfoRepository userInfoRepository;
@@ -200,15 +200,21 @@ class AuthServiceTest {
 
     @Test
     @DisplayName("로그인 사용자에게 토큰을 발급하고 응답 DTO를 반환한다")
-    void tokenIssueStoresRefreshTokenAndReturnsAuthResponse() {
+    void signInAuthenticatesAndReturnsStoredTokenResponse() {
+        SignInRequest request = new SignInRequest(
+                signInfo.getEmail(),
+                "plain-password"
+        );
         UserInfoDTO userInfoDTO = UserInfoDTO.from(userInfo);
         userInfoDTO.setEmail(signInfo.getEmail());
+        when(credentialAuthenticator.authenticate(request))
+                .thenReturn(userInfoDTO);
         when(jwtUtil.generateAccessToken(USER_NUM, PROFILE_ID, UserRole.USER))
                 .thenReturn(ACCESS_TOKEN);
         when(jwtUtil.generateRefreshToken(USER_NUM))
                 .thenReturn(NEW_REFRESH_TOKEN);
 
-        AuthResponse result = authService.tokenIssue(userInfoDTO);
+        AuthResponse result = authService.signIn(request);
 
         assertThat(result.refreshToken()).isEqualTo(NEW_REFRESH_TOKEN);
         assertThat(result.signInResponse().userNum()).isEqualTo(USER_NUM);
@@ -228,6 +234,15 @@ class AuthServiceTest {
                 .isEqualTo(ACCESS_TOKEN);
         verify(refreshTokenService)
                 .addRefreshToken(USER_NUM, NEW_REFRESH_TOKEN);
+        verify(credentialAuthenticator).authenticate(request);
+    }
+
+    @Test
+    @DisplayName("로그아웃은 인증 저장소에서 리프레시 토큰을 제거한다")
+    void signOutDeletesRefreshToken() {
+        authService.signOut(OLD_REFRESH_TOKEN);
+
+        verify(refreshTokenService).deleteRefreshToken(OLD_REFRESH_TOKEN);
     }
 
     private void stubValidRefreshToken(SignInfo tokenOwner) {

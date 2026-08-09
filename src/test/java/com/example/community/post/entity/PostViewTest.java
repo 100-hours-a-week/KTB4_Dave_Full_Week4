@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PostViewTest {
 
     private PostView postView;
+    private Post post;
 
     @BeforeEach
     void setUp() {
@@ -23,8 +24,14 @@ class PostViewTest {
                 "viewer",
                 null
         );
-        Post post = new Post(userInfo, "title", "content", null);
+        post = new Post(userInfo, "title", "content", null);
         postView = new PostView(post, userInfo);
+    }
+
+    @Test
+    @DisplayName("조회 이력 생성 자체는 게시글 상태의 조회수를 변경하지 않는다")
+    void constructorDoesNotIncrementPostState() {
+        assertThat(post.getPostState().getViewCount()).isZero();
     }
 
     @Test

@@ -7,7 +7,8 @@ import com.example.community.comment.dto.request.CommentToPostRequest;
 import com.example.community.comment.dto.response.CommentAddResponse;
 import com.example.community.comment.dto.response.CommentPageResponse;
 import com.example.community.comment.dto.response.CommentResponse;
-import com.example.community.comment.service.CommentService;
+import com.example.community.comment.service.CommentCommandService;
+import com.example.community.comment.service.CommentQueryService;
 import com.example.community.configuration.WebConfig;
 import com.example.community.filter.JwtFilter;
 import com.example.community.filter.RateLimitFilter;
@@ -31,15 +32,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.startsWith;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -72,14 +66,17 @@ class CommentControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean(name = "commentService")
-    private CommentService commentService;
+    @MockitoBean
+    private CommentCommandService commentCommandService;
+
+    @MockitoBean
+    private CommentQueryService commentQueryService;
 
     @Test
     @DisplayName("게시글 댓글 등록 성공")
     void commentToPostSuccess() throws Exception {
         CommentToPostRequest request = new CommentToPostRequest("comment");
-        when(commentService.addCommentToPost(
+        when(commentCommandService.addCommentToPost(
                 SIGN_USER_INFO,
                 POST_NUM,
                 request
@@ -99,7 +96,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.data.comment.content")
                         .value("comment"));
 
-        verify(commentService).addCommentToPost(
+        verify(commentCommandService).addCommentToPost(
                 SIGN_USER_INFO,
                 POST_NUM,
                 request
@@ -110,7 +107,7 @@ class CommentControllerTest {
     @DisplayName("존재하지 않는 게시글에 댓글 등록 시 404 응답")
     void commentToPostReturnsNotFoundWhenPostDoesNotExist() throws Exception {
         CommentToPostRequest request = new CommentToPostRequest("comment");
-        when(commentService.addCommentToPost(
+        when(commentCommandService.addCommentToPost(
                 SIGN_USER_INFO,
                 POST_NUM,
                 request
@@ -124,7 +121,7 @@ class CommentControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("존재하지 않는 게시글"));
 
-        verify(commentService).addCommentToPost(
+        verify(commentCommandService).addCommentToPost(
                 SIGN_USER_INFO,
                 POST_NUM,
                 request
@@ -144,7 +141,7 @@ class CommentControllerTest {
                         "입력데이터가 유효하지 않습니다."
                 )));
 
-        verifyNoInteractions(commentService);
+        verifyNoInteractions(commentCommandService, commentQueryService);
     }
 
     @Test
@@ -152,7 +149,7 @@ class CommentControllerTest {
     void commentToCommentSuccess() throws Exception {
         CommentToCommentRequest request =
                 new CommentToCommentRequest("child", COMMENT_NUM);
-        when(commentService.addCommentToComment(
+        when(commentCommandService.addCommentToComment(
                 SIGN_USER_INFO,
                 POST_NUM,
                 request
@@ -175,7 +172,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.data.numberOfComments").value(2))
                 .andExpect(jsonPath("$.data.comment.content").value("child"));
 
-        verify(commentService).addCommentToComment(
+        verify(commentCommandService).addCommentToComment(
                 SIGN_USER_INFO,
                 POST_NUM,
                 request
@@ -188,7 +185,7 @@ class CommentControllerTest {
             throws Exception {
         CommentToCommentRequest request =
                 new CommentToCommentRequest("child", COMMENT_NUM);
-        when(commentService.addCommentToComment(
+        when(commentCommandService.addCommentToComment(
                 SIGN_USER_INFO,
                 POST_NUM,
                 request
@@ -207,7 +204,7 @@ class CommentControllerTest {
     @DisplayName("게시글 댓글 목록은 기본 조회 조건으로 불러온다")
     void getPostCommentListUsesDefaultParameters() throws Exception {
         CommentPageResponse response = commentPageResponse(0, 10);
-        when(commentService.getPostCommentPage(POST_NUM, 0, 10))
+        when(commentQueryService.getPostCommentPage(POST_NUM, 0, 10))
                 .thenReturn(response);
 
         mockMvc.perform(get("/comments/list/{postNum}", POST_NUM))
@@ -218,14 +215,14 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.data.commentResponses[0].commentNum")
                         .value(COMMENT_NUM));
 
-        verify(commentService).getPostCommentPage(POST_NUM, 0, 10);
+        verify(commentQueryService).getPostCommentPage(POST_NUM, 0, 10);
     }
 
     @Test
     @DisplayName("대댓글 목록은 요청한 조회 조건으로 불러온다")
     void getChildCommentListUsesRequestedParameters() throws Exception {
         CommentPageResponse response = commentPageResponse(1, 5);
-        when(commentService.getChildCommentPage(COMMENT_NUM, 1, 5))
+        when(commentQueryService.getChildCommentPage(COMMENT_NUM, 1, 5))
                 .thenReturn(response);
 
         mockMvc.perform(get("/comments/list/child/{commentNum}", COMMENT_NUM)
@@ -236,7 +233,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.data.page").value(1))
                 .andExpect(jsonPath("$.data.pageSize").value(5));
 
-        verify(commentService).getChildCommentPage(COMMENT_NUM, 1, 5);
+        verify(commentQueryService).getChildCommentPage(COMMENT_NUM, 1, 5);
     }
 
     @Test
@@ -248,7 +245,7 @@ class CommentControllerTest {
                 null,
                 "updated"
         );
-        when(commentService.updateComment(
+        when(commentCommandService.updateComment(
                 SIGN_USER_INFO,
                 COMMENT_NUM,
                 request
@@ -263,7 +260,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.code").value("댓글 수정 성공"))
                 .andExpect(jsonPath("$.data.content").value("updated"));
 
-        verify(commentService).updateComment(
+        verify(commentCommandService).updateComment(
                 SIGN_USER_INFO,
                 COMMENT_NUM,
                 request
@@ -275,7 +272,7 @@ class CommentControllerTest {
     void updateCommentReturnsForbiddenWhenUserIsNotAuthor()
             throws Exception {
         CommentEditRequest request = new CommentEditRequest("updated");
-        when(commentService.updateComment(
+        when(commentCommandService.updateComment(
                 SIGN_USER_INFO,
                 COMMENT_NUM,
                 request
@@ -295,7 +292,7 @@ class CommentControllerTest {
     void updateCommentReturnsNotFoundWhenCommentDoesNotExist()
             throws Exception {
         CommentEditRequest request = new CommentEditRequest("updated");
-        when(commentService.updateComment(
+        when(commentCommandService.updateComment(
                 SIGN_USER_INFO,
                 COMMENT_NUM,
                 request
@@ -313,7 +310,7 @@ class CommentControllerTest {
     @Test
     @DisplayName("댓글 삭제 성공")
     void deleteCommentSuccess() throws Exception {
-        doNothing().when(commentService)
+        doNothing().when(commentCommandService)
                 .deleteComment(SIGN_USER_INFO, COMMENT_NUM);
 
         mockMvc.perform(delete("/comments/{commentNum}", COMMENT_NUM))
@@ -321,7 +318,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.code").value("댓글 삭제 성공"))
                 .andExpect(jsonPath("$.data").doesNotExist());
 
-        verify(commentService).deleteComment(SIGN_USER_INFO, COMMENT_NUM);
+        verify(commentCommandService).deleteComment(SIGN_USER_INFO, COMMENT_NUM);
     }
 
     @Test
@@ -329,7 +326,7 @@ class CommentControllerTest {
     void deleteCommentReturnsForbiddenWhenUserHasNoAuthority()
             throws Exception {
         doThrow(new ForbiddenException("접근 권한 부족"))
-                .when(commentService)
+                .when(commentCommandService)
                 .deleteComment(SIGN_USER_INFO, COMMENT_NUM);
 
         mockMvc.perform(delete("/comments/{commentNum}", COMMENT_NUM))
@@ -342,7 +339,7 @@ class CommentControllerTest {
     void deleteCommentReturnsNotFoundWhenCommentDoesNotExist()
             throws Exception {
         doThrow(new NotFoundException("존재하지 않는 댓글"))
-                .when(commentService)
+                .when(commentCommandService)
                 .deleteComment(SIGN_USER_INFO, COMMENT_NUM);
 
         mockMvc.perform(delete("/comments/{commentNum}", COMMENT_NUM))

@@ -39,7 +39,6 @@ public class PostView {
     public PostView(Post post, UserInfo userInfo){
         this.post = post;
         this.userInfo = userInfo;
-        this.post.view();
     }
 
     public boolean view(){

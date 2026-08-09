@@ -34,6 +34,18 @@ tokenExpire:
 
 popular-post:
   candidate-max-age: ${POPULAR_POST_CANDIDATE_MAX_AGE:3d}
+  cache:
+    enabled: ${POPULAR_POST_CACHE_ENABLED:true}
+    list-ttl: ${POPULAR_POST_CACHE_LIST_TTL:15m}
+    body-idle-ttl: ${POPULAR_POST_CACHE_BODY_IDLE_TTL:10m}
+    body-max-ttl: ${POPULAR_POST_CACHE_BODY_MAX_TTL:30m}
+    state-ttl: ${POPULAR_POST_CACHE_STATE_TTL:1m}
+    comment-idle-ttl: ${POPULAR_POST_CACHE_COMMENT_IDLE_TTL:10m}
+    comment-max-ttl: ${POPULAR_POST_CACHE_COMMENT_MAX_TTL:30m}
+    body-max-weight-bytes: ${POPULAR_POST_CACHE_BODY_MAX_WEIGHT_BYTES:4194304}
+    comment-max-weight-bytes: ${POPULAR_POST_CACHE_COMMENT_MAX_WEIGHT_BYTES:8388608}
+    state-max-size: ${POPULAR_POST_CACHE_STATE_MAX_SIZE:20}
+    comment-index-max-size: ${POPULAR_POST_CACHE_COMMENT_INDEX_MAX_SIZE:20}
   scheduler:
     enabled: ${POPULAR_POST_SCHEDULER_ENABLED:true}
     cron: "10 */5 * * * *"

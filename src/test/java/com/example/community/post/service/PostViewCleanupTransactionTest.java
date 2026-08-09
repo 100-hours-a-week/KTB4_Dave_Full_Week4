@@ -39,7 +39,9 @@ import static org.mockito.Mockito.doThrow;
 
 @DataJpaTest
 @Import({
-        PostViewService.class,
+        PopularityCleanupService.class,
+        PopularityCheckpointLock.class,
+        PopularityWindowPolicy.class,
         PostViewCleanupTransactionTest.FixedTimeConfiguration.class
 })
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -52,7 +54,7 @@ class PostViewCleanupTransactionTest {
             Instant.parse("2026-08-04T11:55:00Z");
 
     @Autowired
-    private PostViewService postViewService;
+    private PopularityCleanupService cleanupService;
 
     @Autowired
     private PostPopularityStatRepository postPopularityStatRepository;
@@ -84,7 +86,7 @@ class PostViewCleanupTransactionTest {
                 .deleteAllByPostWriteAtBefore(CANDIDATE_SINCE);
 
         assertThatThrownBy(
-                () -> postViewService.cleanupExpiredPopularityData()
+                () -> cleanupService.cleanupExpiredPopularityData()
         ).isInstanceOf(DataAccessResourceFailureException.class)
                 .hasMessage("cleanup failed");
 
