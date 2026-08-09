@@ -7,6 +7,7 @@ import com.example.community.user.entity.UserInfo;
 import com.example.community.user.repository.SignInfoRepository;
 import com.example.community.user.repository.UserInfoRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceUnitUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -137,6 +138,7 @@ class PostViewBucketRepositoryTest {
                 new PostViewBucket(boundaryPost, BUCKET_START_AT, 1L),
                 new PostViewBucket(expiredPost, BUCKET_START_AT, 100L)
         );
+        entityManager.clear();
 
         List<PostViewBucket> rebuildBuckets = postViewBucketRepository
                 .findForPopularityRebuild(
@@ -162,6 +164,16 @@ class PostViewBucketRepositoryTest {
                         recentPost.getPostNum(),
                         boundaryPost.getPostNum()
                 );
+        PersistenceUnitUtil persistenceUnitUtil = entityManager
+                .getEntityManagerFactory()
+                .getPersistenceUnitUtil();
+        assertThat(rebuildBuckets)
+                .allSatisfy(bucket -> assertThat(
+                        persistenceUnitUtil.isLoaded(
+                                bucket.getPost(),
+                                "postState"
+                        )
+                ).isFalse());
     }
 
     @Test

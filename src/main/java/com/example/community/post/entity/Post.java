@@ -31,7 +31,12 @@ public class Post {
     private String image;
 
 
-    @OneToOne(mappedBy = "post", cascade = CascadeType.ALL)
+    @OneToOne(
+            mappedBy = "post",
+            fetch = FetchType.LAZY,
+            optional = false,
+            cascade = CascadeType.ALL
+    )
     private PostState postState;
 
     @Column(name = "deletedAt")

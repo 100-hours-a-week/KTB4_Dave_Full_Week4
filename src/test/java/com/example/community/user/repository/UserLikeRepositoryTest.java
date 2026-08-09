@@ -5,6 +5,8 @@ import com.example.community.post.repository.PostRepository;
 import com.example.community.user.entity.SignInfo;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserLikePost;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceUnitUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,9 @@ class UserLikeRepositoryTest {
     @Autowired
     private UserInfoRepository userInfoRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     private UserInfo liker;
     private UserInfo author;
 
@@ -56,6 +61,29 @@ class UserLikeRepositoryTest {
                 .extracting(userLikePost -> userLikePost.getPost().getPostNum())
                 .containsExactly(likedPost.getPostNum());
         assertThat(result.getTotalElements()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("좋아요 목록 조회는 게시글 작성자와 상태를 함께 로딩한다")
+    void findByProfileIdFetchesPostDisplayAssociations() {
+        saveLikedPost("liked");
+        userLikeRepository.flush();
+        entityManager.clear();
+
+        UserLikePost result = findLatestLikedPosts().getContent().getFirst();
+        PersistenceUnitUtil persistenceUnitUtil = entityManager
+                .getEntityManagerFactory()
+                .getPersistenceUnitUtil();
+
+        assertThat(persistenceUnitUtil.isLoaded(result, "post")).isTrue();
+        assertThat(persistenceUnitUtil.isLoaded(
+                result.getPost(),
+                "userInfo"
+        )).isTrue();
+        assertThat(persistenceUnitUtil.isLoaded(
+                result.getPost(),
+                "postState"
+        )).isTrue();
     }
 
     @Test
