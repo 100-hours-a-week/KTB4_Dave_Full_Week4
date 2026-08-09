@@ -3,7 +3,12 @@
 
 SET time_zone = '+00:00';
 
-CREATE TEMPORARY TABLE perf_digit (
+-- MySQL cannot reopen one TEMPORARY table under multiple aliases in the
+-- sequence CROSS JOIN below. This disposable helper is therefore a regular
+-- table and is dropped after seeding.
+DROP TABLE IF EXISTS perf_digit;
+
+CREATE TABLE perf_digit (
     n TINYINT NOT NULL PRIMARY KEY
 );
 
