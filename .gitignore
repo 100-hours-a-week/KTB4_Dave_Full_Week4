@@ -37,3 +37,10 @@ out/
 .vscode/
 .env
 .env.*
+
+# Keep the load-test template, but never commit local credentials or run output.
+!load-test/.env.example
+load-test/.env
+load-test/.current-run
+load-test/.current-run.json
+load-test/results/
