@@ -360,15 +360,17 @@ $comparisonMetadata = [ordered]@{
 $metadataFile = Join-Path $metadataRoot "$($runMetadata.variant)-$($runMetadata.commit).json"
 $comparisonMetadata | ConvertTo-Json | Set-Content -LiteralPath $metadataFile -Encoding UTF8
 
-$appContainerId = [string](& docker ps `
+$appContainerIds = @(& docker ps `
     --filter "label=com.docker.compose.project=$($runMetadata.project)" `
     --filter 'label=com.docker.compose.service=app' `
-    --format '{{.ID}}' | Select-Object -First 1)
+    --format '{{.ID}}')
+$dockerPsExitCode = $LASTEXITCODE
 
-if ($LASTEXITCODE -ne 0) {
+if ($dockerPsExitCode -ne 0) {
     throw 'Unable to query the application container. Is Docker Desktop running?'
 }
 
+$appContainerId = [string]($appContainerIds | Select-Object -First 1)
 $appContainerId = $appContainerId.Trim()
 
 if ([string]::IsNullOrWhiteSpace($appContainerId)) {
