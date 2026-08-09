@@ -4,6 +4,7 @@ import com.example.community.user.entity.SignInfo;
 import com.example.community.user.entity.UserInfo;
 import com.example.community.user.entity.UserRole;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -28,6 +29,7 @@ class UserInfoRepositoryTest {
     }
 
     @Test
+    @DisplayName("회원 번호로 프로필 목록을 조회한다")
     void findBySignInfo_UserNum() {
         List<UserInfo> userInfo = userInfoRepository.findBySignInfo_UserNum(1L);
         assertThat(userInfo).isEmpty();
@@ -37,6 +39,7 @@ class UserInfoRepositoryTest {
     }
 
     @Test
+    @DisplayName("닉네임으로 프로필을 조회한다")
     void findByNickname() {
         Optional<UserInfo> userInfo = userInfoRepository.findByNickname(USER_INFO.getNickname());
         assertThat(userInfo).isEmpty();
@@ -47,6 +50,7 @@ class UserInfoRepositoryTest {
     }
 
     @Test
+    @DisplayName("프로필 번호로 프로필을 조회한다")
     void findByProfileId() {
         Optional<UserInfo> userInfo = userInfoRepository.findByProfileId(0L);
         assertThat(userInfo).isEmpty();
@@ -57,6 +61,7 @@ class UserInfoRepositoryTest {
     }
 
     @Test
+    @DisplayName("닉네임 존재 여부를 확인한다")
     void existsByNickname() {
         boolean exist = userInfoRepository.existsByNickname(USER_INFO.getNickname());
         assertThat(exist).isFalse();

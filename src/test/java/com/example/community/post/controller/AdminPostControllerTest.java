@@ -4,11 +4,11 @@ import com.example.community.configuration.WebConfig;
 import com.example.community.filter.JwtFilter;
 import com.example.community.filter.RateLimitFilter;
 import com.example.community.handler.exception.NotFoundException;
+import com.example.community.post.dto.response.AdminPostPageResponse;
+import com.example.community.post.dto.response.AdminPostResponse;
 import com.example.community.post.dto.response.PostEditPageResponse;
 import com.example.community.post.dto.response.PostEditResponse;
-import com.example.community.post.dto.response.PostPageResponse;
-import com.example.community.post.dto.response.PostResponse;
-import com.example.community.post.service.PostService;
+import com.example.community.post.service.AdminPostQueryService;
 import com.example.community.resolver.SignUserArgumentResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,14 +55,14 @@ class AdminPostControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean(name = "postService")
-    private PostService postService;
+    @MockitoBean
+    private AdminPostQueryService postQueryService;
 
     @Test
     @DisplayName("관리자 게시글 목록은 기본 조회 조건으로 불러온다")
     void getPostsUsesDefaultRequestParameters() throws Exception {
-        PostPageResponse response = postPageResponse(0, 10);
-        when(postService.adminGetPostsByPage(0, 10, "latest"))
+        AdminPostPageResponse response = postPageResponse(0, 10);
+        when(postQueryService.getPostsByPage(0, 10, "latest"))
                 .thenReturn(response);
 
         mockMvc.perform(get("/admin/posts"))
@@ -73,14 +73,14 @@ class AdminPostControllerTest {
                 .andExpect(jsonPath("$.data.page").value(0))
                 .andExpect(jsonPath("$.data.pageSize").value(10));
 
-        verify(postService).adminGetPostsByPage(0, 10, "latest");
+        verify(postQueryService).getPostsByPage(0, 10, "latest");
     }
 
     @Test
     @DisplayName("관리자 게시글 목록은 요청한 조회 조건으로 불러온다")
     void getPostsUsesRequestedParameters() throws Exception {
-        PostPageResponse response = postPageResponse(2, 5);
-        when(postService.adminGetPostsByPage(2, 5, "views"))
+        AdminPostPageResponse response = postPageResponse(2, 5);
+        when(postQueryService.getPostsByPage(2, 5, "views"))
                 .thenReturn(response);
 
         mockMvc.perform(get("/admin/posts")
@@ -91,43 +91,45 @@ class AdminPostControllerTest {
                 .andExpect(jsonPath("$.data.page").value(2))
                 .andExpect(jsonPath("$.data.pageSize").value(5));
 
-        verify(postService).adminGetPostsByPage(2, 5, "views");
+        verify(postQueryService).getPostsByPage(2, 5, "views");
     }
 
     @Test
     @DisplayName("관리자 게시글 상세 조회 성공")
     void getPostSuccess() throws Exception {
-        PostResponse response = postResponse();
-        when(postService.adminGetPost(POST_NUM)).thenReturn(response);
+        AdminPostResponse response = postResponse();
+        when(postQueryService.getPost(POST_NUM)).thenReturn(response);
 
         mockMvc.perform(get("/admin/posts/{postNum}", POST_NUM))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code")
                         .value("관리자 모드 : 게시글 상세 조회 성공"))
                 .andExpect(jsonPath("$.data.postNum").value(POST_NUM))
-                .andExpect(jsonPath("$.data.title").value("title"));
+                .andExpect(jsonPath("$.data.title").value("title"))
+                .andExpect(jsonPath("$.data.reportCount").value(6))
+                .andExpect(jsonPath("$.data.blind").doesNotExist());
 
-        verify(postService).adminGetPost(POST_NUM);
+        verify(postQueryService).getPost(POST_NUM);
     }
 
     @Test
     @DisplayName("관리자 상세 조회 시 게시글이 없으면 404 응답")
     void getPostReturnsNotFoundWhenPostDoesNotExist() throws Exception {
-        when(postService.adminGetPost(POST_NUM))
+        when(postQueryService.getPost(POST_NUM))
                 .thenThrow(new NotFoundException("존재하지 않는 게시글"));
 
         mockMvc.perform(get("/admin/posts/{postNum}", POST_NUM))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("존재하지 않는 게시글"));
 
-        verify(postService).adminGetPost(POST_NUM);
+        verify(postQueryService).getPost(POST_NUM);
     }
 
     @Test
     @DisplayName("게시글 수정 이력 목록은 기본 조회 조건으로 불러온다")
     void getPostEditsUsesDefaultRequestParameters() throws Exception {
         PostEditPageResponse response = postEditPageResponse(0, 10);
-        when(postService.getPostEditsByPage(POST_NUM, 0, 10))
+        when(postQueryService.getPostEditsByPage(POST_NUM, 0, 10))
                 .thenReturn(response);
 
         mockMvc.perform(get("/admin/posts/editList/{postNum}", POST_NUM))
@@ -138,14 +140,14 @@ class AdminPostControllerTest {
                 .andExpect(jsonPath("$.data.page").value(0))
                 .andExpect(jsonPath("$.data.pageSize").value(10));
 
-        verify(postService).getPostEditsByPage(POST_NUM, 0, 10);
+        verify(postQueryService).getPostEditsByPage(POST_NUM, 0, 10);
     }
 
     @Test
     @DisplayName("게시글 수정 이력 목록은 요청한 페이지로 불러온다")
     void getPostEditsUsesRequestedParameters() throws Exception {
         PostEditPageResponse response = postEditPageResponse(1, 5);
-        when(postService.getPostEditsByPage(POST_NUM, 1, 5))
+        when(postQueryService.getPostEditsByPage(POST_NUM, 1, 5))
                 .thenReturn(response);
 
         mockMvc.perform(get("/admin/posts/editList/{postNum}", POST_NUM)
@@ -155,7 +157,7 @@ class AdminPostControllerTest {
                 .andExpect(jsonPath("$.data.page").value(1))
                 .andExpect(jsonPath("$.data.pageSize").value(5));
 
-        verify(postService).getPostEditsByPage(POST_NUM, 1, 5);
+        verify(postQueryService).getPostEditsByPage(POST_NUM, 1, 5);
     }
 
     @Test
@@ -167,7 +169,7 @@ class AdminPostControllerTest {
                 null,
                 OffsetDateTime.parse("2026-08-05T10:00:00+09:00")
         );
-        when(postService.getPostEdit(EDIT_ID)).thenReturn(response);
+        when(postQueryService.getPostEdit(EDIT_ID)).thenReturn(response);
 
         mockMvc.perform(get("/admin/posts/edit/{editId}", EDIT_ID))
                 .andExpect(status().isOk())
@@ -176,24 +178,24 @@ class AdminPostControllerTest {
                 .andExpect(jsonPath("$.data.title").value("old-title"))
                 .andExpect(jsonPath("$.data.content").value("old-content"));
 
-        verify(postService).getPostEdit(EDIT_ID);
+        verify(postQueryService).getPostEdit(EDIT_ID);
     }
 
     @Test
     @DisplayName("수정 이력이 없으면 404 응답")
     void getPostEditReturnsNotFoundWhenEditDoesNotExist() throws Exception {
-        when(postService.getPostEdit(EDIT_ID))
+        when(postQueryService.getPostEdit(EDIT_ID))
                 .thenThrow(new NotFoundException("존재하지 않는 수정 이력"));
 
         mockMvc.perform(get("/admin/posts/edit/{editId}", EDIT_ID))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("존재하지 않는 수정 이력"));
 
-        verify(postService).getPostEdit(EDIT_ID);
+        verify(postQueryService).getPostEdit(EDIT_ID);
     }
 
-    private PostPageResponse postPageResponse(int page, int pageSize) {
-        return new PostPageResponse(
+    private AdminPostPageResponse postPageResponse(int page, int pageSize) {
+        return new AdminPostPageResponse(
                 List.of(),
                 page,
                 pageSize,
@@ -217,8 +219,8 @@ class AdminPostControllerTest {
         );
     }
 
-    private PostResponse postResponse() {
-        return new PostResponse(
+    private AdminPostResponse postResponse() {
+        return new AdminPostResponse(
                 POST_NUM,
                 "author",
                 null,
@@ -227,7 +229,7 @@ class AdminPostControllerTest {
                 null,
                 0,
                 0,
-                0,
+                6,
                 0,
                 false,
                 OffsetDateTime.parse("2026-08-05T10:00:00+09:00")

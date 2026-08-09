@@ -1,6 +1,7 @@
 package com.example.community.post.scheduler;
 
-import com.example.community.post.service.PostViewService;
+import com.example.community.post.service.PopularPostSnapshotService;
+import com.example.community.post.service.PopularityAggregationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,13 +15,15 @@ import org.springframework.stereotype.Component;
         matchIfMissing = true
 )
 public class PopularPostScheduler {
-    private final PostViewService postViewService;
+    private final PopularityAggregationService aggregationService;
+    private final PopularPostSnapshotService popularPostSnapshotService;
 
     @Scheduled(
             cron = "${popular-post.scheduler.cron:10 */5 * * * *}",
             zone = "${popular-post.scheduler.zone:UTC}"
     )
     public void refreshPopularPosts() {
-        postViewService.refreshPopularityStats();
+        aggregationService.refreshPopularityStats();
+        popularPostSnapshotService.refreshSnapshot();
     }
 }

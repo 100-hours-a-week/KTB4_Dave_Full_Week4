@@ -1,0 +1,43 @@
+package com.example.community.post.dto.response;
+
+import com.example.community.post.entity.Post;
+import com.example.community.util.ImageUrlBuilder;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
+public record AdminPostResponse(
+        long postNum,
+        String nickname,
+        String profileImage,
+        String title,
+        String content,
+        String image,
+        int viewCount,
+        int likeCount,
+        int reportCount,
+        int commentCount,
+        boolean isEdited,
+        OffsetDateTime writeAt
+) {
+    public static AdminPostResponse from(
+            Post post,
+            ImageUrlBuilder imageUrlBuilder
+    ) {
+        ZoneOffset kstOffset = ZoneOffset.of("+09:00");
+        return new AdminPostResponse(
+                post.getPostNum(),
+                post.getUserInfo().getNickname(),
+                post.getUserInfo().getProfileImage(),
+                post.getTitle(),
+                post.getContent(),
+                imageUrlBuilder.build(post.getImage()),
+                post.getPostState().getViewCount(),
+                post.getPostState().getLikeCount(),
+                post.getPostState().getReportCount(),
+                post.getPostState().getCommentCount(),
+                post.getEditedAt() != null,
+                post.getWriteAt().atOffset(kstOffset)
+        );
+    }
+}

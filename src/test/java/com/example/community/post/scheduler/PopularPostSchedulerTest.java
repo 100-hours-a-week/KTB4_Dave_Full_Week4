@@ -1,6 +1,7 @@
 package com.example.community.post.scheduler;
 
-import com.example.community.post.service.PostViewService;
+import com.example.community.post.service.PopularPostSnapshotService;
+import com.example.community.post.service.PopularityAggregationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,24 +16,29 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.inOrder;
 
 @ExtendWith(MockitoExtension.class)
 class PopularPostSchedulerTest {
     private static final String DEFAULT_CRON = "10 */5 * * * *";
 
     @Mock
-    private PostViewService postViewService;
+    private PopularityAggregationService aggregationService;
+
+    @Mock
+    private PopularPostSnapshotService popularPostSnapshotService;
 
     @InjectMocks
     private PopularPostScheduler scheduler;
 
     @Test
-    @DisplayName("인기글 스케줄러는 인기 통계 갱신을 위임한다")
+    @DisplayName("인기 통계를 갱신한 뒤 목록 스냅샷을 교체한다")
     void delegatesPopularityRefreshToPostViewService() {
         scheduler.refreshPopularPosts();
 
-        verify(postViewService).refreshPopularityStats();
+        var order = inOrder(aggregationService, popularPostSnapshotService);
+        order.verify(aggregationService).refreshPopularityStats();
+        order.verify(popularPostSnapshotService).refreshSnapshot();
     }
 
     @Test

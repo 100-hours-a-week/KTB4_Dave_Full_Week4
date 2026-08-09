@@ -1,5 +1,7 @@
 package com.example.community.post.repository;
 
+import com.example.community.post.dto.query.PostStateData;
+import com.example.community.post.dto.response.PopularPostTitleResponse;
 import com.example.community.post.entity.Post;
 import com.example.community.user.entity.SignInfo;
 import com.example.community.user.entity.UserInfo;
@@ -15,8 +17,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
+import java.util.Optional;
+
+import static java.time.temporal.ChronoUnit.MICROS;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 @DataJpaTest
 class PostRepositoryTest {
@@ -26,6 +32,8 @@ class PostRepositoryTest {
     private SignInfoRepository signInfoRepository;
     @Autowired
     private UserInfoRepository userInfoRepository;
+    @Autowired
+    private PostStateRepository postStateRepository;
 
     private UserInfo author;
 
@@ -119,58 +127,107 @@ class PostRepositoryTest {
     }
 
     @Nested
-    @DisplayName("게시글 번호 목록으로 게시글 조회")
-    class FindPostByPostNumIn {
+    @DisplayName("인기글 안정 요약 조회")
+    class FindPopularPostSummariesByPostNumIn {
 
         @Test
-        @DisplayName("해당하는 게시글이 없으면 빈 목록을 반환한다")
-        void returnsEmptyListWhenPostsDoNotExist() {
-            assertThat(postRepository.findPostByPostNumIn(
-                    List.of(Long.MAX_VALUE)
-            )).isEmpty();
-        }
+        @DisplayName("상태 엔티티 없이 요청한 게시글의 안정 필드를 반환한다")
+        void returnsStableSummaryFields() {
+            Post post = savePost(author, "popular");
 
-        @Test
-        @DisplayName("빈 게시글 번호 목록을 전달하면 빈 목록을 반환한다")
-        void returnsEmptyListWhenPostNumsAreEmpty() {
-            assertThat(postRepository.findPostByPostNumIn(List.of()))
-                    .isEmpty();
-        }
-
-        @Test
-        @DisplayName("번호 목록에 해당하는 게시글만 반환한다")
-        void returnsOnlyPostsMatchingPostNums() {
-            Post firstPost = savePost(author, "first");
-            Post secondPost = savePost(author, "second");
-            savePost(author, "not-requested");
-
-            List<Post> result = postRepository.findPostByPostNumIn(
-                    List.of(firstPost.getPostNum(), secondPost.getPostNum())
-            );
-
-            assertThat(result)
-                    .extracting(Post::getPostNum)
-                    .containsExactlyInAnyOrder(
-                            firstPost.getPostNum(),
-                            secondPost.getPostNum()
+            List<PopularPostTitleResponse> result =
+                    postRepository.findPopularPostTitlesByPostNumIn(
+                            List.of(post.getPostNum())
                     );
+
+            assertThat(result).singleElement().satisfies(summary -> {
+                assertThat(summary.postNum()).isEqualTo(post.getPostNum());
+                assertThat(summary.nickname()).isEqualTo("test");
+                assertThat(summary.title()).isEqualTo("popular");
+                assertThat(summary.writeAt().toInstant())
+                        .isCloseTo(post.getWriteAt(), within(1, MICROS));
+            });
         }
 
         @Test
-        @DisplayName("삭제된 게시글은 번호 목록에 있어도 제외한다")
-        void excludesDeletedPosts() {
-            Post visiblePost = savePost(author, "visible");
-            Post deletedPost = savePost(author, "deleted");
-            deletedPost.delete();
+        @DisplayName("삭제된 게시글은 안정 요약에서 제외한다")
+        void excludesDeletedPost() {
+            Post post = savePost(author, "deleted");
+            post.delete();
             postRepository.flush();
 
-            List<Post> result = postRepository.findPostByPostNumIn(
-                    List.of(visiblePost.getPostNum(), deletedPost.getPostNum())
+            assertThat(postRepository.findPopularPostTitlesByPostNumIn(
+                    List.of(post.getPostNum())
+            )).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("게시글 상세 분리 projection 조회")
+    class FindPostDetailProjections {
+
+        @Test
+        @DisplayName("본문 projection은 상태 엔티티 없이 본문 필드만 반환한다")
+        void returnsBodyFields() {
+            Post post = savePost(author, "detail-title");
+
+            assertThat(postRepository.findPostBodyDataByPostNum(post.getPostNum()))
+                    .hasValueSatisfying(body -> {
+                        assertThat(body.postNum()).isEqualTo(post.getPostNum());
+                        assertThat(body.title()).isEqualTo("detail-title");
+                        assertThat(body.content()).isEqualTo("content");
+                        assertThat(body.writeAt())
+                                .isCloseTo(post.getWriteAt(), within(1, MICROS));
+                    });
+        }
+
+        @Test
+        @DisplayName("상태 projection은 상태 필드만 반환한다")
+        void returnsStateFields() {
+            Post post = savePost(author, "state");
+
+            Optional<PostStateData> result =
+                    postStateRepository.findDataByPostNum(
+                            post.getPostNum()
+                    );
+
+            assertThat(result).hasValueSatisfying(state -> {
+                assertThat(state.viewCount()).isZero();
+                assertThat(state.likeCount()).isZero();
+                assertThat(state.reportCount()).isZero();
+                assertThat(state.commentCount()).isZero();
+            });
+        }
+
+        @Test
+        @DisplayName("조회수는 Post 전체 로드 없이 상태 테이블에서 증가시킨다")
+        void incrementsViewCountDirectly() {
+            Post post = savePost(author, "view");
+
+            int updated = postStateRepository.incrementViewCount(
+                    post.getPostNum()
             );
 
-            assertThat(result)
-                    .extracting(Post::getPostNum)
-                    .containsExactly(visiblePost.getPostNum());
+            assertThat(updated).isOne();
+            assertThat(postStateRepository.findDataByPostNum(
+                    post.getPostNum()
+            )).hasValueSatisfying(state ->
+                    assertThat(state.viewCount()).isOne()
+            );
+        }
+
+        @Test
+        @DisplayName("삭제된 게시글은 본문과 상태 projection에서 제외한다")
+        void excludesDeletedPost() {
+            Post post = savePost(author, "deleted-detail");
+            post.delete();
+            postRepository.flush();
+
+            assertThat(postRepository.findPostBodyDataByPostNum(post.getPostNum()))
+                    .isEmpty();
+            assertThat(postStateRepository.findDataByPostNum(
+                    post.getPostNum()
+            )).isEmpty();
         }
     }
 

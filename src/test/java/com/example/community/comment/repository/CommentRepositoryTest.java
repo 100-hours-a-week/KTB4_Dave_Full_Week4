@@ -1,5 +1,6 @@
 package com.example.community.comment.repository;
 
+import com.example.community.comment.dto.response.CommentResponse;
 import com.example.community.comment.entity.Comment;
 import com.example.community.post.entity.Post;
 import com.example.community.post.repository.PostRepository;
@@ -15,6 +16,8 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -183,6 +186,77 @@ class CommentRepositoryTest {
         assertThat(commentRepository.findByCommentNum(
                 deleted.getCommentNum()
         )).isEmpty();
+    }
+
+    @Test
+    @DisplayName("캐시용 첫 페이지 projection은 최상위 댓글과 페이지 정보를 반환한다")
+    void findFirstPageCacheValuesReturnsRootComments() {
+        Comment first = saveRootComment(post, "first");
+        Comment deleted = saveRootComment(post, "deleted-content");
+        saveChildComment(post, first, "child");
+        deleted.delete();
+        commentRepository.flush();
+
+        Page<CommentResponse> result = commentRepository
+                .findFirstPageResponsesByPostNum(
+                        post.getPostNum(),
+                        pageRequest()
+                );
+
+        assertThat(result.getContent())
+                .extracting(CommentResponse::commentNum)
+                .containsExactly(first.getCommentNum(), deleted.getCommentNum());
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent().get(1).content())
+                .isEqualTo("삭제된 댓글입니다.");
+        assertThat(result.getContent().get(1).deleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("캐시 부분 미스 IN projection은 삭제 댓글도 제외하지 않는다")
+    void findCacheValuesByCommentNumInIncludesDeletedComments() {
+        Comment visible = saveRootComment(post, "visible");
+        Comment deleted = saveRootComment(post, "deleted-content");
+        deleted.delete();
+        commentRepository.flush();
+
+        List<CommentResponse> result = commentRepository
+                .findResponsesByCommentNumIn(List.of(
+                        visible.getCommentNum(),
+                        deleted.getCommentNum()
+                ));
+
+        assertThat(result)
+                .extracting(CommentResponse::commentNum)
+                .containsExactlyInAnyOrder(
+                        visible.getCommentNum(),
+                        deleted.getCommentNum()
+                );
+        assertThat(result)
+                .filteredOn(value -> value.commentNum() == deleted.getCommentNum())
+                .singleElement()
+                .satisfies(value -> {
+                    assertThat(value.content()).isEqualTo("삭제된 댓글입니다.");
+                    assertThat(value.deleted()).isTrue();
+                });
+    }
+
+    @Test
+    @DisplayName("캐시 projection 결과의 탈퇴 작성자는 Java DTO에서 마스킹한다")
+    void cacheValueMasksDeletedAuthor() {
+        Comment comment = saveRootComment(post, "content");
+        author.delete();
+        userInfoRepository.flush();
+
+        CommentResponse result = commentRepository
+                .findResponsesByCommentNumIn(List.of(
+                        comment.getCommentNum()
+                ))
+                .getFirst();
+
+        assertThat(result.nickname()).isEqualTo("탈퇴한 사용자");
+        assertThat(result.profileImage()).isNull();
+        assertThat(result.content()).isEqualTo("content");
     }
 
     private PageRequest pageRequest() {
