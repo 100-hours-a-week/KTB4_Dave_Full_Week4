@@ -127,4 +127,4 @@ ANALYZE TABLE sign_info, user_info, post, post_stat, comment,
               post_popularity_stat, post_view_bucket;
 
 DROP TEMPORARY TABLE perf_sequence;
-DROP TEMPORARY TABLE perf_digit;
+DROP TABLE perf_digit;
